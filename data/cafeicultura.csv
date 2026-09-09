@@ -1,0 +1,341 @@
+"id_talhao","regiao_produtora","cultivar","manejo","irrigacao","altitude_m","declividade_pct","idade_lavoura_anos","densidade_plantio","adubacao_n_kg_ha","precipitacao_safra_mm","umidade_relativa_pct","ph_solo","materia_organica_pct","n_armadilhas","dias_exposicao","n_brocas_capturadas","severidade_ferrugem","padrao_exportacao"
+"TAL001","Sul de Minas","Catuai","Integrado","Nao",1036,22.6,14.3,2770,460,1592,68.6,5.49,2.11,6,15,1,0.0958,1
+"TAL002","Cerrado Mineiro","Mundo Novo","Convencional","Sim",910,16.9,8.7,4058,238,1397,78.4,5.48,2.52,9,15,7,0.1344,1
+"TAL003","Cerrado Mineiro","Bourbon","Convencional","Sim",971,24.8,10.6,4009,292,1449,81.4,5.81,2.22,7,15,11,0.3424,1
+"TAL004","Cerrado Mineiro","Mundo Novo","Convencional","Sim",1004,1,6,3360,272,1473,67.8,5.12,2.51,9,15,1,0.0862,1
+"TAL005","Mogiana","Mundo Novo","Convencional","Sim",734,19.1,5.6,4836,335,1919,82.1,4.88,3.93,6,30,46,0.2579,0
+"TAL006","Mogiana","Catuai","Convencional","Nao",949,16.5,10.8,2563,191,1556,69.9,5.48,2.68,8,30,4,0.2353,0
+"TAL007","Matas de Minas","Icatu","Integrado","Sim",496,23.6,7.4,4461,362,1133,76.6,6.28,3.47,4,15,2,0.1376,1
+"TAL008","Matas de Minas","Mundo Novo","Convencional","Sim",1237,27.2,8.4,2797,394,1760,74.1,5.63,3.06,11,15,7,0.0796,1
+"TAL009","Cerrado Mineiro","Mundo Novo","Convencional","Sim",1094,16.4,6.9,3675,355,1407,67.6,5.35,2.24,5,15,0,0.1526,1
+"TAL010","Cerrado Mineiro","Catuai","Convencional","Nao",844,15.1,8,4024,322,1513,70.4,5.01,3.56,5,30,4,0.4314,0
+"TAL011","Cerrado Mineiro","Mundo Novo","Integrado","Nao",1193,23.8,4.9,3578,290,1576,68.6,6.01,2.87,8,15,1,0.0173,1
+"TAL012","Matas de Minas","Catuai","Integrado","Sim",923,30.8,7,2716,284,1732,73.2,5.74,3.18,4,30,1,0.1406,1
+"TAL013","Mogiana","Catuai","Integrado","Nao",907,23.7,8.7,2408,257,1454,83.2,5.49,1.02,8,20,9,0.0339,1
+"TAL014","Matas de Minas","Mundo Novo","Convencional","Nao",681,26,6.4,3309,234,1144,68.4,4.54,2.52,7,15,1,0.1093,0
+"TAL015","Sul de Minas","Mundo Novo","Integrado","Nao",1025,17.5,2.7,3994,503,2067,70.8,5.88,1.56,6,15,0,0.229,0
+"TAL016","Cerrado Mineiro","Bourbon","Convencional","Nao",922,22.7,14.2,3681,257,1617,78.9,5.41,1.69,7,15,8,0.1547,0
+"TAL017","Sul de Minas","Catuai","Organico","Nao",1194,21.6,2.4,5076,295,1461,81.5,5.68,2.9,8,20,13,0.2031,0
+"TAL018","Sul de Minas","Icatu","Convencional","Nao",1118,17.5,11.3,4104,369,1322,84.8,4.8,2.09,8,30,12,0.0772,0
+"TAL019","Cerrado Mineiro","Mundo Novo","Convencional","Nao",957,18.6,2.9,3078,283,1306,77.7,4.95,2.17,12,15,9,0.1318,0
+"TAL020","Sul de Minas","Catuai","Convencional","Sim",997,19.5,10.8,3565,337,1740,73.5,5.42,2.3,4,30,10,0.138,1
+"TAL021","Mogiana","Icatu","Integrado","Sim",1278,16.7,6.1,4018,337,1654,71.5,5.19,2.49,8,20,2,0.0701,0
+"TAL022","Cerrado Mineiro","Catuai","Integrado","Sim",947,8.5,6.1,3766,322,1392,63.4,5.52,3.1,11,30,11,0.0281,1
+"TAL023","Sul de Minas","Catuai","Integrado","Sim",1343,8.3,3.3,2823,310,1520,76.1,5.51,2.23,6,20,5,0.1881,1
+"TAL024","Matas de Minas","Bourbon","Integrado","Nao",818,25.8,3.4,2650,367,1625,79,4.87,2,4,20,0,0.0863,1
+"TAL025","Sul de Minas","Catuai","Convencional","Sim",1232,31.1,7.3,3279,221,1386,76.4,5.26,2.48,6,20,1,0.0796,1
+"TAL026","Matas de Minas","Mundo Novo","Convencional","Nao",529,20.8,12.3,3958,415,1730,68.4,5.81,3.52,9,20,4,0.142,0
+"TAL027","Cerrado Mineiro","Catuai","Convencional","Sim",932,17.8,2.6,4011,228,1466,69.4,4.79,3.58,7,20,6,0.157,1
+"TAL028","Sul de Minas","Catuai","Integrado","Sim",916,13,17.2,5469,277,1265,64.3,5.73,3.9,4,30,11,0.0698,1
+"TAL029","Sul de Minas","Catuai","Integrado","Nao",1003,14.5,10.2,3876,394,1099,75.2,5.84,1.35,8,15,4,0.3369,1
+"TAL030","Mogiana","Mundo Novo","Organico","Sim",729,12,9.2,3556,271,1573,76.9,5.47,3.44,12,20,27,0.1711,0
+"TAL031","Cerrado Mineiro","Catuai","Integrado","Sim",1089,26.4,19,3423,453,1378,71.4,5.93,2.83,5,15,0,0.0858,1
+"TAL032","Matas de Minas","Mundo Novo","Integrado","Nao",805,28.6,4.9,2024,296,1144,80.2,5.35,2.27,6,30,8,0.0606,1
+"TAL033","Mogiana","Mundo Novo","Integrado","Nao",841,26.2,13.4,2896,259,1677,73.3,5.1,2.04,7,20,3,0.0989,0
+"TAL034","Sul de Minas","Mundo Novo","Convencional","Sim",865,25.5,5.2,4068,419,1391,78.3,6.19,2.43,8,30,16,0.1431,0
+"TAL035","Mogiana","Mundo Novo","Convencional","Nao",1117,39.4,12,3905,343,1917,79.5,5.2,2.07,4,15,8,0.2179,1
+"TAL036","Sul de Minas","Catuai","Organico","Nao",1068,13.2,14.7,4269,154,1835,72.8,5.39,3.41,11,15,6,0.0489,0
+"TAL037","Sul de Minas","Mundo Novo","Integrado","Sim",834,29.2,4.8,3840,532,1223,74.9,5.37,3.77,4,15,3,0.2221,0
+"TAL038","Sul de Minas","Mundo Novo","Integrado","Sim",873,27.7,20.2,3629,427,1667,66.2,4.97,2.15,9,30,7,0.1419,0
+"TAL039","Cerrado Mineiro","Catuai","Convencional","Nao",1047,20.4,3.6,3736,321,1841,80.2,5.82,2.97,12,15,10,0.1516,1
+"TAL040","Sul de Minas","Bourbon","Organico","Nao",1109,15,12.3,3790,200,1366,68,6.02,2.53,4,20,5,0.1542,0
+"TAL041","Cerrado Mineiro","Icatu","Integrado","Nao",1099,22.5,6.9,4256,292,1674,74.1,5.17,2.24,9,15,5,0.062,1
+"TAL042","Cerrado Mineiro","Catuai","Organico","Sim",1005,18.1,9.9,2663,180,1161,74.6,5.32,4.24,11,15,25,0.027,1
+"TAL043","Sul de Minas","Mundo Novo","Organico","Nao",1047,9.1,6.8,3291,330,1468,73.7,5.6,3.1,9,20,6,0.1111,1
+"TAL044","Sul de Minas","Catuai","Convencional","Sim",863,18.5,16.7,4667,345,1626,82.6,5.51,2.93,11,15,14,0.4414,0
+"TAL045","Cerrado Mineiro","Catuai","Integrado","Nao",1054,22.4,16.5,3466,391,1265,80.7,6.5,2.84,5,20,1,0.096,1
+"TAL046","Sul de Minas","Catuai","Integrado","Nao",1098,9.9,7.1,3877,370,1602,83,4.58,2.9,10,15,5,0.1299,0
+"TAL047","Cerrado Mineiro","Bourbon","Convencional","Nao",896,14.3,15.4,4790,270,1144,68.7,4.96,2.59,4,20,4,0.0908,1
+"TAL048","Mogiana","Catuai","Organico","Sim",687,13.1,6.7,4360,403,1495,70.8,5.53,4.57,8,15,1,0.3147,1
+"TAL049","Cerrado Mineiro","Catuai","Integrado","Nao",1055,20,11.2,4052,358,1462,83.4,5.24,2.49,12,15,10,0.147,1
+"TAL050","Cerrado Mineiro","Catuai","Integrado","Sim",1274,11.5,4.5,2903,365,1449,59.5,5.57,1.59,11,30,3,0.0313,1
+"TAL051","Sul de Minas","Icatu","Convencional","Nao",881,16.8,6.8,4643,398,1848,79.7,5.61,2.97,5,15,7,0.2141,0
+"TAL052","Matas de Minas","Mundo Novo","Integrado","Sim",859,34.3,8.5,2068,225,1295,74.3,5.41,1.34,10,30,4,0.0546,1
+"TAL053","Cerrado Mineiro","Mundo Novo","Integrado","Nao",1119,7.3,9.4,2663,275,1233,82.2,5.77,3.2,7,15,4,0.2061,1
+"TAL054","Mogiana","Icatu","Integrado","Sim",1202,8.4,7.1,4117,299,1862,78.2,6.08,1.7,10,15,0,0.1704,1
+"TAL055","Mogiana","Catuai","Organico","Sim",795,12.7,13.6,4521,186,1435,66.4,5.84,3.8,10,30,14,0.3297,1
+"TAL056","Matas de Minas","Mundo Novo","Convencional","Nao",575,29.6,10.1,3699,389,863,60.3,5.54,2.16,4,20,1,0.0606,1
+"TAL057","Sul de Minas","Icatu","Integrado","Nao",1102,18.4,3.8,3222,293,1511,71.2,5.89,1.65,6,30,1,0.1015,0
+"TAL058","Cerrado Mineiro","Bourbon","Convencional","Sim",1012,10.8,6.7,4254,282,1812,79.9,5.23,2.37,6,20,12,0.4208,1
+"TAL059","Matas de Minas","Bourbon","Convencional","Sim",713,30.5,12.1,2941,279,1356,73.9,6.66,3.37,11,20,11,0.1386,0
+"TAL060","Sul de Minas","Mundo Novo","Convencional","Nao",1069,28.2,14.5,2956,255,1205,70,4.81,3.5,10,20,4,0.0353,0
+"TAL061","Matas de Minas","Catuai","Integrado","Sim",852,21.1,8.5,4753,345,1581,75,4.92,3.59,7,20,11,0.1251,1
+"TAL062","Mogiana","Icatu","Integrado","Nao",865,13,7,3398,433,1756,64.2,5.29,1.89,5,15,2,0.0024,1
+"TAL063","Sul de Minas","Mundo Novo","Integrado","Sim",1149,21.7,7.6,3528,285,1382,75.7,5.69,3.44,5,15,2,0.1501,1
+"TAL064","Matas de Minas","Mundo Novo","Convencional","Nao",886,29.2,5.8,3230,309,1221,71.2,5.39,1.98,5,15,4,0.0767,0
+"TAL065","Cerrado Mineiro","Catuai","Convencional","Nao",1260,13.4,8,4031,384,1176,58.5,5.99,2.49,6,15,0,0.1591,0
+"TAL066","Cerrado Mineiro","Catuai","Convencional","Sim",948,18.7,8.3,4481,217,1346,79.9,5.37,1.86,10,15,25,0.1021,1
+"TAL067","Matas de Minas","Catuai","Organico","Nao",785,16.2,8.4,3727,316,1435,83.4,5.35,3.77,5,15,9,0.2912,0
+"TAL068","Cerrado Mineiro","Catuai","Integrado","Sim",1083,24.3,10.8,4312,335,1591,79.7,5.09,2.28,5,20,5,0.2119,1
+"TAL069","Matas de Minas","Catuai","Convencional","Nao",872,20.1,12.9,4703,330,1274,67.8,5.22,3.69,10,20,6,0.2407,0
+"TAL070","Sul de Minas","Catuai","Convencional","Nao",1038,28.3,5.1,2562,425,1615,75.6,6.32,3.14,11,20,1,0.0883,1
+"TAL071","Mogiana","Bourbon","Convencional","Nao",836,13.4,4.9,2403,201,1702,78.4,4.37,2.87,11,30,14,0.2933,1
+"TAL072","Mogiana","Icatu","Integrado","Sim",956,12.7,8,4185,416,1244,76.7,6.03,2.59,7,20,6,0.118,0
+"TAL073","Matas de Minas","Mundo Novo","Convencional","Nao",1110,18.7,13.2,4611,221,983,57.2,5.39,2.99,12,30,8,0.2101,0
+"TAL074","Mogiana","Catuai","Convencional","Nao",921,16,8.9,3555,303,1486,79,5.22,2.82,9,20,6,0.1304,0
+"TAL075","Cerrado Mineiro","Bourbon","Convencional","Nao",994,14.8,8.5,2837,374,1159,76.3,5.51,2.91,10,15,7,0.1754,1
+"TAL076","Matas de Minas","Bourbon","Integrado","Nao",766,22.7,10.8,4980,210,1584,66.5,6.39,2.55,8,20,5,0.2846,0
+"TAL077","Cerrado Mineiro","Mundo Novo","Integrado","Nao",1261,22.6,16,4381,464,1182,77.8,5.75,1.61,12,30,21,0.2907,0
+"TAL078","Mogiana","Icatu","Integrado","Sim",924,1,6.4,3592,282,1383,72.1,5.11,2.07,12,15,5,0.0484,0
+"TAL079","Mogiana","Mundo Novo","Convencional","Sim",985,17.3,5.9,4253,443,1759,76.1,5.61,3.76,5,30,27,0.1871,0
+"TAL080","Cerrado Mineiro","Mundo Novo","Convencional","Sim",864,15.5,4.8,3477,389,1618,82.9,5.81,2.88,4,30,16,0.3933,0
+"TAL081","Mogiana","Catuai","Organico","Nao",824,15.1,7.4,2517,165,1509,71.8,5.37,3.92,12,20,9,0.023,1
+"TAL082","Matas de Minas","Mundo Novo","Convencional","Sim",689,28.8,12.5,2648,370,1630,81.4,5.65,3.01,8,30,32,0.1779,0
+"TAL083","Sul de Minas","Bourbon","Organico","Nao",938,2.5,7.2,4360,257,1624,79.9,6.2,4.66,6,15,7,0.2977,1
+"TAL084","Mogiana","Icatu","Convencional","Nao",853,9.6,23.8,2880,417,1574,69.4,4.55,1.42,10,15,15,0.0365,0
+"TAL085","Sul de Minas","Catuai","Integrado","Sim",1044,22.5,31.1,4714,282,1448,78.2,5.68,1.78,8,15,10,0.1742,0
+"TAL086","Sul de Minas","Mundo Novo","Organico","Nao",909,16.7,4.9,3233,40,1536,74.3,5.25,3.42,11,20,11,0.0542,1
+"TAL087","Mogiana","Catuai","Convencional","Nao",950,49,10.7,3752,431,1414,78.7,5.04,3.7,8,30,15,0.0376,0
+"TAL088","Matas de Minas","Mundo Novo","Convencional","Nao",825,34.8,8.8,4455,472,1604,72.2,5.38,3.38,4,20,4,0.3469,0
+"TAL089","Mogiana","Bourbon","Convencional","Sim",830,13.6,15.5,4604,265,1581,77.6,5.31,2.46,7,15,19,0.2442,0
+"TAL090","Matas de Minas","Catuai","Convencional","Nao",803,25.9,16.1,3778,381,1468,63.6,5.27,2.78,10,20,2,0.1011,0
+"TAL091","Mogiana","Icatu","Convencional","Nao",813,16.3,10.1,3491,302,1598,70.1,5.03,1.04,11,20,4,0.0851,1
+"TAL092","Sul de Minas","Icatu","Organico","Sim",862,22,8.2,4186,243,990,65.4,4.4,5.04,9,20,5,0.0105,0
+"TAL093","Matas de Minas","Catuai","Integrado","Sim",762,40.2,17.3,3333,268,1335,65.6,5.46,2.6,9,20,5,0.0244,0
+"TAL094","Mogiana","Icatu","Integrado","Nao",936,19.6,11.7,5811,284,1468,77.7,5.45,3.14,8,30,14,0.0755,0
+"TAL095","Mogiana","Bourbon","Integrado","Sim",737,23.6,3.2,4731,281,1588,71.2,5.55,2.77,8,20,20,0.1846,0
+"TAL096","Sul de Minas","Catuai","Integrado","Sim",1049,15.5,19.2,4677,243,1704,74.9,5.8,1.65,6,15,11,0.0736,1
+"TAL097","Matas de Minas","Bourbon","Integrado","Sim",805,24.8,3.3,4210,201,1660,82.1,5.42,2.62,10,15,4,0.4236,0
+"TAL098","Sul de Minas","Mundo Novo","Integrado","Nao",1229,25.7,11.3,3598,266,1222,65.5,5.5,3.14,4,30,5,0.0731,1
+"TAL099","Sul de Minas","Catuai","Convencional","Sim",988,20,1.4,3079,302,1943,83.1,5.07,1.43,11,30,23,0.12,0
+"TAL100","Cerrado Mineiro","Catuai","Organico","Nao",949,3.7,10.2,3476,208,1181,75.8,6.07,4.14,8,15,8,0.1895,0
+"TAL101","Cerrado Mineiro","Catuai","Convencional","Sim",963,18,1,3568,271,1828,73.3,5.54,2.96,6,30,6,0.1291,1
+"TAL102","Matas de Minas","Icatu","Convencional","Nao",682,18.7,13.1,4606,283,1478,63.2,4.93,2.25,4,20,5,0.0855,1
+"TAL103","Sul de Minas","Bourbon","Convencional","Nao",1241,21.5,4.6,3193,339,1487,75.1,5.05,1.72,6,20,2,0.1629,1
+"TAL104","Matas de Minas","Bourbon","Convencional","Nao",921,21.4,14.1,2972,485,1331,66.3,5.06,3.12,9,15,2,0.3121,0
+"TAL105","Matas de Minas","Mundo Novo","Convencional","Nao",873,26.1,2.7,2905,289,1024,71.5,4.85,2.95,12,20,16,0.0681,0
+"TAL106","Mogiana","Mundo Novo","Integrado","Sim",898,25.7,7.7,4227,420,1549,76.6,5.17,3.62,11,30,4,0.4182,1
+"TAL107","Cerrado Mineiro","Catuai","Integrado","Nao",900,8.7,4.6,3630,250,1762,75.7,4.87,1.72,4,15,4,0.2262,1
+"TAL108","Mogiana","Catuai","Organico","Sim",814,45.1,5,1800,218,1441,75.2,5.09,4.25,6,20,9,0.0996,0
+"TAL109","Cerrado Mineiro","Catuai","Integrado","Nao",1145,27.6,11.1,3136,282,1772,85.5,6.4,1.75,6,30,6,0.1614,0
+"TAL110","Cerrado Mineiro","Mundo Novo","Convencional","Nao",807,13.5,12.8,3986,337,1376,67.9,4.73,1.87,9,15,5,0.1525,0
+"TAL111","Cerrado Mineiro","Icatu","Convencional","Nao",993,29.5,20.6,3437,396,1331,71.4,5.68,2.88,7,15,7,0.0101,0
+"TAL112","Sul de Minas","Mundo Novo","Convencional","Nao",1193,25.1,8.8,3031,395,1532,74.4,5.42,2.51,7,15,6,0.0701,0
+"TAL113","Sul de Minas","Mundo Novo","Convencional","Nao",1128,35.9,3.6,3175,177,1275,70.9,5.53,2.15,12,20,0,0.1158,1
+"TAL114","Mogiana","Icatu","Organico","Sim",887,14,12.9,4619,270,1198,58.9,6.57,4.05,8,15,3,0.0212,0
+"TAL115","Matas de Minas","Mundo Novo","Integrado","Sim",634,32.4,9.5,3836,386,1143,62.5,5.39,1.73,6,20,4,0.1839,0
+"TAL116","Sul de Minas","Mundo Novo","Convencional","Nao",1083,18.4,19.9,4102,366,1082,72.1,5.09,2.56,8,15,4,0.1057,0
+"TAL117","Cerrado Mineiro","Bourbon","Convencional","Sim",881,24,6.2,3530,303,1523,74.9,5.06,3.71,6,15,0,0.3237,0
+"TAL118","Sul de Minas","Bourbon","Convencional","Sim",837,18.2,8.8,3148,271,1742,76.1,4.56,1.22,11,30,15,0.1436,1
+"TAL119","Mogiana","Catuai","Integrado","Sim",923,25.2,10.8,2718,393,1347,73.1,5.44,1.54,8,15,7,0.3704,0
+"TAL120","Sul de Minas","Mundo Novo","Convencional","Nao",1136,3.4,6.6,2785,280,1274,55.1,4.96,3.18,11,15,1,0.001,0
+"TAL121","Sul de Minas","Catuai","Integrado","Sim",1190,27,10.4,2442,318,1199,86.5,5.64,3.16,9,15,3,0.0941,1
+"TAL122","Sul de Minas","Bourbon","Convencional","Nao",1191,20,6.1,3500,525,1416,67.3,4.82,3.37,8,30,10,0.0724,1
+"TAL123","Sul de Minas","Icatu","Convencional","Sim",1028,33.2,9.5,3488,411,1601,69.4,5.86,3.39,4,30,7,0.0377,1
+"TAL124","Cerrado Mineiro","Mundo Novo","Convencional","Nao",954,9.8,13.8,2495,301,1366,71.2,5.21,3.39,6,30,7,0.0676,0
+"TAL125","Sul de Minas","Catuai","Integrado","Sim",1047,19.5,13.8,3529,195,1549,70.1,5.74,1.7,8,30,12,0.0718,0
+"TAL126","Mogiana","Bourbon","Convencional","Sim",928,28.8,9.6,1885,397,1564,80,5.18,2.27,10,15,18,0.3985,0
+"TAL127","Mogiana","Icatu","Convencional","Nao",1058,24.7,4.9,3893,194,1489,92.2,5.08,2.44,10,30,26,0.1723,0
+"TAL128","Sul de Minas","Icatu","Integrado","Nao",1183,16.2,6.2,3035,231,1373,74.4,4.95,3.35,4,15,1,0.0054,0
+"TAL129","Cerrado Mineiro","Catuai","Integrado","Nao",1226,27.5,4.8,3626,323,1411,76.9,5.74,3.13,11,15,2,0.2024,1
+"TAL130","Sul de Minas","Mundo Novo","Convencional","Nao",1153,16.7,14.1,3472,389,1513,78.1,6.01,2.35,5,20,5,0.067,0
+"TAL131","Sul de Minas","Catuai","Integrado","Nao",921,6.8,5.8,4260,332,1611,80.9,6.46,2.5,4,15,0,0.2477,0
+"TAL132","Cerrado Mineiro","Mundo Novo","Integrado","Nao",1068,24.4,6.8,2868,140,1138,70.5,5.16,2.87,9,20,3,0.1892,1
+"TAL133","Mogiana","Icatu","Organico","Sim",948,15.5,1.5,4333,253,1291,73.2,5.37,3.86,10,30,17,0.1001,0
+"TAL134","Matas de Minas","Bourbon","Organico","Sim",743,24.3,17.1,2959,225,1572,64.2,6.05,3.62,5,30,11,0.0957,0
+"TAL135","Cerrado Mineiro","Mundo Novo","Integrado","Nao",621,18.9,18.8,3283,418,1129,70,4.92,3.04,10,20,10,0.1047,0
+"TAL136","Cerrado Mineiro","Catuai","Convencional","Nao",1135,11.5,11,4084,265,1288,78.2,5.17,2.18,10,30,14,0.1232,1
+"TAL137","Matas de Minas","Icatu","Convencional","Sim",690,18.5,9.3,3907,395,1479,73.8,5.69,0.8,11,15,10,0.0854,1
+"TAL138","Cerrado Mineiro","Catuai","Integrado","Sim",898,21.1,12.3,4315,419,1342,74,5.03,4.44,12,20,18,0.3634,0
+"TAL139","Mogiana","Mundo Novo","Organico","Nao",778,9.2,6.7,2892,141,1570,79.2,5.62,3.72,8,20,18,0.1835,1
+"TAL140","Sul de Minas","Catuai","Convencional","Sim",856,15,13.8,3327,379,1190,75.4,5.42,3.15,12,30,14,0.1122,0
+"TAL141","Cerrado Mineiro","Mundo Novo","Convencional","Nao",897,22.9,12.4,3425,415,1564,81,5.07,2.87,11,15,12,0.1855,0
+"TAL142","Sul de Minas","Icatu","Convencional","Nao",1114,17,5.7,5349,384,1255,74.1,4.28,3.15,4,15,2,0.0938,0
+"TAL143","Sul de Minas","Catuai","Organico","Nao",1318,18.7,19.4,3459,133,1294,73.1,5.83,3.48,8,15,6,0.0038,1
+"TAL144","Sul de Minas","Catuai","Convencional","Nao",1044,22.8,9.6,2863,318,1554,72.7,5.65,1.81,7,30,6,0.016,0
+"TAL145","Cerrado Mineiro","Catuai","Convencional","Nao",815,5.1,6.6,4228,261,1321,84.2,5.73,2.2,5,20,13,0.2104,1
+"TAL146","Matas de Minas","Mundo Novo","Convencional","Sim",655,38.6,4.9,5500,380,1684,75.4,5.61,2.21,4,30,23,0.4289,0
+"TAL147","Sul de Minas","Icatu","Convencional","Nao",818,35.3,16.8,2448,190,1233,74.5,5.75,2.56,10,15,4,0.001,0
+"TAL148","Cerrado Mineiro","Mundo Novo","Organico","Nao",871,13.4,21.1,3405,110,1953,88.6,5.54,4.72,9,30,38,0.1773,0
+"TAL149","Mogiana","Mundo Novo","Convencional","Nao",762,23.6,11.6,3753,295,1641,70.3,5.66,3.2,8,20,10,0.1497,1
+"TAL150","Sul de Minas","Catuai","Integrado","Nao",1254,13,10,4172,387,1241,62.5,5.51,4.05,4,15,2,0.0529,1
+"TAL151","Cerrado Mineiro","Mundo Novo","Convencional","Nao",1018,20.3,4.9,3489,388,1673,80.3,5.78,2.75,6,15,3,0.0266,1
+"TAL152","Cerrado Mineiro","Icatu","Convencional","Nao",1076,10.4,10.5,4296,231,1625,81.8,5.43,2.67,5,20,12,0.1443,1
+"TAL153","Cerrado Mineiro","Icatu","Integrado","Sim",940,18.6,14.7,3639,390,2018,70.8,5.02,3.64,10,15,7,0.1408,0
+"TAL154","Mogiana","Catuai","Organico","Nao",837,14.3,3.2,3214,327,1848,79.5,5.88,3.35,12,30,20,0.0878,0
+"TAL155","Matas de Minas","Bourbon","Convencional","Nao",783,22.1,6.3,4251,322,1057,65.2,5.18,3.25,10,15,9,0.0716,1
+"TAL156","Matas de Minas","Catuai","Convencional","Sim",815,19.5,2.6,3601,268,1170,64.3,5.94,2.9,8,15,4,0.1276,1
+"TAL157","Matas de Minas","Catuai","Convencional","Nao",829,19.5,5.9,3873,435,1320,66.4,5.92,2.83,7,15,1,0.0774,1
+"TAL158","Sul de Minas","Icatu","Convencional","Nao",1182,12.8,19.8,3662,442,1731,83.5,5.7,2.82,8,15,3,0.0471,0
+"TAL159","Matas de Minas","Icatu","Integrado","Sim",896,12.5,7.5,4038,284,1676,81.8,5.39,3.12,7,20,24,0.1536,1
+"TAL160","Matas de Minas","Catuai","Integrado","Sim",878,10,8.2,4158,295,2208,83.7,6.23,3.06,7,30,18,0.2315,0
+"TAL161","Sul de Minas","Mundo Novo","Integrado","Sim",873,12.2,9.4,2457,372,1182,67.6,5.48,2.61,4,30,3,0.2252,0
+"TAL162","Mogiana","Mundo Novo","Convencional","Nao",1022,16.3,9.8,3531,166,1312,68.9,6.15,2.79,11,20,11,0.0457,0
+"TAL163","Matas de Minas","Mundo Novo","Organico","Nao",648,30.7,14.4,1823,53,1707,75.4,5.4,3.92,8,30,6,0.0381,0
+"TAL164","Sul de Minas","Icatu","Integrado","Sim",999,17.4,14.4,3735,452,1396,72.1,4.54,2.3,8,20,4,0.0164,1
+"TAL165","Sul de Minas","Bourbon","Convencional","Nao",1095,6.7,6.5,2524,310,1293,73.6,5.36,2,9,15,0,0.1222,0
+"TAL166","Cerrado Mineiro","Mundo Novo","Convencional","Sim",906,15.9,12.6,4701,367,1022,68.7,5.09,3.21,4,30,5,0.3773,1
+"TAL167","Sul de Minas","Mundo Novo","Convencional","Nao",896,19.1,8.4,3385,426,1434,73.4,4.94,2.29,7,15,9,0.1111,0
+"TAL168","Mogiana","Mundo Novo","Convencional","Nao",988,19.8,14.6,4509,290,1096,70.1,5.82,2.97,6,20,4,0.0734,1
+"TAL169","Matas de Minas","Bourbon","Integrado","Nao",916,20.4,4.6,4255,346,1322,72.6,5.27,1.86,5,20,1,0.5282,0
+"TAL170","Matas de Minas","Mundo Novo","Convencional","Nao",661,20.7,12.9,3899,456,1098,78.3,5.87,2.3,6,15,5,0.1542,0
+"TAL171","Matas de Minas","Icatu","Integrado","Nao",613,31.9,5.2,4004,367,1289,67.7,5.15,3.16,12,15,6,0.0262,0
+"TAL172","Mogiana","Mundo Novo","Integrado","Nao",836,14.4,9.8,3126,356,1560,78.8,5.59,1.13,9,30,4,0.3278,0
+"TAL173","Mogiana","Catuai","Integrado","Sim",708,35.6,16,4049,266,974,65.2,5.5,2.7,4,20,6,0.0348,1
+"TAL174","Cerrado Mineiro","Mundo Novo","Integrado","Nao",948,23.2,4.8,3536,214,1683,82.3,6.03,1.96,8,15,4,0.3571,0
+"TAL175","Cerrado Mineiro","Mundo Novo","Convencional","Sim",1013,28.7,5.4,3671,253,1373,66.3,5.92,4.01,5,15,4,0.0557,0
+"TAL176","Sul de Minas","Icatu","Convencional","Nao",958,29.7,13.8,3101,145,1225,69.6,5.24,2.76,9,30,15,0.044,0
+"TAL177","Sul de Minas","Mundo Novo","Integrado","Nao",999,8.6,6.5,4241,488,1891,81.6,5.67,3.25,7,20,8,0.2619,0
+"TAL178","Mogiana","Mundo Novo","Integrado","Sim",1051,4.9,13.1,4045,274,1368,81.5,5.42,2.04,8,15,10,0.1822,1
+"TAL179","Cerrado Mineiro","Bourbon","Integrado","Nao",1077,32.1,11.3,2946,449,1129,80.2,5.74,3.11,6,30,2,0.4188,0
+"TAL180","Mogiana","Catuai","Integrado","Sim",673,6.5,6.6,3222,341,982,60.2,5.55,2.96,12,20,2,0.1814,1
+"TAL181","Cerrado Mineiro","Catuai","Convencional","Sim",1042,26.2,9,1800,264,1453,76.1,5.27,3.43,5,15,5,0.0269,1
+"TAL182","Mogiana","Mundo Novo","Integrado","Nao",797,21,10.1,2817,429,1918,74.1,5.13,2.8,11,30,10,0.1643,1
+"TAL183","Mogiana","Catuai","Integrado","Nao",933,30.5,4.4,3210,433,1677,79.4,4.69,3.58,5,20,2,0.0965,0
+"TAL184","Mogiana","Mundo Novo","Organico","Sim",979,13.3,10.6,3309,351,1172,75.2,4.54,3.53,5,30,14,0.3528,0
+"TAL185","Sul de Minas","Catuai","Convencional","Nao",893,23.2,16.4,3236,432,1240,76.3,5.7,2.93,7,30,9,0.1583,0
+"TAL186","Sul de Minas","Catuai","Organico","Nao",973,9.4,7.6,4672,364,1671,69,6.1,3.42,4,15,10,0.1066,1
+"TAL187","Cerrado Mineiro","Catuai","Convencional","Nao",1281,23.6,7.3,5466,246,1468,73.7,5.91,2.79,12,30,23,0.1287,1
+"TAL188","Sul de Minas","Mundo Novo","Convencional","Nao",1175,13.9,10.2,3001,377,1431,77.6,4.96,2.91,12,20,14,0.1493,1
+"TAL189","Sul de Minas","Icatu","Integrado","Nao",1066,14.5,3.3,3990,138,1723,77.4,5.78,2.78,9,30,8,0.0567,1
+"TAL190","Sul de Minas","Icatu","Convencional","Sim",1068,17.4,7.6,4282,251,1379,66.9,5.56,2.27,4,20,1,0.0536,1
+"TAL191","Cerrado Mineiro","Catuai","Convencional","Nao",983,20.3,1.4,5092,432,1454,69.9,5.4,1.92,7,15,4,0.1475,1
+"TAL192","Cerrado Mineiro","Icatu","Convencional","Nao",700,20.9,5.4,3400,431,1496,75.3,5.02,3.4,10,15,6,0.2147,0
+"TAL193","Mogiana","Bourbon","Organico","Nao",862,25,9.9,4430,205,1395,73.5,6.18,4.3,7,15,5,0.1655,1
+"TAL194","Mogiana","Mundo Novo","Convencional","Nao",900,8.8,3.3,4238,337,1145,70,6.06,2.6,5,15,4,0.143,0
+"TAL195","Mogiana","Mundo Novo","Organico","Sim",896,17,3.5,3953,205,1683,77.2,5.85,3.33,10,20,19,0.2362,1
+"TAL196","Matas de Minas","Catuai","Integrado","Sim",772,6.6,12.2,3642,305,1977,77.9,4.96,2.89,4,15,3,0.0788,0
+"TAL197","Matas de Minas","Bourbon","Organico","Sim",743,26.1,5,4235,188,1217,56.9,5.29,4.38,4,15,3,0.0872,0
+"TAL198","Mogiana","Bourbon","Integrado","Nao",952,4.9,16.7,2739,425,1576,76.9,5.15,3.76,12,30,23,0.0958,1
+"TAL199","Cerrado Mineiro","Mundo Novo","Organico","Sim",858,25.3,5.6,3893,157,1283,78.1,5.33,4,8,20,17,0.1197,1
+"TAL200","Cerrado Mineiro","Icatu","Organico","Sim",892,13.7,3,2184,111,1750,75.8,5.42,3.55,8,15,10,0.0525,1
+"TAL201","Matas de Minas","Bourbon","Convencional","Sim",697,28.7,6.5,2464,374,1334,75.1,5.6,3.26,8,30,17,0.1994,1
+"TAL202","Mogiana","Bourbon","Convencional","Sim",946,22.3,12.3,4376,199,1751,77.2,5.47,3.5,11,20,32,0.2781,0
+"TAL203","Matas de Minas","Icatu","Convencional","Sim",1050,21.4,9.4,4072,263,841,70.5,5.47,2.59,11,15,12,0.0098,1
+"TAL204","Sul de Minas","Catuai","Integrado","Sim",1114,19.9,17.4,2834,379,1067,63.7,5.69,1.71,8,15,4,0.1314,1
+"TAL205","Matas de Minas","Bourbon","Convencional","Nao",718,11.9,13.7,3350,381,1477,60.4,5.7,1.48,7,30,11,0.1192,1
+"TAL206","Cerrado Mineiro","Mundo Novo","Convencional","Nao",1060,27.8,1.2,3004,354,1505,73,5.56,3.78,11,30,14,0.1466,1
+"TAL207","Sul de Minas","Mundo Novo","Convencional","Sim",1110,20.8,9.2,4099,355,1458,79.3,5.63,3.78,10,15,17,0.3272,0
+"TAL208","Cerrado Mineiro","Icatu","Convencional","Nao",1279,17.2,19.2,3971,230,909,71.6,6.38,2.54,6,30,11,0.0291,0
+"TAL209","Cerrado Mineiro","Mundo Novo","Organico","Sim",1052,14.8,4.3,4123,84,1308,76.1,6.45,2.63,8,20,12,0.1237,1
+"TAL210","Cerrado Mineiro","Bourbon","Integrado","Nao",922,1,19.1,3087,379,1287,72.9,4.74,3.18,11,15,3,0.1475,0
+"TAL211","Mogiana","Bourbon","Integrado","Nao",682,22.1,3.5,4755,227,1618,79.7,6.15,2.7,12,15,16,0.258,0
+"TAL212","Matas de Minas","Catuai","Integrado","Nao",806,25.1,8.6,3226,413,1672,71.5,4.87,1.1,12,20,10,0.0204,0
+"TAL213","Mogiana","Bourbon","Organico","Sim",986,15.7,8.8,3712,203,1347,75.8,5.5,3.36,6,20,24,0.2673,0
+"TAL214","Sul de Minas","Bourbon","Integrado","Nao",944,13.9,21.6,5067,267,1893,83.5,5.02,2.96,10,30,38,0.157,1
+"TAL215","Matas de Minas","Mundo Novo","Convencional","Sim",770,30.4,5.4,3601,272,1400,66.6,5.17,2.77,8,15,4,0.0489,0
+"TAL216","Matas de Minas","Catuai","Convencional","Sim",811,21.5,8.4,2893,372,1997,83.5,5.35,1.46,4,15,2,0.4099,0
+"TAL217","Cerrado Mineiro","Mundo Novo","Integrado","Sim",1046,11.8,6.4,3476,312,1151,74,5.92,3.31,8,30,10,0.1645,1
+"TAL218","Mogiana","Mundo Novo","Convencional","Nao",729,24.3,4.2,4270,383,1214,65.2,4.88,2.09,4,20,5,0.0858,1
+"TAL219","Matas de Minas","Catuai","Integrado","Nao",757,15.8,7.1,4056,256,1528,73.4,5.53,1.27,5,15,1,0.0559,1
+"TAL220","Sul de Minas","Catuai","Integrado","Sim",972,12.6,13.2,4050,230,1758,82.2,5.81,3.35,10,20,18,0.2152,0
+"TAL221","Cerrado Mineiro","Catuai","Integrado","Nao",1267,24.3,8.1,4002,312,1526,80.5,4.77,1.42,9,15,3,0.0753,1
+"TAL222","Mogiana","Catuai","Convencional","Nao",646,17.8,2.6,4236,406,930,49.4,5,2.75,12,30,2,0.2109,0
+"TAL223","Cerrado Mineiro","Catuai","Convencional","Sim",1109,14.5,5.8,2733,394,1640,77.6,5.64,1.69,8,15,10,0.1602,1
+"TAL224","Mogiana","Catuai","Integrado","Sim",1000,11.5,17.5,4664,457,1530,82.7,5.75,1.87,9,20,16,0.3131,0
+"TAL225","Matas de Minas","Mundo Novo","Convencional","Nao",892,34.3,8.4,4227,213,1678,74.6,5.13,1.38,5,20,2,0.1237,0
+"TAL226","Sul de Minas","Mundo Novo","Convencional","Nao",1031,15.5,8.7,4012,272,1035,72.9,5.1,2.94,6,15,2,0.1013,0
+"TAL227","Mogiana","Catuai","Integrado","Nao",904,26.5,10.3,2287,352,1780,67,5.73,2.74,11,30,3,0.0629,0
+"TAL228","Sul de Minas","Bourbon","Convencional","Nao",1124,14.3,10.1,4363,396,1714,78.7,5.45,1.85,6,30,11,0.2312,0
+"TAL229","Sul de Minas","Mundo Novo","Convencional","Nao",977,18.6,3.6,3423,317,1210,70.4,5.04,3.88,12,15,7,0.1536,0
+"TAL230","Sul de Minas","Bourbon","Integrado","Nao",1119,1.9,4,4224,388,1456,71.9,5.53,3.54,9,20,2,0.0758,1
+"TAL231","Sul de Minas","Mundo Novo","Convencional","Nao",1108,16.8,5.8,3983,330,1673,68.6,4.41,1.61,8,15,4,0.07,0
+"TAL232","Mogiana","Icatu","Convencional","Sim",893,29.8,7.7,4046,317,1610,71.1,4.83,2.86,6,15,6,0.1051,0
+"TAL233","Sul de Minas","Catuai","Convencional","Nao",1046,15.9,27.4,2459,439,1500,66.3,5.03,3.77,5,20,3,0.0372,0
+"TAL234","Sul de Minas","Icatu","Convencional","Sim",1018,26.5,10.9,1988,236,1590,71.5,5.02,3.34,5,15,1,0.001,0
+"TAL235","Sul de Minas","Bourbon","Convencional","Nao",820,18.9,5,3209,358,1654,82.5,5.64,1.61,11,15,5,0.1664,1
+"TAL236","Cerrado Mineiro","Bourbon","Convencional","Nao",822,14.6,4.5,4279,373,1807,72.5,5.24,3.26,6,20,3,0.1353,0
+"TAL237","Sul de Minas","Icatu","Convencional","Sim",1097,1.7,15.7,3552,260,1372,61.1,5.34,3.13,5,20,9,0.001,0
+"TAL238","Mogiana","Icatu","Integrado","Nao",762,2.1,6.2,3931,365,1463,70.8,5.12,2.31,11,15,12,0.0198,0
+"TAL239","Mogiana","Icatu","Convencional","Sim",860,3,10.7,4583,362,1196,65.9,4.97,2.08,12,30,20,0.0666,1
+"TAL240","Mogiana","Mundo Novo","Integrado","Nao",925,22.3,10.8,4350,345,1637,82.6,5.46,3.8,7,15,5,0.1766,1
+"TAL241","Mogiana","Mundo Novo","Convencional","Nao",768,20.5,5.1,3076,313,1461,85.1,5.45,2.6,7,20,15,0.5203,0
+"TAL242","Mogiana","Mundo Novo","Organico","Nao",838,13.1,6.5,2476,181,833,73.2,5.89,2.53,7,30,4,0.1206,0
+"TAL243","Cerrado Mineiro","Catuai","Integrado","Nao",859,16.9,3.3,3069,185,1466,76.5,5.4,2.95,10,15,7,0.0948,1
+"TAL244","Mogiana","Bourbon","Convencional","Nao",955,28,6.1,3426,226,1490,78.6,4.83,2.03,9,20,10,0.238,1
+"TAL245","Cerrado Mineiro","Catuai","Convencional","Sim",950,21.7,3,3698,416,1234,67.6,5.43,4.22,12,15,3,0.059,1
+"TAL246","Cerrado Mineiro","Bourbon","Convencional","Nao",951,24.3,5.5,4383,517,1271,72.3,5.11,2.73,12,15,11,0.1568,0
+"TAL247","Cerrado Mineiro","Mundo Novo","Organico","Nao",1123,18.6,1.9,2229,221,1357,83.7,5.24,3.74,11,15,5,0.1322,0
+"TAL248","Matas de Minas","Mundo Novo","Integrado","Nao",797,25.2,11.5,2971,400,1135,66,5.71,2.46,11,20,7,0.1278,1
+"TAL249","Matas de Minas","Catuai","Convencional","Nao",685,19.8,8.2,4386,334,1674,87.4,5.65,3.06,6,30,13,0.2702,0
+"TAL250","Matas de Minas","Catuai","Convencional","Nao",750,23.5,12.1,3799,419,1408,68.7,5.58,3.22,10,30,10,0.1256,1
+"TAL251","Mogiana","Mundo Novo","Integrado","Sim",883,5.1,8.6,3249,448,1423,69.1,5.09,2.03,10,15,5,0.1772,1
+"TAL252","Sul de Minas","Bourbon","Organico","Sim",998,24.6,4.5,3960,250,1485,85.1,5.93,3.5,4,15,12,0.3674,1
+"TAL253","Mogiana","Mundo Novo","Convencional","Nao",1155,26,3.6,4214,331,1288,77.8,5.23,1.88,4,20,4,0.159,1
+"TAL254","Sul de Minas","Mundo Novo","Convencional","Nao",1003,34.4,14.5,3336,385,1448,77.9,4.88,2.78,6,30,6,0.2349,0
+"TAL255","Sul de Minas","Catuai","Convencional","Sim",957,8.8,8.9,3504,217,969,71.4,6.14,2.39,11,30,27,0.2193,0
+"TAL256","Matas de Minas","Icatu","Integrado","Nao",721,11.2,12.5,3454,233,1306,64.9,5.47,3.84,10,30,7,0.0172,0
+"TAL257","Cerrado Mineiro","Catuai","Convencional","Nao",949,16,8.2,3142,331,1458,67.6,5.62,2.9,8,15,3,0.0942,0
+"TAL258","Matas de Minas","Catuai","Convencional","Nao",788,25,4.6,4139,310,1155,63,4.82,1.31,6,30,14,0.0258,0
+"TAL259","Mogiana","Catuai","Integrado","Nao",857,22.1,5.5,4210,336,1464,85.2,5.67,4.05,8,20,17,0.1412,1
+"TAL260","Matas de Minas","Bourbon","Integrado","Nao",770,23.8,5.7,3483,292,1152,72.2,5.19,3.44,10,15,10,0.082,1
+"TAL261","Sul de Minas","Mundo Novo","Integrado","Nao",953,25.2,2.5,3541,340,1255,81.7,5.34,2.48,12,30,12,0.1058,0
+"TAL262","Cerrado Mineiro","Mundo Novo","Integrado","Nao",853,1.1,7.5,4237,308,1895,82.5,5.72,2.72,12,30,14,0.4176,0
+"TAL263","Sul de Minas","Mundo Novo","Integrado","Nao",936,15.6,7.1,3874,333,1286,70.6,5.35,1.76,8,20,4,0.0807,0
+"TAL264","Cerrado Mineiro","Catuai","Integrado","Nao",970,25.2,21.3,1800,274,1612,70.4,5.84,3.42,7,30,7,0.0175,1
+"TAL265","Matas de Minas","Icatu","Convencional","Sim",936,15.4,7.7,4356,436,1130,68.8,5.66,3.5,10,30,15,0.1013,1
+"TAL266","Cerrado Mineiro","Catuai","Organico","Sim",921,20.6,11.8,4178,211,1292,73.8,5.22,3.63,5,15,10,0.056,1
+"TAL267","Mogiana","Mundo Novo","Integrado","Nao",859,8.2,4.4,5031,239,1868,86,4.74,2.01,6,30,11,0.429,1
+"TAL268","Sul de Minas","Icatu","Convencional","Nao",993,16.7,9.4,1934,373,1934,84.9,5.89,1.75,6,20,9,0.0561,1
+"TAL269","Cerrado Mineiro","Catuai","Convencional","Nao",985,21.1,8.7,3113,247,1924,83.2,5.94,3.07,8,30,3,0.1668,0
+"TAL270","Matas de Minas","Mundo Novo","Convencional","Nao",894,36.8,13.1,2795,374,1055,75.4,5.07,2.13,5,20,3,0.0765,1
+"TAL271","Sul de Minas","Bourbon","Integrado","Nao",1028,15.2,11.5,4206,309,1517,70.5,6.52,1.83,10,15,7,0.1356,1
+"TAL272","Matas de Minas","Icatu","Organico","Sim",680,21.5,8.9,4419,93,1243,69.5,5.3,4.34,8,15,28,0.0282,0
+"TAL273","Mogiana","Mundo Novo","Convencional","Sim",691,26.6,1.9,3226,269,1357,76.4,5.56,2.3,11,15,9,0.437,0
+"TAL274","Mogiana","Icatu","Integrado","Nao",1094,19,8.4,4045,287,1476,68.7,5.53,1.93,11,15,6,0.1035,1
+"TAL275","Mogiana","Catuai","Convencional","Nao",681,12.4,9,4538,375,1486,72.6,5.13,2.05,9,30,33,0.1374,0
+"TAL276","Mogiana","Icatu","Convencional","Sim",820,25.9,5.8,2670,361,1556,67.7,5.69,1.96,6,15,4,0.0215,0
+"TAL277","Sul de Minas","Mundo Novo","Convencional","Nao",1138,29.2,2.9,3253,271,1105,69,4.73,1.69,7,30,6,0.1311,1
+"TAL278","Cerrado Mineiro","Mundo Novo","Integrado","Nao",937,27.4,6.4,3393,384,1192,74.6,5.43,3.59,12,15,4,0.0388,0
+"TAL279","Matas de Minas","Mundo Novo","Organico","Sim",851,20.1,7.5,2770,160,1634,74.3,5.43,3.17,6,15,3,0.1505,1
+"TAL280","Mogiana","Mundo Novo","Convencional","Sim",801,16,7.7,4618,338,1319,77.8,5.13,1.94,8,30,15,0.3295,0
+"TAL281","Sul de Minas","Mundo Novo","Convencional","Sim",1166,10.3,10.7,3383,431,979,73.1,5.15,2.74,8,15,4,0.0973,1
+"TAL282","Matas de Minas","Mundo Novo","Organico","Sim",968,37.9,5.3,1800,217,1647,75.9,5.01,3.2,5,15,4,0.1225,1
+"TAL283","Cerrado Mineiro","Catuai","Convencional","Sim",1003,19.9,8.4,4382,297,1051,77.7,5.44,3.01,5,15,5,0.2221,0
+"TAL284","Mogiana","Mundo Novo","Convencional","Nao",1019,13.6,5.2,4775,262,1789,89.5,5.26,2.98,6,20,13,0.4078,0
+"TAL285","Cerrado Mineiro","Catuai","Integrado","Nao",1098,32.4,28.5,2488,347,1583,82.8,5.6,2.65,8,30,19,0.0708,1
+"TAL286","Mogiana","Bourbon","Convencional","Nao",793,27.9,12.4,2486,346,1458,78.4,5.81,2,7,15,3,0.0917,1
+"TAL287","Mogiana","Mundo Novo","Convencional","Sim",923,51.4,6.3,2780,342,1317,72.9,5.95,2.53,9,15,19,0.2079,0
+"TAL288","Sul de Minas","Catuai","Integrado","Sim",971,19.9,4.7,4298,252,1250,63.2,5.5,2.54,5,30,3,0.0892,1
+"TAL289","Cerrado Mineiro","Icatu","Organico","Nao",820,20.2,11,3598,184,1448,68.7,5.14,3.1,5,15,3,0.0247,1
+"TAL290","Cerrado Mineiro","Icatu","Integrado","Sim",1108,16,10.3,3357,433,1346,75.5,4.93,2.78,6,30,12,0.0795,1
+"TAL291","Sul de Minas","Bourbon","Organico","Nao",1060,32.2,11.3,2715,137,1767,82.7,5.59,4.22,4,20,1,0.1017,1
+"TAL292","Matas de Minas","Bourbon","Integrado","Nao",684,29.5,6.3,3600,356,1657,64.4,6.29,2.4,5,30,7,0.2732,1
+"TAL293","Mogiana","Icatu","Convencional","Nao",812,21.2,14.6,3174,419,1625,73,4.76,2.37,7,15,3,0.0542,0
+"TAL294","Mogiana","Bourbon","Integrado","Sim",1046,21.8,9.5,4713,408,1110,69.5,5.31,3.61,9,30,16,0.2352,1
+"TAL295","Matas de Minas","Mundo Novo","Convencional","Nao",597,31.8,8.3,3540,356,1636,80.2,5.46,2.68,7,30,32,0.2286,0
+"TAL296","Cerrado Mineiro","Icatu","Integrado","Sim",806,25.4,1.4,2771,409,1452,79.1,5.16,3.15,12,20,13,0.1483,0
+"TAL297","Cerrado Mineiro","Bourbon","Integrado","Nao",808,23.3,3,3532,414,1556,78.4,4.88,1.33,5,30,8,0.2225,1
+"TAL298","Cerrado Mineiro","Catuai","Organico","Sim",980,30.2,9.5,3749,239,1716,78,6.17,3.56,4,15,4,0.1194,1
+"TAL299","Cerrado Mineiro","Catuai","Integrado","Nao",1193,16.7,12,5390,284,1180,67.2,5.15,2.02,9,15,1,0.0323,1
+"TAL300","Cerrado Mineiro","Mundo Novo","Convencional","Sim",1056,30.6,11.9,3859,484,1223,68.7,5.07,2.34,8,15,6,0.1044,1
+"TAL301","Matas de Minas","Mundo Novo","Organico","Nao",753,39.3,5.3,4042,207,1383,81.1,6.18,3.15,11,30,49,0.2158,1
+"TAL302","Mogiana","Mundo Novo","Organico","Sim",745,12.6,2.6,4126,98,1312,80.3,5.47,2.88,4,30,13,0.2238,1
+"TAL303","Sul de Minas","Icatu","Integrado","Sim",1163,24.2,13.4,3319,341,1352,79.2,5.09,2.27,9,15,10,0.0159,1
+"TAL304","Matas de Minas","Mundo Novo","Integrado","Sim",765,30.5,6.8,3049,389,1407,68.2,5.9,1.86,4,30,4,0.0937,0
+"TAL305","Sul de Minas","Icatu","Organico","Nao",1015,8.3,7.6,3790,112,1616,77.7,5.96,2.54,4,30,5,0.0344,1
+"TAL306","Mogiana","Catuai","Convencional","Sim",857,30.1,10.7,3618,374,1017,75.6,5.85,2.07,4,20,3,0.3047,1
+"TAL307","Cerrado Mineiro","Mundo Novo","Organico","Nao",994,16.8,6.9,2444,253,1493,91,5.9,3.82,9,30,32,0.0783,0
+"TAL308","Sul de Minas","Bourbon","Convencional","Nao",1074,20.1,9.9,2778,489,1452,72.7,5.69,3.1,8,30,6,0.1808,1
+"TAL309","Cerrado Mineiro","Mundo Novo","Integrado","Sim",1121,19.3,7.1,3624,344,1271,68,5.49,2.18,5,30,2,0.2794,0
+"TAL310","Cerrado Mineiro","Mundo Novo","Organico","Nao",830,19.2,18,4851,231,1429,72.7,5.89,3.36,9,30,24,0.1746,1
+"TAL311","Sul de Minas","Mundo Novo","Convencional","Nao",1048,19.6,8.7,3563,359,1666,76.6,6.16,3.31,6,15,4,0.1314,1
+"TAL312","Sul de Minas","Catuai","Convencional","Nao",1019,16.1,19.9,4487,381,1688,72.7,4.62,2.86,5,15,2,0.0554,0
+"TAL313","Sul de Minas","Mundo Novo","Organico","Sim",980,3.1,8.1,3660,264,1209,68.2,5.83,3.97,11,15,22,0.0297,0
+"TAL314","Cerrado Mineiro","Mundo Novo","Organico","Sim",873,8.3,7.4,3703,246,1403,85.4,5.42,3.12,8,20,6,0.2105,1
+"TAL315","Sul de Minas","Icatu","Convencional","Nao",964,3.6,6,4123,358,1483,68.1,5.65,1.66,6,15,4,0.0503,0
+"TAL316","Matas de Minas","Catuai","Organico","Sim",813,30.5,5,3156,204,1747,74.5,5.18,3.91,8,20,14,0.2515,1
+"TAL317","Mogiana","Mundo Novo","Organico","Nao",1020,17.3,4.7,4573,312,2158,84,5.2,3.37,4,15,6,0.134,1
+"TAL318","Cerrado Mineiro","Mundo Novo","Convencional","Nao",795,22.6,2.1,2283,148,1179,60.9,5.57,1.94,8,30,1,0.0141,1
+"TAL319","Mogiana","Icatu","Organico","Sim",698,2.2,6.4,3471,229,1551,79.2,6.15,3.19,4,20,5,0.0449,1
+"TAL320","Cerrado Mineiro","Catuai","Convencional","Sim",911,19.9,10.6,4190,408,1376,65.9,4.71,2.48,8,30,5,0.1791,0
+"TAL321","Sul de Minas","Bourbon","Integrado","Sim",1061,21.7,13.7,4884,310,1568,87.9,5.51,2.49,12,20,62,0.6098,0
+"TAL322","Sul de Minas","Mundo Novo","Integrado","Nao",1009,15.6,2.5,4142,408,1240,72.9,5.36,1.8,11,15,4,0.1902,0
+"TAL323","Sul de Minas","Catuai","Integrado","Nao",818,25.6,5,4472,446,1132,61.8,4.62,2.44,11,15,5,0.0549,0
+"TAL324","Matas de Minas","Icatu","Convencional","Nao",1021,28.1,6.3,2999,272,1647,87.1,5.25,2.69,12,30,9,0.05,0
+"TAL325","Matas de Minas","Icatu","Convencional","Nao",611,36.6,16.4,3316,269,1462,75.3,6.36,2.09,9,20,7,0.0811,0
+"TAL326","Cerrado Mineiro","Icatu","Integrado","Sim",1044,25.8,14.9,3338,343,1256,70.8,4.87,2.85,7,20,5,0.1003,0
+"TAL327","Mogiana","Mundo Novo","Integrado","Nao",934,19.9,12.6,4043,384,1436,77.3,5.71,1.62,11,15,6,0.206,0
+"TAL328","Sul de Minas","Catuai","Convencional","Nao",871,17.8,11.6,4374,351,1635,71.6,5.41,2.27,5,30,13,0.0383,0
+"TAL329","Mogiana","Icatu","Convencional","Nao",881,22.3,10.4,3535,407,1608,72.2,5.58,2.01,11,30,20,0.0035,0
+"TAL330","Matas de Minas","Catuai","Convencional","Sim",830,34.1,8.9,3021,402,1579,72,4.68,2.15,9,20,3,0.2138,0
+"TAL331","Sul de Minas","Bourbon","Convencional","Nao",865,13.7,9.1,3116,257,971,63.4,4.97,1.73,8,30,6,0.0874,0
+"TAL332","Matas de Minas","Catuai","Convencional","Sim",748,21.9,8.2,3273,398,1374,80,5.26,1.87,9,15,9,0.2046,0
+"TAL333","Sul de Minas","Mundo Novo","Integrado","Sim",869,22.2,11.2,5222,299,1611,74,4.78,1.91,6,30,2,0.1357,0
+"TAL334","Sul de Minas","Catuai","Integrado","Nao",997,31.7,13.1,3246,288,1516,69.6,5.58,3.34,8,20,3,0.1139,1
+"TAL335","Cerrado Mineiro","Icatu","Convencional","Nao",1016,11.7,3.6,4354,386,1754,80.6,5.36,2.33,8,20,13,0.0939,0
+"TAL336","Mogiana","Bourbon","Convencional","Nao",870,25,25.6,3131,371,870,66.8,5.74,2.3,5,20,2,0.085,0
+"TAL337","Sul de Minas","Mundo Novo","Integrado","Nao",1297,14.5,11.2,5735,364,1697,79,4.51,2.93,8,20,5,0.2109,1
+"TAL338","Cerrado Mineiro","Icatu","Integrado","Sim",1013,9.2,8.3,3616,367,1440,77.9,4.73,3.6,11,20,12,0.0117,0
+"TAL339","Mogiana","Mundo Novo","Convencional","Nao",870,4.6,10.2,3441,349,1388,69.4,5.67,2.03,4,15,5,0.0468,0
+"TAL340","Cerrado Mineiro","Bourbon","Convencional","Sim",863,28.2,20.3,3267,381,1543,76.5,5.68,2.63,5,20,6,0.2666,1
