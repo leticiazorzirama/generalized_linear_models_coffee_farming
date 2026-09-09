@@ -1,11 +1,41 @@
-# ===============================
-# CONFIGURAR AMBIENTE DE TRABALHO
-# ===============================
+# =====================================================================
+# ANALISE ESTATISTICA DESCRITIVA DA CAFEICULTURA
+# =====================================================================
+#
+# UNIVERSIDADE DO VALE DO ITAJAI - UNIVALI
+# ESCOLA POLITECNICA
+# PROGRAMA DE POS-GRADUACAO EM COMPUTACAO APLICADA - PPGCA
+# MESTRADO EM COMPUTACAO APLICADA
+# Disciplina: Modelagem estatistica
+# Prof. Dr.: Rodrigo Sant'Ana
+# Discentes: Andre Lucas Ribeiro, Leticia Zorzi Rama, Matheus Neis
+# Itajai, Santa Catarina, Brasil
+#
+# Descrição:
+# Este script realiza a inspecao e a analise estatistica descritiva 
+# de uma base de dados referente a cafeicultura.
+# A analise estatistica dos dados serve como etapa previa para posteriores
+# analises inferenciais e modelagens dos dados conforme perguntas especificas 
+# pre-formuladas e propostas ao grupo de trabalho para responde-las.
+#
+# O script esta estruturado em:
+# - Configurar ambiente de trabalho
+# - Carregamento e inspecao inicial da base de dados
+# - Analise univariada por ordem das colunas da base de dados
+# - Analises multivariadas
+# - Analises globais
+#
+# Base de dados: cafeicultura.csv
+# =====================================================================
 
-# Conferir caminhos
-getwd()
-setwd("inserir caminho")
-getwd()
+# =====================================================================
+# CONFIGURAR AMBIENTE DE TRABALHO
+# =====================================================================
+
+# Conferir e configurar caminhos, se necessario
+# getwd()
+# setwd("inserir caminho")
+# getwd()
 
 # Pacotes
 library(spdep) ## I de Moran, LISA e matriz de pesos
@@ -75,12 +105,12 @@ inferior = tanh(z - q * ep),
 superior = tanh(z + q * ep))
 }
 
-# ==============
+# =====================================================================
 # BASE DE DADOS
-# ==============
+# =====================================================================
 
 # Carregar a base de dados
-caf <- read.csv("data/cafeicultura.csv", sep=",")
+caf <- read.csv("cafeicultura.csv", sep=",")
 
 # Inspecao da base de dados
 secao("Inspeção da base de dados")
@@ -114,12 +144,18 @@ cat("Total de células na base de dados:", total_celulas, "\n")
 cat("Total de dados faltantes (NA):", total_na, "\n")
 cat("Porcentagem geral de dados faltantes:", pct_geral_na, "%\n\n")
 
-# =====================
+# =====================================================================
 # ANALISES UNIVARIADAS
-# =====================
+# =====================================================================
 
-# Variavel 'id_talhao'
+# VARIAVEL 'id_talhao'
 secao("Análise univariada - variável: id_talhao")
+
+# O que e um talhao?
+# (...) o talhao refere-se a determinada área da lavoura cafeeira que pode ser considerada homogênea, 
+# por ter a mesma variedade de café plantada na mesma data, em um solo de características físicas, 
+# químicas e topográficas semelhantes, além de receber o mesmo manejo agronômico e o mesmo tratamento 
+# administrativo (Santos et al., 2009).
 
 # Verificar se cada observacao corresponde a um talhao
 length(unique(caf$id_talhao))
@@ -127,7 +163,7 @@ length(unique(caf$id_talhao))
 cat("\nA base de dados contém", length(unique(caf$id_talhao)), "observações,",
 "cada uma correspondente a um talhão.")
 
-# Variavel 'regiao_produtora'
+# VARIAVEL 'regiao_produtora'
 secao("Análise univariada - variável: regiao_produtora")
 table(caf$regiao_produtora)
 names(table(caf$regiao_produtora))
@@ -135,16 +171,28 @@ names(table(caf$regiao_produtora))
 # Moda
 regiao_produtora_moda <- names(which.max(table(caf$regiao_produtora)))
 
-# Ranking
+# Ranking absoluto
 regiao_produtora_rank <- caf %>%
   group_by(regiao_produtora) %>%
   summarise(frequencia = n()) %>%
   arrange(desc(frequencia))
 
 # Grafico de barras
-# TO DO
+regiao_produtora_plot <- ggplot(
+  regiao_produtora_rank,
+  aes(x = regiao_produtora, y = frequencia)
+) +
+  geom_col() +
+  labs(
+    x = "Região produtora",
+    y = "Frequência absoluta"
+  ) +
+  coord_flip() +
+  theme_minimal()
 
-# Exibir resultados preliminares
+print(regiao_produtora_plot)
+
+# Exibir resultados
 # Moda
 cat("\nDas", dim(table(caf$regiao_produtora)), "regiões produtoras,",
 "a moda é:", str_to_title(regiao_produtora_moda))
@@ -153,7 +201,7 @@ cat("\nDas", dim(table(caf$regiao_produtora)), "regiões produtoras,",
 cat("\nO ranking das regiões produtoras é:")
 print(regiao_produtora_rank)
 
-# Variavel 'cultivar'
+# VARIAVEL 'cultivar'
 secao("Análise univariada - variável: cultivar")
 table(caf$cultivar)
 names(table(caf$cultivar))
@@ -168,9 +216,24 @@ cultivar_rank <- caf %>%
   arrange(desc(frequencia))
 
 # Grafico de barras
-# TO DO
+cultivar_plot <- ggplot(
+  cultivar_rank,
+  aes(
+    x = reorder(cultivar, frequencia),
+    y = frequencia
+  )
+) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    x = "Cultivar",
+    y = "Frequência absoluta"
+  ) +
+  theme_minimal()
 
-# Exibir resultados preliminares
+print(cultivar_plot)
+
+# Exibir resultados
 # Moda
 cat("\nDos", dim(table(caf$cultivar)), "cultivares,",
 "a moda é:", str_to_title(cultivar_moda))
@@ -179,7 +242,7 @@ cat("\nDos", dim(table(caf$cultivar)), "cultivares,",
 cat("\nO ranking dos cultivares é:")
 print(cultivar_rank)
 
-# Variavel 'manejo'
+# VARIAVEL 'manejo'
 secao("Análise univariada - variável: manejo")
 table(caf$manejo)
 names(table(caf$manejo))
@@ -194,9 +257,24 @@ manejo_rank <- caf %>%
   arrange(desc(frequencia))
 
 # Grafico de barras
-# TO DO
+manejo_plot <- ggplot(
+  manejo_rank, 
+  aes(
+    x = reorder(manejo, frequencia),
+    y = frequencia
+    )
+) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    x = "Manejo",
+    y = "Frequência absoluta"
+  ) +
+  theme_minimal()
 
-# Exibir resultados preliminares
+print(manejo_plot)
+
+# Exibir resultados
 # Moda
 cat("\nDos", dim(table(caf$manejo)), "manejos,",
 "a moda é:", str_to_title(manejo_moda))
@@ -205,7 +283,7 @@ cat("\nDos", dim(table(caf$manejo)), "manejos,",
 cat("\nO ranking dos manejos é:")
 print(manejo_rank)
 
-# Variavel 'irrigacao'
+# VARIAVEL 'irrigacao'
 secao("Análise univariada - variável: irrigação")
 table(caf$irrigacao)
 names(table(caf$irrigacao))
@@ -220,9 +298,24 @@ irrigacao_rank <- caf %>%
   arrange(desc(frequencia))
 
 # Grafico de barras
-# TO DO
+irrigacao_plot <- ggplot(
+  irrigacao_rank, 
+  aes(
+    x = reorder(irrigacao, frequencia),
+    y = frequencia
+    )
+) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    x = "Irrigação",
+    y = "Frequência absoluta"
+  ) +
+  theme_minimal()
 
-# Exibir resultados preliminares
+print(irrigacao_plot)
+
+# Exibir resultados
 # Moda
 cat("\nA irrigação predomina?", str_to_title(irrigacao_moda))
 
@@ -230,7 +323,7 @@ cat("\nA irrigação predomina?", str_to_title(irrigacao_moda))
 cat("\nO ranking da irrigação é:")
 print(irrigacao_rank)
 
-# Variavel 'altitude'
+# VARIAVEL 'altitude'
 secao("Análise univariada - variável: altitude")
 
 # Altitude do parque cafeeiro de Minas gerais, segundo Bernardes et al. (2012)
@@ -239,14 +332,6 @@ secao("Análise univariada - variável: altitude")
 # Resumo estatistico
 summary(caf$altitude_m)
 
-# Histograma
-altitude_m_plot <- ggplot(caf, aes(altitude_m)) +
-  geom_histogram(binwidth = 50) +
-  theme_minimal()
-
-print(altitude_m_plot)
-
-# Resultados
 # Extrair estatisticas descritivas
 alt_min <- min(caf$altitude_m)
 alt_max <- max(caf$altitude_m)
@@ -256,7 +341,31 @@ alt_sd <- sd(caf$altitude_m)
 alt_q1 <- quantile(caf$altitude_m, 0.25)
 alt_q3 <- quantile(caf$altitude_m, 0.75)
 
-# Exibir resultados preliminares
+# Histograma
+altitude_m_plot <- ggplot(caf, aes(x = altitude_m)) +
+  geom_histogram(binwidth = 50, colour = "white") +
+  geom_vline(
+  xintercept = alt_media,
+  linetype = "dashed"
+) +
+annotate(
+  "text",
+  x = alt_media,
+  y = Inf,
+  label = paste0("Média = ", round(alt_media, 2), " m"),
+  vjust = 1.5,
+  hjust = -0.05
+) +
+  labs(
+    x = "Altitude (m)",
+    y = "Frequência absoluta"
+  ) +
+  theme_minimal()
+
+print(altitude_m_plot)
+
+# Resultados
+# Exibir resultados
 cat("\nAltitude mínima:", alt_min, "metros\n")
 cat("nAltitude máxima:", alt_max, "metros\n")
 cat("1º quartil:", alt_q1, "metros\n")
@@ -266,13 +375,12 @@ cat("3º quartil:", alt_q3, "metros\n")
 cat("Desvio padrão:", round(alt_sd, 2), "metros\n")
 
 # Parecer
-cat("\nA altitude tem uma distribuição normal,
-sem a presença de valores extremos ou impossíveis. Segundo Bernard et al. (2012),
-a altitude no parque cafeeiro em Minas gerais varia entre 500 a 1.200 metros. 
-Os dados indicam uma frequência maior de altitudes entre 830 e 1046 metros, com altitudes mínimas
-de 496 e máximas de 1343 metros.")
+cat("\nA altitude tem uma distribuição normal, sem a presença de valores extremos ou impossíveis. 
+Segundo Bernard et al. (2012), a altitude no parque cafeeiro em Minas gerais varia entre 500 a 1.200 
+metros. Os dados indicam uma frequência maior de altitudes entre 830 e 1046 metros, com altitudes 
+mínimas de 496 e máximas de 1343 metros.")
 
-# Variavel 'declividade_pct'
+# VARIAVEL 'declividade_pct'
 secao("Análise univariada - variável: declividade")
 
 # Classes de declividade de Minas Gerais, segundo INPE (2023)
@@ -291,14 +399,6 @@ secao("Análise univariada - variável: declividade")
 # Resumo estatistico
 summary(caf$declividade_pct)
 
-# Histograma
-declividade_pct_plot <- ggplot(caf, aes(declividade_pct)) +
-  geom_histogram(binwidth = 3) +
-  theme_minimal()
-
-print(declividade_pct_plot)
-
-# Resultados
 # Extrair estatisticas descritivas
 decl_min <- min(caf$declividade_pct)
 decl_max <- max(caf$declividade_pct)
@@ -308,7 +408,31 @@ decl_sd <- sd(caf$declividade_pct)
 decl_q1 <- quantile(caf$declividade_pct, 0.25)
 decl_q3 <- quantile(caf$declividade_pct, 0.75)
 
-# Exibir resultados preliminares
+# Histograma
+declividade_pct_plot <- ggplot(caf, aes(x = declividade_pct)) +
+  geom_histogram(binwidth = 3, colour = "white") +
+  geom_vline(
+  xintercept = c(3, 8, 20, 45, 75),
+  linetype = "dashed"
+) +
+annotate(
+  "text",
+  x = c(3, 8, 20, 45, 75),
+  y = Inf,
+  label = c("3%", "8%", "20%", "45%", "75%"),
+  vjust = 1.5,
+  hjust = -0.1
+) +
+  labs(
+    x = "Declividade (%)",
+    y = "Frequência absoluta"
+  ) +
+  theme_minimal()
+
+print(declividade_pct_plot)
+
+# Resultados
+# Exibir resultados
 cat("\nDeclividade mínima:", decl_min)
 cat("Declividade máxima:", decl_max)
 cat("1º quartil:", decl_q1)
@@ -318,29 +442,24 @@ cat("3º quartil:", decl_q3)
 cat("Desvio padrão:", round(decl_sd, 2))
 
 # Parecer
-cat("\nA declividade tem uma distribuição normal,
-com a predominância de terrenos forte-ondulados, segundo
-a classificação do INPE (2023). Há, entretanto, uma
-heterogeneidade de terrenos visto que a declividade varia de
-0% a 51.4%, caracterizando a ocorrência de terrenos planos à
-montanhosos, respectivamente. Os resultados diferem da caracterização de 
-Bernard et al. (2012) cuja declividae do parque cafeeiro em Minas Gerais
-predomina entre 5 e 15%.")
+cat("\nA declividade tem uma distribuição normal, levemente assimetrica à direita,
+com a predominância de terrenos forte-ondulados, segundo a classificação do INPE (2023). 
+Há, entretanto, uma heterogeneidade de terrenos visto que a declividade varia de
+0% a 51.4%, caracterizando a ocorrência de terrenos planos à montanhosos, respectivamente. 
+Os resultados diferem da caracterização de  Bernard et al. (2012) cuja declividae do parque 
+cafeeiro em Minas Gerais predomina entre 5 e 15%.")
 
-# Variavel 'idade_lavoura_anos'
+# VARIAVEL 'idade_lavoura_anos'
 secao("Análise univariada - variável: idade_lavoura_anos")
+
+# Idade da lavoura
+# Até  os  dois  anos, chamada de lavoura jovem e após os dois anos, 
+# conhecida como manejo em café adulto (Nascimento et al., 2020).
+# Uma vez plantada, a lavoura permanece por 10, 20, 30 anos ou mais (Silva et al., 2002).
 
 # Resumo estatistico
 summary(caf$idade_lavoura_anos)
 
-# Histograma
-idade_lavoura_anos_plot <- ggplot(caf, aes(idade_lavoura_anos)) +
-  geom_histogram(binwidth = 2) +
-  theme_minimal()
-
-print(idade_lavoura_anos_plot)
-
-# Resultados
 # Extrair estatisticas descritivas
 idade_min <- min(caf$idade_lavoura_anos)
 idade_max <- max(caf$idade_lavoura_anos)
@@ -350,7 +469,31 @@ idade_sd <- sd(caf$idade_lavoura_anos)
 idade_q1 <- quantile(caf$idade_lavoura_anos, 0.25)
 idade_q3 <- quantile(caf$idade_lavoura_anos, 0.75)
 
-# Exibir resultados preliminares
+# Histograma
+idade_lavoura_anos_plot <- ggplot(caf, aes(x = idade_lavoura_anos)) +
+  geom_histogram(binwidth = 2, colour = "white") +
+  geom_vline(
+  xintercept = 2,
+  linetype = "dashed"
+) +
+annotate(
+  "text",
+  x = 2,
+  y = Inf,
+  label = "Jovens: até 2 anos",
+  vjust = 1.5,
+  hjust = -0.1
+) +
+  labs(
+    x = "Idade da lavoura (anos)",
+    y = "Frequência absoluta"
+  ) +
+  theme_minimal()
+
+print(idade_lavoura_anos_plot)
+
+# Resultados
+# Exibir resultados
 cat("\nIdade mínima:", idade_min)
 cat("Idade máxima:", idade_max)
 cat("1º quartil:", idade_q1)
@@ -360,58 +503,504 @@ cat("3º quartil:", idade_q3)
 cat("Desvio padrão:", round(idade_sd, 2))
 
 # Parecer
-# TO DO 
+cat("\n A idade da lavoura de café apresenta uma distribuição normal com assimetria
+à direita. Existem lavouras jovens, com menos de dois anos e lavoura adultas com 31 anos.
+Predominam lavouras adultas, com idade média de 9.25 anos.")
 
-# ======================
+# VARIAVEL densidade_plantio
+secao("Análise univariada - variável: densidade_plantio")
+
+# Densidade de plantio sao plantas por alguma unidade de espaco
+# Exemplo: plantas/metro quadrado, plantas/hectare
+# Segundo Malta et al. (2008), 
+# um hectare tradicional tem 2.500 plantas/ha, 
+# semi-adensado possui 2.500 a 5.000 plantas/ha e 
+# adensado possui mais de 5.000 plantas/ha
+
+# Resumo estatistico
+summary(caf$densidade_plantio)
+
+# Densidade de plantio seguindo a classificacao de Malta et al. (2008)
+caf2 <- caf %>%
+  select(densidade_plantio) %>%
+  mutate(
+    densidade_plantio_classes = cut(
+      densidade_plantio,
+      breaks = c(-Inf, 2500, 5000, Inf),
+      labels = c("Tradicional", "Semi-adensado", "Adensado"),
+      right = TRUE
+    ),
+    densidade_plantio_classes = factor(
+      densidade_plantio_classes,
+      levels = c("Tradicional", "Semi-adensado", "Adensado")
+    )
+  )
+
+# Grafico de barras agrupando talhoes pelas classes de densidade
+densidade_plantio_plot <- ggplot(caf2, aes(x = densidade_plantio_classes)) +
+  geom_bar(width = 0.7) +
+  geom_text(
+    stat = "count",
+    aes(label = after_stat(count)),
+    vjust = -0.3
+  ) +
+  labs(
+    x = "Sistema de densidade por plantio",
+    y = "Talhões"
+  ) +
+  theme_minimal(base_size = 13)
+
+print(densidade_plantio_plot)
+
+# Moda
+densidade_moda <- names(which.max(table(caf2$densidade_plantio_classes)))
+
+# Ranking
+densidade_rank <- caf2 %>%
+  group_by(densidade_plantio_classes) %>%
+  summarise(frequencia = n()) %>%
+  arrange(desc(frequencia))
+
+# Exibir resultados
+# Moda
+cat("\nDos sistemas de plantio, predomina aqueles com densidade do tipo", 
+str_to_title(densidade_moda))
+
+# Ranking
+cat("\nO ranking dos sistemas de densidadade de plantio é:")
+print(densidade_rank)
+
+# VARIAVEL adubacao_n_kg_h
+secao("Análise univariada - variável: adubacao_n_kg_ha")
+
+# Resumo estatistico
+summary(caf$adubacao_n_kg_ha)
+
+# Extrair estatisticas descritivas
+adubacao_min <- min(caf$adubacao_n_kg_ha)
+adubacao_max <- max(caf$adubacao_n_kg_ha)
+adubacao_mediana <- median(caf$adubacao_n_kg_ha)
+adubacao_media <- mean(caf$adubacao_n_kg_ha)
+adubacao_sd <- sd(caf$adubacao_n_kg_ha)
+adubacao_q1 <- quantile(caf$adubacao_n_kg_ha, 0.25)
+adubacao_q3 <- quantile(caf$adubacao_n_kg_ha, 0.75)
+
+# Histograma
+adubacao_plot <- ggplot(caf, aes(x = adubacao_n_kg_ha)) +
+  geom_histogram(binwidth = 20, colour = "white") +
+  geom_vline(
+  xintercept = adubacao_media,
+  linetype = "dashed"
+) +
+annotate(
+  "text",
+  x = adubacao_media,
+  y = Inf,
+  label = paste0("Média = ", round(adubacao_media, 2), " kg/ha"),
+  vjust = 1.5,
+  hjust = -0.05
+) +
+  labs(
+    x = "Adubação nitrogenada (kg/ha)",
+    y = "Frequência absoluta"
+  ) +
+  theme_minimal()
+
+print(adubacao_plot)
+
+# Resultados
+# Exibir resultados
+cat("\nAdubação mínima:", adubacao_min)
+cat("Adubação máxima:", adubacao_max)
+cat("1º quartil:", adubacao_q1)
+cat("Mediana:", adubacao_mediana)
+cat("Média:", round(adubacao_media, 2))
+cat("3º quartil:", adubacao_q3)
+cat("Desvio padrão:", round(adubacao_sd, 2))
+
+# Parecer
+cat("\n.")
+
+# VARIAVEL precipitacao_safra_mm
+secao("Análise univariada - variável: precipitacao_safra_mm")
+
+# Resumo estatistico
+summary(caf$precipitacao_safra_mm)
+
+# Extrair estatisticas descritivas
+precipitacao_min <- min(caf$precipitacao_safra_mm)
+precipitacao_max <- max(caf$precipitacao_safra_mm)
+precipitacao_mediana <- median(caf$precipitacao_safra_mm)
+precipitacao_media <- mean(caf$precipitacao_safra_mm)
+precipitacao_sd <- sd(caf$precipitacao_safra_mm)
+precipitacao_q1 <- quantile(caf$precipitacao_safra_mm, 0.25)
+precipitacao_q3 <- quantile(caf$precipitacao_safra_mm, 0.75)
+
+# Histograma
+precipitacao_plot <- ggplot(caf, aes(x = precipitacao_safra_mm)) +
+  geom_histogram(binwidth = 20, colour = "white") +
+  geom_vline(
+  xintercept = precipitacao_media,
+  linetype = "dashed"
+) +
+annotate(
+  "text",
+  x = precipitacao_media,
+  y = Inf,
+  label = paste0("Média = ", round(precipitacao_media, 2), " mm"),
+  vjust = 1.5,
+  hjust = -0.05
+) +
+  labs(
+    x = "Precipitação na safra (mm)",
+    y = "Frequência absoluta"
+  ) +
+  theme_minimal()
+
+print(precipitacao_plot)
+
+# Resultados
+# Exibir resultados
+cat("\nPrecipitação mínima:", precipitacao_min)
+cat("Precipitação máxima:", precipitacao_max)
+cat("1º quartil:", precipitacao_q1)
+cat("Mediana:", precipitacao_mediana)
+cat("Média:", round(precipitacao_media, 2))
+cat("3º quartil:", precipitacao_q3)
+cat("Desvio padrão:", round(precipitacao_sd, 2))
+
+# Parecer
+cat("\n.")
+
+# VARIAVEL umidade_relativa_pct
+secao("Análise univariada - variável: umidade_relativa_pct")
+
+# Resumo estatistico
+summary(caf$umidade_relativa_pct)
+
+# Extrair estatisticas descritivas
+umidade_min <- min(caf$umidade_relativa_pct)
+umidade_max <- max(caf$umidade_relativa_pct)
+umidade_mediana <- median(caf$umidade_relativa_pct)
+umidade_media <- mean(caf$umidade_relativa_pct)
+umidade_sd <- sd(caf$umidade_relativa_pct)
+umidade_q1 <- quantile(caf$umidade_relativa_pct, 0.25)
+umidade_q3 <- quantile(caf$umidade_relativa_pct, 0.75)
+
+# Histograma
+umidade_plot <- ggplot(caf, aes(x = umidade_relativa_pct)) +
+  geom_histogram(binwidth = 2) +
+  geom_vline(
+  xintercept = umidade_media,
+  linetype = "dashed"
+) +
+annotate(
+  "text",
+  x = umidade_media,
+  y = Inf,
+  label = paste0("Média = ", round(umidade_media, 2), "%"),
+  vjust = 1.5,
+  hjust = -0.05
+) +
+  labs(
+    x = "Umidade relativa (%)",
+    y = "Frequência absoluta"
+  ) +
+  theme_minimal()
+
+print(umidade_plot)
+
+# Resultados
+# Exibir resultados
+cat("\nUmidade mínima:", umidade_min)
+cat("Umidade máxima:", umidade_max)
+cat("1º quartil:", umidade_q1)
+cat("Mediana:", umidade_mediana)
+cat("Média:", round(umidade_media, 2))
+cat("3º quartil:", umidade_q3)
+cat("Desvio padrão:", round(umidade_sd, 2))
+
+# Parecer
+cat("\n.")
+
+# VARIAVEL ph_solo
+secao("Análise univariada - variável: ph_solo")
+
+# Resumo estatistico
+summary(caf$ph_solo)
+
+# Extrair estatisticas descritivas
+ph_solo_min <- min(caf$ph_solo)
+ph_solo_max <- max(caf$ph_solo)
+ph_solo_mediana <- median(caf$ph_solo)
+ph_solo_media <- mean(caf$ph_solo)
+ph_solo_sd <- sd(caf$ph_solo)
+ph_solo_q1 <- quantile(caf$ph_solo, 0.25)
+ph_solo_q3 <- quantile(caf$ph_solo, 0.75)
+
+# Histograma
+ph_solo_plot <- ggplot(caf, aes(x = ph_solo)) +
+  geom_histogram(binwidth = 0.25, colour = "white") +
+  labs(
+    x = "pH do solo",
+    y = "Frequência absoluta"
+  ) +
+  theme_minimal()
+
+print(ph_solo_plot)
+
+# Resultados
+# Exibir resultados
+cat("\npH mínimo:", ph_solo_min)
+cat("pH máximo:", ph_solo_max)
+cat("1º quartil:", ph_solo_q1)
+cat("Mediana:", ph_solo_mediana)
+cat("Média:", round(ph_solo_media, 2))
+cat("3º quartil:", ph_solo_q3)
+cat("Desvio padrão:", round(ph_solo_sd, 2))
+
+# Parecer
+cat("\n.")
+
+# VARIAVEL materia_organica_pct
+secao("Análise univariada - variável: materia_organica_pct")
+
+# Resumo estatistico
+summary(caf$materia_organica_pct)
+
+# Extrair estatisticas descritivas
+materia_organica_min <- min(caf$materia_organica_pct)
+materia_organica_max <- max(caf$materia_organica_pct)
+materia_organica_mediana <- median(caf$materia_organica_pct)
+materia_organica_media <- mean(caf$materia_organica_pct)
+materia_organica_sd <- sd(caf$materia_organica_pct)
+materia_organica_q1 <- quantile(caf$materia_organica_pct, 0.25)
+materia_organica_q3 <- quantile(caf$materia_organica_pct, 0.75)
+
+# Histograma
+materia_organica_plot <- ggplot(caf, aes(x = materia_organica_pct)) +
+  geom_histogram(binwidth = 0.5, colour = "white") +
+  geom_vline(
+  xintercept = materia_organica_media,
+  linetype = "dashed"
+) +
+annotate(
+  "text",
+  x = materia_organica_media,
+  y = Inf,
+  label = paste0("Média = ", round(materia_organica_media, 2), "%"),
+  vjust = 1.5,
+  hjust = -0.05
+) +
+  labs(
+    x = "Matéria orgânica (%)",
+    y = "Frequência absoluta"
+  ) +
+  theme_minimal()
+
+print(materia_organica_plot)
+
+# Resultados
+# Exibir resultados
+cat("\nMatéria orgânica mínima:", materia_organica_min)
+cat("Matéria orgânica máxima:", materia_organica_max)
+cat("1º quartil:", materia_organica_q1)
+cat("Mediana:", materia_organica_mediana)
+cat("Média:", round(materia_organica_media, 2))
+cat("3º quartil:", materia_organica_q3)
+cat("Desvio padrão:", round(materia_organica_sd, 2))
+
+# Parecer
+cat("\n.")
+
+# VARIAVEL 'n_armadilhas'
+secao("Análise univariada - variável: n_armadilhas")
+table(caf$n_armadilhas)
+
+# Media
+armadilhas_media <- mean(caf$n_armadilhas)
+
+# Moda
+armadilhas_moda <- names(which.max(table(caf$n_armadilhas)))
+
+# Mediana
+armadilhas_mediana <- median(caf$n_armadilhas)
+
+# Ranking
+armadilhas_rank <- caf %>%
+  group_by(n_armadilhas) %>%
+  summarise(frequencia = n()) %>%
+  arrange(desc(frequencia))
+
+# Grafico de barras
+armadilhas_plot <- ggplot(caf, aes(x = n_armadilhas)) +
+  geom_bar() +
+  scale_x_continuous(breaks = seq(
+    min(caf$n_armadilhas),
+    max(caf$n_armadilhas),
+    by = 1
+  )) +
+  theme_minimal() +
+  labs(
+    x = "Quantidade de armadilhas",
+    y = "Frequência"
+  )
+
+print(armadilhas_plot)
+
+# Exibir resultados
+# Media, moda e mediana
+cat("\nQuantidade média de armadilhas:", round(armadilhas_media, 2))
+cat("\nQuantidade de armadilhas mais frequente (moda):", armadilhas_moda)
+cat("\nMediana da quantidade de armadilhas:", armadilhas_mediana)
+
+# Ranking
+cat("\nO ranking da quantidade de armadilhas é:")
+print(armadilhas_rank)
+
+# Parecer
+cat("\n.")
+
+# VARIAVEL 'dias_exposicao'
+secao("Análise univariada - variável: dias_exposicao")
+table(caf$dias_exposicao)
+
+# Media
+exposicao_media <- mean(caf$dias_exposicao)
+
+# Moda
+exposicao_moda <- names(which.max(table(caf$dias_exposicao)))
+
+# Mediana
+exposicao_mediana <- median(caf$dias_exposicao)
+
+# Ranking
+dias_exposicao_rank <- caf %>%
+  group_by(dias_exposicao) %>%
+  summarise(frequencia = n()) %>%
+  arrange(desc(frequencia))
+
+# Grafico de barras
+dias_exposicao_plot <- ggplot(
+  dias_exposicao_rank,
+  aes(x = dias_exposicao, y = frequencia)
+) +
+  geom_col() +
+  labs(
+    x = "Dias de exposição",
+    y = "Frequência absoluta"
+  ) +
+  coord_flip() +
+  theme_minimal()
+
+print(dias_exposicao_plot)
+
+# Exibir resultados
+# Media, moda e mediana
+cat("\nDias de exposição em média:", round(exposicao_media, 2))
+cat("\nDias de exposição mais frequente (moda):", exposicao_moda)
+cat("\nMediana de dias de exposição:", exposicao_mediana)
+
+# Ranking
+cat("\nO ranking dos dias de exposição é:")
+print(dias_exposicao_rank)
+
+# Parecer
+cat("\n.")
+
+# VARIAVEL 'n_brocas_capturadas'
+secao("Análise univariada - variável: n_brocas_capturadas")
+table(caf$n_brocas_capturadas)
+
+# Moda
+brocas_moda <- names(which.max(table(caf$n_brocas_capturadas)))
+
+# Mediana
+brocas_mediana <- median(caf$n_brocas_capturadas)
+
+# Ranking
+n_brocas_capturadas_rank <- caf %>%
+  group_by(n_brocas_capturadas) %>%
+  summarise(frequencia = n()) %>%
+  arrange(desc(frequencia))
+
+# Grafico de barras
+n_brocas_capturadas_plot <- ggplot(caf, aes(x = n_brocas_capturadas)) +
+  geom_bar() +
+  scale_x_continuous(breaks = seq(
+    min(caf$n_brocas_capturadas),
+    max(caf$n_brocas_capturadas),
+    by = 5
+  )) +
+  theme_minimal() +
+  labs(
+    x = "Número de brocas capturadas",
+    y = "Frequência absoluta"
+  )
+
+print(n_brocas_capturadas_plot)
+
+# Exibir resultados
+# Moda e mediana
+cat("\nQuantidade mais frequente de brocas capturadas (moda):", brocas_moda)
+cat("\nMediana do número de brocas capturadas:", brocas_mediana)
+
+# Ranking
+cat("\nO ranking do número de brocas capturadas é:")
+print(n_brocas_capturadas_rank)
+
+# =====================================================================
 # ANALISES MULTIVARIADAS
-# ======================
+# =====================================================================
 
 # TO DO
 
-# ================
+# =====================================================================
 # ANALISES GLOBAIS
-# ================
+# =====================================================================
+
+# TO DO
 
 # Variaveis numericas
-num_caf <- caf %>%
-  select(where(is.numeric))
-num_caf <- names(num_caf)
+# num_caf <- caf %>%
+#   select(where(is.numeric))
+# num_caf <- names(num_caf)
  
-secao("Forma das distibuições - Cafeicultura")
+# secao("Forma das distibuições - Cafeicultura")
 
-diagnostico_forma <- data.frame(
-variavel = num_caf,
-media = sapply(caf[num_caf], mean, na.rm = TRUE),
-mediana = sapply(caf[num_caf], median, na.rm = TRUE),
-assimetria = sapply(caf[num_caf], skewness, na.rm = TRUE),
-curtose = sapply(caf[num_caf], kurtosis, na.rm = TRUE),
-shapiro_p = sapply(caf[num_caf],
-function(x) shapiro.test(x)$p.value))
-print(diagnostico_forma, row.names = FALSE)
+# diagnostico_forma <- data.frame(
+# variavel = num_caf,
+# media = sapply(caf[num_caf], mean),
+# mediana = sapply(caf[num_caf], median),
+# assimetria = sapply(caf[num_caf], skewness),
+# curtose = sapply(caf[num_caf], kurtosis),
+# shapiro_p = sapply(caf[num_caf],
+# function(x) shapiro.test(x)$p.value))
+# print(diagnostico_forma, row.names = FALSE)
 
-# Matriz de dispersao
+# # Matriz de dispersao
 
-p_pares <- ggpairs(
-caf[, num_caf],
-lower = list(
-continuous = wrap("points", alpha = 0.5, size = 1)
-),
-upper = list(
-continuous = wrap("cor", method = "pearson", size = 4)
-),
-diag = list(
-continuous = wrap("densityDiag", alpha = 0.5)
-),
-title = "Matriz de dispersão - Pearson - Cafeicultura"
-)
+# p_pares <- ggpairs(
+# caf[, num_caf],
+# lower = list(
+# continuous = wrap("points", alpha = 0.5, size = 1)
+# ),
+# upper = list(
+# continuous = wrap("cor", method = "pearson", size = 4)
+# ),
+# diag = list(
+# continuous = wrap("densityDiag", alpha = 0.5)
+# ),
+# title = "Matriz de dispersão - Pearson - Cafeicultura"
+# )
 
-p_pares
+# p_pares
 
-ggsave(
-"matriz_dispersao_pearson_cafeicultura.png",
-p_pares,
-width = 22,
-height = 22,
-units = "in",
-dpi = 300
-)
+# ggsave(
+# "matriz_dispersao_pearson_cafeicultura.png",
+# p_pares,
+# width = 22,
+# height = 22,
+# units = "in",
+# dpi = 300
+# )
