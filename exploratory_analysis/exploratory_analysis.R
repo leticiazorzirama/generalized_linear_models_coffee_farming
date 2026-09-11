@@ -1,7 +1,4 @@
 # =====================================================================
-# ANALISE ESTATISTICA DESCRITIVA DA CAFEICULTURA
-# =====================================================================
-#
 # UNIVERSIDADE DO VALE DO ITAJAI - UNIVALI
 # ESCOLA POLITECNICA
 # PROGRAMA DE POS-GRADUACAO EM COMPUTACAO APLICADA - PPGCA
@@ -10,8 +7,11 @@
 # Prof. Dr.: Rodrigo Sant'Ana
 # Discentes: Andre Lucas Ribeiro, Leticia Zorzi Rama, Matheus Neis
 # Itajai, Santa Catarina, Brasil
-#
-# Descrição:
+
+# =====================================================================
+# ANALISE ESTATISTICA DESCRITIVA DA CAFEICULTURA
+# =====================================================================
+# Descricao:
 # Este script realiza a inspecao e a analise estatistica descritiva 
 # de uma base de dados referente a cafeicultura.
 # A analise estatistica dos dados serve como etapa previa para posteriores
@@ -22,8 +22,8 @@
 # - Configurar ambiente de trabalho
 # - Carregamento e inspecao inicial da base de dados
 # - Analise univariada por ordem das colunas da base de dados
-# - Analises multivariadas
-# - Analises globais
+# - TO DO Analises multivariadas
+# - TO DO Analises globais
 #
 # Base de dados: cafeicultura.csv
 # =====================================================================
@@ -38,20 +38,20 @@
 # getwd()
 
 # Pacotes
-library(spdep) ## I de Moran, LISA e matriz de pesos
-library(energy) ## Correlacao de distancia (dCor)
-library(boot) ## Bootstrap dos intervalos de confianca
-library(DescTools) ## V de Cramer com correcao de vies
-library(psych) ## Correlacao parcial
-library(car) ## Fator de inflacao de variancia (VIF)
-library(moments) ## Assimetria e curtose
-library(dplyr) ## Manipulacao de dados
-library(tidyr) ## Reorganizacao de dados
-library(ggplot2) ## Graficos
-library(GGally) ## Matriz de dispersao
-library(corrplot) ## Mapa de calor de matrizes de correlacao
-library(patchwork) ## Composicao de graficos
-library(stringr) ## Manipulacao de caracteres
+library(spdep) 
+library(energy) 
+library(boot) 
+library(DescTools) 
+library(psych)
+library(car) 
+library(moments)
+library(dplyr) 
+library(tidyr) 
+library(ggplot2)
+library(GGally) 
+library(corrplot) 
+library(patchwork) 
+library(stringr) 
 
 # Opcoes gerais
 options(width = 80, scipen = 6, digits = 4)
@@ -63,46 +63,46 @@ set.seed(20260818)
 rgb01 <- "#303033"
 seta <- grid::arrow(length = grid::unit(0.2, "cm"), type = "open")
 my_theme <- function(base_size = 14, base_family = "Helvetica") {
-theme_bw(base_size = base_size, base_family = base_family) %+replace%
-theme(axis.ticks = element_blank(),
-axis.line = element_line(arrow = seta, colour = rgb01),
-legend.background = element_blank(),
-legend.key = element_blank(),
-panel.background =
-element_rect(fill = ggplot2::alpha(rgb01, 0.05),
-colour = "white"),
-panel.border = element_blank(),
-panel.grid = element_line(linetype = "solid",
-linewidth = 0.2,
-colour = "white"),
-strip.text = element_text(colour = "white",
-margin = margin(0.3, 0.3, 0.3, 0.3,
-"cm"),
-face = "bold"),
-strip.background = element_rect(fill = rgb01,
-colour = rgb01),
-plot.background = element_blank(),
-complete = TRUE)
+  theme_bw(base_size = base_size, base_family = base_family) %+replace%
+  theme(axis.ticks = element_blank(),
+  axis.line = element_line(arrow = seta, colour = rgb01),
+  legend.background = element_blank(),
+  legend.key = element_blank(),
+  panel.background =
+  element_rect(fill = ggplot2::alpha(rgb01, 0.05),
+  colour = "white"),
+  panel.border = element_blank(),
+  panel.grid = element_line(linetype = "solid",
+  linewidth = 0.2,
+  colour = "white"),
+  strip.text = element_text(colour = "white",
+  margin = margin(0.3, 0.3, 0.3, 0.3,
+  "cm"),
+  face = "bold"),
+  strip.background = element_rect(fill = rgb01,
+  colour = rgb01),
+  plot.background = element_blank(),
+  complete = TRUE)
 }
 
 # Definir o tema padrao
 theme_set(my_theme())
 
-# Funcao auxiliar
+# Funcao auxiliar de impressao de texto
 secao <- function(texto) {
 barra <- paste(rep("=", 70), collapse = "")
-cat("\n", barra, "\n", texto, "\n", barra, "\n\n", sep = "")
+  cat("\n", barra, "\n", texto, "\n", barra, "\n\n", sep = "")
 }
 
 # Teste de Fischer
 ic_fisher <- function(r, n, conf = 0.95) {
-z <- atanh(r)
-ep <- 1 / sqrt(n - 3)
-q <- qnorm(1 - (1 - conf) / 2)
-data.frame(r = r,
-n = n,
-inferior = tanh(z - q * ep),
-superior = tanh(z + q * ep))
+  z <- atanh(r)
+  ep <- 1 / sqrt(n - 3)
+  q <- qnorm(1 - (1 - conf) / 2)
+  data.frame(r = r,
+  n = n,
+  inferior = tanh(z - q * ep),
+  superior = tanh(z + q * ep))
 }
 
 # =====================================================================
@@ -180,7 +180,9 @@ regiao_produtora_rank <- caf %>%
 # Grafico de barras
 regiao_produtora_plot <- ggplot(
   regiao_produtora_rank,
-  aes(x = regiao_produtora, y = frequencia)
+  aes(
+    x = reorder(regiao_produtora, frequencia), 
+    y = frequencia)
 ) +
   geom_col() +
   labs(
@@ -188,7 +190,7 @@ regiao_produtora_plot <- ggplot(
     y = "Frequência absoluta"
   ) +
   coord_flip() +
-  theme_minimal()
+  my_theme()
 
 print(regiao_produtora_plot)
 
@@ -229,7 +231,7 @@ cultivar_plot <- ggplot(
     x = "Cultivar",
     y = "Frequência absoluta"
   ) +
-  theme_minimal()
+  my_theme()
 
 print(cultivar_plot)
 
@@ -270,7 +272,7 @@ manejo_plot <- ggplot(
     x = "Manejo",
     y = "Frequência absoluta"
   ) +
-  theme_minimal()
+  my_theme()
 
 print(manejo_plot)
 
@@ -311,7 +313,7 @@ irrigacao_plot <- ggplot(
     x = "Irrigação",
     y = "Frequência absoluta"
   ) +
-  theme_minimal()
+  my_theme()
 
 print(irrigacao_plot)
 
@@ -343,7 +345,7 @@ alt_q3 <- quantile(caf$altitude_m, 0.75)
 
 # Histograma
 altitude_m_plot <- ggplot(caf, aes(x = altitude_m)) +
-  geom_histogram(binwidth = 50, colour = "white") +
+  geom_histogram(binwidth = 50) +
   geom_vline(
   xintercept = alt_media,
   linetype = "dashed"
@@ -360,7 +362,7 @@ annotate(
     x = "Altitude (m)",
     y = "Frequência absoluta"
   ) +
-  theme_minimal()
+  my_theme()
 
 print(altitude_m_plot)
 
@@ -391,6 +393,19 @@ secao("Análise univariada - variável: declividade")
 # Forte-ondulado: 20-45%
 # Montanhoso: 45-75%
 # Escarpado: >75%
+caf$classe_declividade <- cut(
+  caf$declividade_pct,
+  breaks = c(-Inf, 3, 8, 20, 45, 75, Inf),
+  labels = c(
+    "Plano (≤ 3%)",
+    "Suave-ondulado (3–8%)",
+    "Ondulado (8–20%)",
+    "Forte-ondulado (20–45%)",
+    "Montanhoso (45–75%)",
+    "Escarpado (> 75%)"
+  ),
+  right = TRUE
+)
 
 # Declividade do parque cafeeiro de Minas Gerais, segundo Bernard et al. (2012)
 # Sao encontradas lavouras em praticamente todas as faixas de declividade,
@@ -409,25 +424,28 @@ decl_q1 <- quantile(caf$declividade_pct, 0.25)
 decl_q3 <- quantile(caf$declividade_pct, 0.75)
 
 # Histograma
-declividade_pct_plot <- ggplot(caf, aes(x = declividade_pct)) +
-  geom_histogram(binwidth = 3, colour = "white") +
-  geom_vline(
-  xintercept = c(3, 8, 20, 45, 75),
-  linetype = "dashed"
+declividade_pct_plot <- ggplot(
+  caf,
+  aes(x = declividade_pct, fill = classe_declividade)
 ) +
-annotate(
-  "text",
-  x = c(3, 8, 20, 45, 75),
-  y = Inf,
-  label = c("3%", "8%", "20%", "45%", "75%"),
-  vjust = 1.5,
-  hjust = -0.1
-) +
+  geom_histogram(binwidth = 2) +
   labs(
     x = "Declividade (%)",
-    y = "Frequência absoluta"
+    y = "Frequência absoluta",
+    fill = "Classe de declividade"
   ) +
-  theme_minimal()
+  scale_fill_manual(
+    values = c(
+      "Plano (≤ 3%)" = "#dfdfdf",
+      "Suave-ondulado (3–8%)" = "#BDBDBD",
+      "Ondulado (8–20%)" = "#969696",
+      "Forte-ondulado (20–45%)" = "#636363" ,
+      "Montanhoso (45–75%)" = "#252525",
+      "Escarpado (> 75%)" = "#131313"
+    ),
+    drop = TRUE
+  ) +
+  my_theme()
 
 print(declividade_pct_plot)
 
@@ -482,13 +500,13 @@ annotate(
   y = Inf,
   label = "Jovens: até 2 anos",
   vjust = 1.5,
-  hjust = -0.1
+  hjust = -0.03
 ) +
   labs(
     x = "Idade da lavoura (anos)",
     y = "Frequência absoluta"
   ) +
-  theme_minimal()
+  my_theme()
 
 print(idade_lavoura_anos_plot)
 
@@ -522,7 +540,6 @@ summary(caf$densidade_plantio)
 
 # Densidade de plantio seguindo a classificacao de Malta et al. (2008)
 caf2 <- caf %>%
-  select(densidade_plantio) %>%
   mutate(
     densidade_plantio_classes = cut(
       densidade_plantio,
@@ -548,7 +565,7 @@ densidade_plantio_plot <- ggplot(caf2, aes(x = densidade_plantio_classes)) +
     x = "Sistema de densidade por plantio",
     y = "Talhões"
   ) +
-  theme_minimal(base_size = 13)
+  my_theme()
 
 print(densidade_plantio_plot)
 
@@ -587,7 +604,7 @@ adubacao_q3 <- quantile(caf$adubacao_n_kg_ha, 0.75)
 
 # Histograma
 adubacao_plot <- ggplot(caf, aes(x = adubacao_n_kg_ha)) +
-  geom_histogram(binwidth = 20, colour = "white") +
+  geom_histogram(binwidth = 20) +
   geom_vline(
   xintercept = adubacao_media,
   linetype = "dashed"
@@ -604,7 +621,7 @@ annotate(
     x = "Adubação nitrogenada (kg/ha)",
     y = "Frequência absoluta"
   ) +
-  theme_minimal()
+  my_theme()
 
 print(adubacao_plot)
 
@@ -638,7 +655,7 @@ precipitacao_q3 <- quantile(caf$precipitacao_safra_mm, 0.75)
 
 # Histograma
 precipitacao_plot <- ggplot(caf, aes(x = precipitacao_safra_mm)) +
-  geom_histogram(binwidth = 20, colour = "white") +
+  geom_histogram(binwidth = 20) +
   geom_vline(
   xintercept = precipitacao_media,
   linetype = "dashed"
@@ -655,7 +672,7 @@ annotate(
     x = "Precipitação na safra (mm)",
     y = "Frequência absoluta"
   ) +
-  theme_minimal()
+  my_theme()
 
 print(precipitacao_plot)
 
@@ -706,7 +723,7 @@ annotate(
     x = "Umidade relativa (%)",
     y = "Frequência absoluta"
   ) +
-  theme_minimal()
+  my_theme()
 
 print(umidade_plot)
 
@@ -740,12 +757,24 @@ ph_solo_q3 <- quantile(caf$ph_solo, 0.75)
 
 # Histograma
 ph_solo_plot <- ggplot(caf, aes(x = ph_solo)) +
-  geom_histogram(binwidth = 0.25, colour = "white") +
+  geom_histogram(binwidth = 0.25) +
+  geom_vline(
+  xintercept = ph_solo_media,
+  linetype = "dashed"
+) +
+annotate(
+  "text",
+  x = ph_solo_media,
+  y = Inf,
+  label = paste0("Média = ", round(ph_solo_media, 2)),
+  vjust = 1.5,
+  hjust = -0.05
+) +
   labs(
     x = "pH do solo",
     y = "Frequência absoluta"
   ) +
-  theme_minimal()
+  my_theme()
 
 print(ph_solo_plot)
 
@@ -779,7 +808,7 @@ materia_organica_q3 <- quantile(caf$materia_organica_pct, 0.75)
 
 # Histograma
 materia_organica_plot <- ggplot(caf, aes(x = materia_organica_pct)) +
-  geom_histogram(binwidth = 0.5, colour = "white") +
+  geom_histogram(binwidth = 0.5) +
   geom_vline(
   xintercept = materia_organica_media,
   linetype = "dashed"
@@ -796,7 +825,7 @@ annotate(
     x = "Matéria orgânica (%)",
     y = "Frequência absoluta"
   ) +
-  theme_minimal()
+  my_theme()
 
 print(materia_organica_plot)
 
@@ -833,18 +862,18 @@ armadilhas_rank <- caf %>%
   arrange(desc(frequencia))
 
 # Grafico de barras
-armadilhas_plot <- ggplot(caf, aes(x = n_armadilhas)) +
+armadilhas_plot <- ggplot(caf, aes(n_armadilhas)) +
   geom_bar() +
   scale_x_continuous(breaks = seq(
     min(caf$n_armadilhas),
     max(caf$n_armadilhas),
     by = 1
   )) +
-  theme_minimal() +
   labs(
     x = "Quantidade de armadilhas",
     y = "Frequência"
-  )
+  ) + 
+  my_theme()
 
 print(armadilhas_plot)
 
@@ -883,7 +912,10 @@ dias_exposicao_rank <- caf %>%
 # Grafico de barras
 dias_exposicao_plot <- ggplot(
   dias_exposicao_rank,
-  aes(x = dias_exposicao, y = frequencia)
+  aes(
+    x = reorder(as.factor(dias_exposicao), frequencia), 
+    y = frequencia
+  )
 ) +
   geom_col() +
   labs(
@@ -891,7 +923,7 @@ dias_exposicao_plot <- ggplot(
     y = "Frequência absoluta"
   ) +
   coord_flip() +
-  theme_minimal()
+  my_theme()
 
 print(dias_exposicao_plot)
 
@@ -925,18 +957,30 @@ n_brocas_capturadas_rank <- caf %>%
   arrange(desc(frequencia))
 
 # Grafico de barras
-n_brocas_capturadas_plot <- ggplot(caf, aes(x = n_brocas_capturadas)) +
+n_brocas_capturadas_plot <- ggplot(caf, aes(n_brocas_capturadas))  +
   geom_bar() +
   scale_x_continuous(breaks = seq(
     min(caf$n_brocas_capturadas),
     max(caf$n_brocas_capturadas),
-    by = 5
+    by = 4
   )) +
-  theme_minimal() +
+  geom_vline(
+  xintercept = as.numeric(brocas_moda),
+  linetype = "dashed"
+) +
+annotate(
+  "text",
+  x = as.numeric(brocas_moda),
+  y = Inf,
+  label = paste0("Moda = ", as.numeric(brocas_moda)),
+  vjust = 1.5,
+  hjust = -0.05
+) +
   labs(
     x = "Número de brocas capturadas",
     y = "Frequência absoluta"
-  )
+  ) +
+  my_theme()
 
 print(n_brocas_capturadas_plot)
 
@@ -1004,3 +1048,36 @@ print(n_brocas_capturadas_rank)
 # units = "in",
 # dpi = 300
 # )
+
+# =====================================================================
+#                  Creative Commons License 4.0
+#                       (CC BY-NC-SA 4.0)
+#
+#  This is a humam-readable summary of (and not a substitute for) the
+#  license (https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode)
+#
+#  You are free to:
+#
+#  Share - copy and redistribute the material in any medium or format.
+#
+#  The licensor cannot revoke these freedoms as long as you follow the
+#  license terms.
+#
+#  Under the following terms:
+#
+#  Attribution - You must give appropriate credit, provide a link to
+#  license, and indicate if changes were made. You may do so in any
+#  reasonable manner, but not in any way that suggests the licensor
+#  endorses you or your use.
+#
+#  NonCommercial - You may not use the material for commercial
+#  purposes.
+#
+#  ShareAlike - If you remix, transform, or build upon the material,
+#  you must distributive your contributions under the same license
+#  as the  original.
+#
+#  No additional restrictions — You may not apply legal terms or
+#  technological measures that legally restrict others from doing
+#  anything the license permits.
+# =====================================================================
