@@ -47,9 +47,9 @@
 # - Carregar e manipular a base de dados
 # - Analise exploratoria multivariada da variavel resposta com cada uma das variaveis candidatas
 # - Analise exploratoria global da variavel resposta com todas as variaveis candidatas
-# - Ajuste de modelos lineares generalizados nulos e completos sem e TO DO com medidas de esforco amostral
-# - Ajuste de modelos lineares generalizados exaurindo as combinacoes entre as variaveis preditoras TO DO com esforco amostral
-# - Analise dos residuos TO DO 
+# - Ajuste de modelos lineares generalizados nulos e completos sem e com medidas de esforco amostral
+# - Ajuste de modelos lineares generalizados exaurindo as combinacoes entre as variaveis preditoras com esforco amostral
+# - Analise dos residuos 
 # - Parecer final (resposta às perguntas do desafio)
 # 
 # Base de dados: cafeicultura.csv
@@ -95,13 +95,7 @@ barra <- paste(rep("=", 80), collapse = "")
 # =====================================================================
 
 # Carregar a base de dados
-caf <- read.csv("cafeicultura.csv", sep = ",")
-
-# Criar medida de esforco amostral
-caf <- caf %>%
-  mutate(
-    esforco_amostral = n_armadilhas * dias_exposicao
-  )
+caf <- read.csv("data/cafeicultura.csv", sep = ",")
 
 # Selecionar as variaveis de interesse (resposta, candidatas e esforco amostral)
 caf1 <- caf %>%
@@ -115,8 +109,7 @@ caf1 <- caf %>%
     materia_organica_pct,
     ph_solo,
     precipitacao_safra_mm,
-    umidade_relativa_pct,
-    esforco_amostral
+    umidade_relativa_pct
   )
 
 # =====================================================================
@@ -174,8 +167,8 @@ correlacao_calc("umidade_relativa_pct", "Umidade (%)")
 
 # Parecer
 cat("\nOs resultados das correlações indicam uma associação moderada positiva do número de 
-brocas capturadas com a umidade relativa. As demais variáveis possuem associação fraca com 
-a variável resposta.")
+    brocas capturadas com a umidade relativa (%). As demais variáveis possuem associação fraca 
+    com a variável resposta.")
 
 # =====================================================================
 # ANALISE EXPLORATORIA GLOBAL 
@@ -207,10 +200,10 @@ print(mat_plot)
 
 # Parecer
 cat("\nA associação moderada e positiva do número de brocas capturadas com a umidade relativa demonstrada
-nas análises individuais se demonstrou significativa. Das demais associações avaliadas como fracas, aquelas
-significativas são precipitação, matéria orgânica e densidade de plantio com direção positiva e adubação e 
-altitude com direção negativa. A matriz de correlação também revelou uma associação moderada entre umidade e 
-precipitação.")
+    nas análises individuais se demonstrou significativa a partir do teste de hipóteses. Das demais associações 
+    avaliadas como fracas, aquelas significativas são precipitação, matéria orgânica e densidade de plantio com 
+    direção positiva e adubação e altitude com direção negativa. A matriz de correlação também revelou uma 
+    associação moderada entre umidade e precipitação.")
 
 # =====================================================================
 # MODELOS LINEARES GENERALIZADOS
@@ -229,6 +222,15 @@ precipitação.")
 #    também o modelo com o log do esforço como preditor livre e comparem o
 #    coeficiente estimado com 1.)
 
+# Criar medida de esforco amostral
+caf <- caf %>%
+  mutate(
+    esforco_amostral = n_armadilhas * dias_exposicao
+  )
+
+# Adicionar a medida de esforco amostral na base de dados que esta sendo manipulada
+caf1$esforco_amostral <- caf$esforco_amostral
+
 # Calcular a frequencia esperada para um modelo poisson
 # Frequencia relativa
 caf1$n_brocas_capturadas_freq_relativa <- caf1$n_brocas_capturadas/sum(caf1$n_brocas_capturadas)
@@ -241,7 +243,7 @@ print(n_brocas_capturadas_freq_esp_pois)
 # MODELO nulo
 # Para este primeiro caso e para fins de aprendizagem, o significado
 # de cada argumento sera comentado conforme constante em ?glm
-#?glm
+?glm
 
 mod00 <- glm(
   formula = n_brocas_capturadas ~ 1, # descricao simbolica do modelo, a funcao a ser modelada
@@ -266,7 +268,7 @@ mod00 <- glm(
 
 # TO DO continuar lendo a documentacao de ?glm
 
-# MODELO completo sem esforco amostral 
+# MODELO completo SEM esforco amostral 
 mod01 <- glm(
   n_brocas_capturadas ~ adubacao_n_kg_ha
     + altitude_m
@@ -282,29 +284,29 @@ mod01 <- glm(
   na.action = "na.fail"
 )
 
-# Teste de Verossimilhança entre os modelos nulo e completo sem esforco amostral
+# Teste de Verossimilhança entre os modelos nulo e completo SEM esforco amostral
 #?anova
 anova(mod00, mod01, test = "Chisq")
 
 # Parecer
-cat("\nEm comparação ao modelo nulo, o modelo completo sem esforço amostral reduziu os resíduos em ",
-((2108-1479) / 2108)*100, "%")
+cat("\nEm comparação ao modelo nulo, o modelo completo SEM esforço amostral reduziu os resíduos em ",
+    ((2108.2 - 1479.1) / 2108.2) * 100, "%.")
 
-# Analise da deviancia das covariáveis do modelo completo sem esforco amostral
+# Analise da deviancia das covariáveis do modelo completo SEM esforco amostral
 anova(mod01, test = "Chisq")
 
 # Parecer 
-cat("\nPara o modelo completo sem esforço amostral, em termos de redução de resíduos, 
-as variáveis com redução significativa foram todas, exceto pH_solo.")
+cat("\nPara o modelo completo SEM esforço amostral, em termos de redução de resíduos, as variáveis com 
+    redução significativa foram todas, exceto pH_solo.")
 
 # Tabela de estimacao dos parametros
 summary(mod01)
 
 # Parecer 
-cat("\nPara o modelo completo sem esforço amostral, em termos de efeito, as variáveis com efeito 
-significativo foram quase todas, exceto declividade_pct, pH_solo e precipitacao_safra_mm.")
+cat("\nPara o modelo completo SEM esforço amostral, em termos de efeito, as variáveis com efeito 
+    significativo foram quase todas, exceto declividade_pct, pH_solo e precipitacao_safra_mm.")
 
-# MODELO completo com esforco amostral TO DO 
+# MODELO completo COM esforco amostral passado como OFFSET 
 mod02 <- glm(
   n_brocas_capturadas ~ adubacao_n_kg_ha
     + altitude_m
@@ -318,11 +320,34 @@ mod02 <- glm(
   family = poisson(link = "log"),
   data = caf1,
   na.action = "na.fail",
-  offset = esforco_amostral
+  offset = log(esforco_amostral)
 )
 
-# Mensagem de erro
+# Teste de Verossimilhança entre os modelos nulo e completo COM esforco amostral passado como OFFSET
+#?anova
+anova(mod00, mod02, test = "Chisq")
 
+# Parecer
+cat("\nEm comparação ao modelo nulo, o modelo completo COM esforço amostral passado como OFFSET reduziu 
+    os resíduos em ", ((2108.2 - 1008.5) / 2108.2) * 100, "%.")
+
+# Analise da deviancia das covariáveis do modelo completo COM esforco amostral passado como OFFSET
+anova(mod02, test = "Chisq")
+
+# Parecer 
+cat("\nPara o modelo completo COM esforço amostral passado como OFFSET, em termos de redução de resíduos, 
+    as variáveis com redução significativa foram todas, exceto declividade_pct e ph_solo.")
+
+# Tabela de estimacao dos parametros
+summary(mod02)
+
+# Parecer 
+cat("\nPara o modelo completo COM esforço amostral passado como OFFSET, em termos de efeito, as variáveis com 
+    efeito significativo foram todas, exceto declividade_pct, ph_solo e precipitacao_safra_mm.")
+
+# TO DO modelo COM esforco amostral SEM offset
+
+# TO DO
 # 2. Verifiquem a equidispersão. Reportem a razão de Pearson sobre os graus de
 #    liberdade e conduzam um teste formal de superdispersão.
 # 3. Caso haja superdispersão, comparem quasi-Poisson e binomial negativa,
@@ -333,12 +358,10 @@ mod02 <- glm(
 # =====================================================================
 # MODELOS LINEARES GENERALIZADOS
 # Exaurindo as combinacoes entre as variaveis preditoras 
-# (por enquanto, feito parcialmente com o modelo completo sem esforco amostral)
-# TO DO fazer com o modelo completo com esforco amostral
 # =====================================================================
 
 # Ajustar diferentes modelos de forma iterativa
-tab01 <- dredge("TO DO modelo", extra = "R^2")
+tab01 <- dredge(mod02, extra = "R^2")
 
 # Quantidade de modelos ajustados
 dim(tab01)
@@ -347,42 +370,52 @@ dim(tab01)
 filter(tab01, AICc == min(AICc))
 
 # Parecer
-cat("\nConforme o AICc, o modelo que melhor se ajusta aos dados TO DO.")
+cat("\nConforme o AICc, o modelo que melhor se ajusta aos dados tem adubacao_n_kg_ha, altitude_m,  
+    declividade_pct, densidade_plantio, idade_lavoura_anos, materia_organica_pct, ph_solo, 
+    precipitacao_safra_mm e umidade_relativa_pct como variáveis preditoras.")
 
 # MODELO final
-mod <- glm(
-  n_brocas_capturadas ~ "variaveis",
-  family = poisson(link = "log"),
+mod <- glm(formula = n_brocas_capturadas ~ adubacao_n_kg_ha 
+  + altitude_m 
+  + declividade_pct 
+  + densidade_plantio 
+  + idade_lavoura_anos 
+  + materia_organica_pct 
+  + ph_solo 
+  + precipitacao_safra_mm 
+  + umidade_relativa_pct, 
+  family = poisson(link = "log"), 
   data = caf1, 
-  na.action = "na.fail",
-  offset = "TO DO offset"
+  na.action = "na.fail", 
+  offset = log(esforco_amostral)
 )
 
-# Teste de Verossimilhança entre os modelos nulo e completo com esforco amostral
+# Teste de Verossimilhança entre os modelos nulo e modelo final
 #?anova
 anova(mod00, mod, test = "Chisq")
 
 # Parecer
-cat("\nEm comparação ao modelo nulo, o modelo completo com esforço amostral reduziu os resíduos em ",
-"TO DO calculo", "%")
+cat("\nEm comparação ao modelo nulo, o modelo final reduziu os resíduos em ", 
+    ((2108.2 - 1008.5) / 2108.2) * 100, "%.")
 
-# Analise da deviancia das covariáveis do modelo completo sem esforco amostral
+# Analise da deviancia das covariáveis do modelo final 
 anova(mod, test = "Chisq")
 
 # Parecer 
-cat("\nPara o modelo completo com esforço amostral, em termos de redução de resíduos, 
-as variáveis com redução significativa foram TO DO.")
+cat("\nPara o modelo final, em termos de redução de resíduos, as variáveis com redução 
+    significativa foram adubacao_n_kg_ha, altitude_m, densidade_plantio, idade_lavoura_anos, 
+    materia_organica_pct, precipitacao_safra_mm e umidade_relativa_pct.")
 
 # Tabela de estimacao dos parametros
 summary(mod)
 
 # Parecer 
 cat("\nPara o modelo completo com esforço amostral, em termos de efeito, as variáveis com efeito 
-significativo foram TO DO.")
+    significativo foram adubacao_n_kg_ha, altitude_m, densidade_plantio, idade_lavoura_anos, 
+    materia_organica_pct e umidade_relativa_pct.")
 
 # =====================================================================
 # ANALISE DE RESIDUOS
-# TO DO
 # =====================================================================
 
 # Envelope simulado dos residuos do modelo final
@@ -399,7 +432,7 @@ p00 <- ggplot(data = res01) +
     geom_line(aes(x = x, y = median), colour = "white") +
     geom_point(aes(x = x, y = residuals), pch = 21, fill = "white",
                colour = "black", size = 5, alpha = 0.5) +
-    labs(x = "Quantís teóricos", y = "Resíduos") +
+    labs(x = "Quantis teóricos", y = "Resíduos") +
     theme_gray(base_size = 18)
 p00
 
