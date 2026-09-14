@@ -38,13 +38,13 @@
 # getwd()
 
 # Pacotes
-library(spdep) 
-library(energy) 
-library(boot) 
-library(DescTools) 
-library(psych)
-library(car) 
-library(moments)
+# library(spdep) 
+# library(energy) 
+# library(boot) 
+# library(DescTools) 
+# library(psych)
+# library(car) 
+# library(moments)
 library(dplyr) 
 library(tidyr) 
 library(ggplot2)
@@ -110,7 +110,7 @@ ic_fisher <- function(r, n, conf = 0.95) {
 # =====================================================================
 
 # Carregar a base de dados
-caf <- read.csv("cafeicultura.csv", sep=",")
+caf <- read.csv("data/cafeicultura.csv", sep=",")
 
 # Inspecao da base de dados
 secao("Inspeção da base de dados")
