@@ -12,8 +12,8 @@
 # DESAFIO A
 # ==========================================================================
 # Descricao:
-# Modelo Poisson (ou extensão para contagens)
-# Quais condições de talhão favorecem a infestacao pela broca, 
+# Modelo Poisson (ou extensao para contagens)
+# Quais condições de talhao favorecem a infestacao pela broca, 
 # e quanto se ganha em pressao de praga ao alterar cada uma delas?
 #
 # Variavel resposta:
@@ -50,9 +50,12 @@
 # - Distribuicao Poisson: 
 #   - Modelos lineares generalizados nulos e completos sem e com medidas de esforco amostral, com e sem offset
 #   - Ajuste de modelos lineares generalizados exaurindo as combinacoes entre as variaveis preditoras com esforco amostral como offset
-#   - Analise dos residuos 
+#   - Diagnostico e analise dos residuos 
 #   - Verificacao da equidispersao
 # - Distribuinao Binomial negativa
+#   - Modelos lineares generalizados nulos e completo
+#   - Ajuste de modelos lineares generalizados exaurindo as combinacoes entre as variaveis preditoras
+#   - Diagnostico e analise dos residuos 
 # - Parecer final (resposta as perguntas do desafio)
 #
 # # Base de dados: cafeicultura.csv
@@ -61,7 +64,6 @@
 # ==========================================================================
 # CONFIGURAR AMBIENTE DE TRABALHO
 # ==========================================================================
-secao("CONFIGURAR AMBIENTE DE TRABALHO")
 
 # Conferir e configurar caminhos, se necessario
 # getwd()
@@ -255,6 +257,10 @@ mod00 <- glm(
   # type, tipo dos pesos a serem extraidos do modelo ajustado
 )
 
+# Verificando se intercepto do modelo nulo coincide com o log da media da variavel resposta
+mod00$coefficients
+log(mean(caf1$n_brocas_capturadas))
+
 # ====================
 # Modelo completo
 # sem esforco amostral
@@ -275,11 +281,11 @@ mod01 <- glm(
   na.action = "na.fail"
 )
 
+
 # Teste de verossimilhanca entre os modelos nulo e completo SEM esforco amostral
 secao("Teste de verossimilhança entre os modelos nulo e completo SEM medida de esforço amostral")
 anova(mod00, mod01, test = "Chisq")
 residuos_mod01 <- ((deviance(mod00) - deviance(mod01)) / deviance(mod00)) * 100
-
 #?anova
 
 # Parecer
@@ -412,7 +418,8 @@ cat("\nO modelo completo COM esforço amostral passado como PREDITOR LIVRE aumen
 secao("Estimação dos parâmetros do modelo completo COM medida de esforço amostral passada como PREDITOR LIVRE")
 summary(mod03)
 
-# Parecer final (comparacao do offset e do preditor livre)
+# TO DO Parecer (comparacao do offset e do preditor livre)
+cat("")
 
 # ==========================================================================
 # MODELOS LINEARES GENERALIZADOS - POISSON
@@ -443,10 +450,10 @@ cat("\nConforme o AICc, o modelo que melhor se ajusta aos dados possui as seguin
 )
 
 # ==================================
-# Modelo final
+# Modelo poisson final
 # ==================================
-secao("Modelo final")
-mod <- glm(
+secao("Modelo poisson final")
+mod04 <- glm(
   n_brocas_capturadas ~ adubacao_n_kg_ha 
     + altitude_m 
     + declividade_pct 
@@ -462,22 +469,22 @@ mod <- glm(
   offset = log(esforco_amostral)
 )
 
-# OBS.: modelo final (mod) identifica-se com o modelo completo com medida de esforco amostral como offset (mod02)
+# OBS.: modelo poisson final (mod04) identifica-se com o modelo completo com medida de esforco amostral como offset (mod02)
 
-# Teste de Verossimilhança entre os modelos nulo e modelo final
-secao("Teste de verossimilhança entre os modelos nulo e final")
-anova(mod00, mod, test = "Chisq")
-residuos_mod <- ((deviance(mod00) - deviance(mod)) / deviance(mod00)) * 100
+# Teste de Verossimilhança entre os modelos nulo e modelo poisson final
+secao("Teste de verossimilhança entre os modelos poisson nulo e final")
+anova(mod00, mod04, test = "Chisq")
+residuos_mod04 <- ((deviance(mod00) - deviance(mod04)) / deviance(mod00)) * 100
 
 # Parecer
-cat("\nEm comparação ao modelo nulo, o modelo final reduziu os resíduos em ", residuos_mod, "%.")
+cat("\nEm comparação ao modelo nulo, o modelo poisson final reduziu os resíduos em ", residuos_mod04, "%.")
 
-# Analise da deviancia das covariaveis do modelo final 
-secao("Analise da deviância das covariáveis do modelo final")
-anova(mod, test = "Chisq")
+# Analise da deviancia das covariaveis do modelo poisson final 
+secao("Analise da deviância das covariáveis do modelo poisson final")
+anova(mod04, test = "Chisq")
 
 # Parecer 
-cat("\nPara o modelo final, em termos de redução de resíduos, as variáveis com redução significativa foram:
+cat("\nPara o modelo poisson final, em termos de redução de resíduos, as variáveis com redução significativa foram:
     - adubação, 
     - altitude,
     - densidade de plantio,
@@ -487,19 +494,19 @@ cat("\nPara o modelo final, em termos de redução de resíduos, as variáveis c
     - umidade."
   )
 
-# Faixa de coeficientes possiveis para os parametros do modelo final
-secao("Faixa de coeficientes possíveis para os parâmetros do modelo final")
-confint(mod)
+# Faixa de coeficientes possiveis para os parametros do modelo poisson final
+secao("Faixa de coeficientes possíveis para os parâmetros do modelo poisson final")
+confint(mod04)
 
 # Tabela de estimacao dos parametros
-secao("Estimação dos parâmetros do modelo final")
-summary(mod)
+secao("Estimação dos parâmetros do modelo poisson final")
+summary(mod04)
 
 # Visualizar efeitos
-plot(effects::allEffects(mod))
+plot(effects::allEffects(mod04))
 
 # Parecer 
-cat("\nPara o modelo final, em termos de efeito, as variáveis com efeito significativo foram:
+cat("\nPara o modelo poisson final, em termos de efeito, as variáveis com efeito significativo foram:
   - adubação, 
   - altitude, 
   - densidade de plantio, 
@@ -512,7 +519,7 @@ cat("\nPara o modelo final, em termos de efeito, as variáveis com efeito signif
 # ==========================================================================
 secao("DIAGNÓSTICO DOS RESÍDUOS")
 
-plot(mod) # (TO DO: verificar se podem diagnosticar glms?)
+plot(mod04) # (TO DO: verificar se podem diagnosticar glms?)
 # Interpretacao:
 # Residuals vs. Fitted: detecta se ha falta de ajuste e se a variancia e constante
 # se os residuos mostram tendencia curvilinea, sinal de que pode haver relacoes nao-lineares
@@ -527,8 +534,8 @@ plot(mod) # (TO DO: verificar se podem diagnosticar glms?)
 # Residuals vs. Leverage
 # Verifica se os valores extremos influenciam no modelo 
 
-# Envelope simulado dos residuos do modelo final
-res01 <- hnp(mod, plot.sim = FALSE)
+# Envelope simulado dos residuos do modelo poisson final
+res01 <- hnp(mod04, plot.sim = FALSE)
 
 # Transformar em dataframe
 res01 <- data.frame(x = res01$x, median = res01$median,
@@ -546,7 +553,7 @@ p00 <- ggplot(data = res01) +
 p00
 
 # Exportar os residuos do modelo
-res02 <- fortify(mod)
+res02 <- fortify(mod04)
 res02$ID <- 1:nrow(res02)
 
 # Grafico de dispersao dos residuos
@@ -565,7 +572,7 @@ p02 <- ggplot(data = res02, aes(x = .stdresid)) +
     scale_y_continuous(expand = c(0, 0), limits = c(0, 25)) +
     labs(x = "Resíduos padronizados", y = "Frequência") +
     theme_gray(base_size = 18)
-p02
+p02  # TO DO Verificar 
 
 # Visualizar os graficos lado a lado
 (p01 | p02 | p00)
@@ -633,31 +640,31 @@ plot(caf2$n_brocas_capturadas, n_brocas_capt_freq_pois - caf2$n_brocas_capt_freq
 abline(h = 0)
 
 # Qui-quadrado para verificar se o modelo poisson se ajusta aos dados
-qui.pois <- with(caf2,
+qui_pois <- with(caf2,
                  sum((count - n_brocas_capt_freq_pois*sum(count))^2 /
                      (n_brocas_capt_freq_pois * sum(count))))
-pchisq(q = qui.pois, df = nrow(caf2) - 1, lower.tail = FALSE)
+pchisq(q = qui_pois, df = nrow(caf2) - 1, lower.tail = FALSE)
 
 # TO DO Parecer
-cat()
+cat("")
 
 # ==================================
 # Teste formal de equidispersao
 # ==================================
 
 # Razao do desvio residual e dos graus de liberdade dos residuos
-deviance(mod)
-df.residual(mod)
-deviance(mod)/df.residual(mod)
+deviance(mod04)
+df.residual(mod04)
+deviance(mod04)/df.residual(mod04)
 
 # Testar sobre a hipotese alternativa da variancia ser uma funcao linear
-dispersiontest(mod, trafo = 1)
+dispersiontest(mod04, trafo = 1)
 
 # Testar sobre a hipotese alternativa da variancia ser uma funcao quadratica
-dispersiontest(mod, trafo = 2)
+dispersiontest(mod04, trafo = 2)
 
 # TO DO Parecer
-cat()
+cat("")
 
 # ==================================
 # Verificar a frequencia esperada
@@ -681,19 +688,21 @@ barplot(t(cbind(caf2$n_brocas_capt_freq_relat, n_brocas_capt_freq_binom)),
         legend.text = c("Observado", "Esperado"),
         main = "Binomial Negativa")
 
-
-plot(db01$n.aves, freq.esp.bn - db01$freq.obs,
-     xlim = c(1, 18), ylim = c(-0.1, 0.1),
-     xlab = "Número de aves", ylab = "Resíduos",
+# Qui-quadrado para verificar se o modelo binomial negativo se ajusta aos dados
+plot(caf2$n_brocas_capturadas, n_brocas_capt_freq_binom - caf2$n_brocas_capt_freq_relat,
+     xlim = c(0, 30), ylim = c(-0.6, 0.6),
+     xlab = "Número de brocas capturadas", ylab = "Resíduos",
      axes = TRUE, main = "Resíduos Binomial Negativa", pch = 19)
 abline(h = 0)
 
-#####@> Cálculo da estatistica qui-quadrado para testar se o modelo se
-#####@> ajusta bem aos dados...
-qui.bn <- with(db01,
-               sum((n.arr - freq.esp.bn*sum(n.arr))^2/(freq.esp.bn
-                   * sum(n.arr))))
-pchisq(q = qui.bn, df = nrow(db01) - 1, lower.tail = FALSE)
+# Qui-quadrado para verificar se o modelo poisson se ajusta aos dados
+qui_pois <- with(caf2,
+                 sum((count - n_brocas_capt_freq_pois*sum(count))^2 /
+                     (n_brocas_capt_freq_pois * sum(count))))
+pchisq(q = qui_pois, df = nrow(caf2) - 1, lower.tail = FALSE)
+
+# TO DO Parecer
+cat("")
 
 # ==========================================================================
 # MODELOS LINEARES GENERALIZADOS - BINOMIAL NEGATIVA
@@ -703,14 +712,15 @@ secao("MODELOS LINEARES GENERALIZADOS - BINOMIAL NEGATIVA")
 # ============
 # Modelo nulo
 # ============
-mod04 <- glm.nb(
+mod05 <- glm.nb(
   n_brocas_capturadas ~ 1,
-  data = caf1)
+  data = caf1,
+  link = "log")
 
 # ============
 # Modelo completo
 # ============
-mod05 <- glm.nb(
+mod06 <- glm.nb(
   n_brocas_capturadas ~ adubacao_n_kg_ha
     + altitude_m
     + declividade_pct
@@ -721,21 +731,22 @@ mod05 <- glm.nb(
     + precipitacao_safra_mm
     + umidade_relativa_pct
     + offset(log(esforco_amostral)), 
-  data = caf1
+  data = caf1,
+  na.action = "na.fail"
 )
 
 # Teste de verossimilhanca entre os modelos nulo e completo COM esforco amostral passado como OFFSET
 secao("Teste de verossimilhança entre os modelos nulo e completo COM medida de esforço amostral passado como OFFSET")
-anova(mod00, mod05, test = "Chisq")
-residuos_mod05 <- ((deviance(mod00) - deviance(mod05)) / deviance(mod00)) * 100
+anova(mod05, mod06, test = "Chisq")
+residuos_mod06 <- ((deviance(mod05) - deviance(mod06)) / deviance(mod05)) * 100
 
 # Parecer
 cat("\nEm comparação ao modelo nulo, o modelo completo COM esforço amostral passado como OFFSET reduziu 
-    os resíduos em ", residuos_mod05, "%.")
+    os resíduos em ", residuos_mod06, "%.")
 
 # Analise da deviancia das covariaveis do modelo completo COM esforco amostral passado como OFFSET
 secao("Analise da deviância das covariáveis do modelo completo COM medida de esforço amostral")
-anova(mod05, test = "Chisq")
+anova(mod06, test = "Chisq")
 
 # Parecer 
 cat("\nPara o modelo completo COM esforço amostral passado como OFFSET, em termos de redução de resíduos, 
@@ -743,24 +754,164 @@ cat("\nPara o modelo completo COM esforço amostral passado como OFFSET, em term
 
 # Tabela de estimacao dos parametros do modelo completo COM esforco amostral passado como OFFSET
 secao("Estimação dos parâmetros do modelo completo COM medida de esforço amostral passada como OFFSET")
-summary(mod05)
+summary(mod06)
 
 # Parecer 
 cat("\nPara o modelo completo COM esforço amostral passado como OFFSET, em termos de efeito, as variáveis com 
     efeito significativo foram todas, exceto declividade, ph solo e precipitação.")
 
-# ####@> Verificando a superdispersão ou sobredispersão...
+# Verificando a superdispersao ou sobredispersao
+# Razao do desvio residual e dos graus de liberdade dos residuos
+deviance(mod06)
+df.residual(mod06)
+deviance(mod06)/df.residual(mod06)
 
-# ###@> Observando a razão do desvio residual e dos graus de liberdade dos
-# ###@> resíduos...
-# deviance(mod.bn)
-# df.residual(mod.bn)
-# deviance(mod.bn)/df.residual(mod.bn)
+# ==========================================================================
+# MODELOS LINEARES GENERALIZADOS - BINOMIAL NEGATIVA
+# Exaurindo as combinacoes entre as variaveis preditoras 
+# ==========================================================================
+secao("MODELOS LINEARES GENERALIZADOS - BINOMIAL NEGATIVA - Exaurindo as combinações entre as variáveis preditoras")
+
+# Ajustar diferentes modelos de forma iterativa
+tab02 <- dredge(mod06, extra = "R^2")
+
+# Quantidade de modelos ajustados
+dim(tab02)
+
+# Identificar o melhor modelo com o criterio de informacao de akaike (AICc)
+filter(tab02, AICc == min(AICc))
+
+# Parecer
+cat("\nConforme o AICc, o modelo que melhor se ajusta aos dados possui as seguintes covariáveis preditoras:
+  - adubação, 
+  - altitude,
+  - declividade,
+  - densidade de plantio,
+  - idade da lavoura
+  - matéria orgânica
+  - ph solo,
+  - precipitação, e
+  - umidade."
+)
+
+# ==================================
+# Modelo binomial negativa final
+# ==================================
+secao("Modelo binomial negativa final")
+mod07 <- glm.nb(
+  n_brocas_capturadas ~ adubacao_n_kg_ha 
+    + altitude_m 
+    + declividade_pct 
+    + densidade_plantio 
+    + idade_lavoura_anos 
+    + materia_organica_pct 
+    + ph_solo 
+    + precipitacao_safra_mm 
+    + umidade_relativa_pct 
+    + offset(log(esforco_amostral)), 
+  data = caf1, 
+  na.action = "na.fail", 
+  init.theta = 4.377708848, 
+  link = log
+)
+
+# Teste de Verossimilhança entre os modelos binomial negativo nulo e modelo final
+secao("Teste de verossimilhança entre os modelos binomial negativo nulo e final")
+anova(mod05, mod07, test = "Chisq")
+residuos_mod07 <- ((deviance(mod05) - deviance(mod07)) / deviance(mod05)) * 100
+
+# Parecer
+cat("\nEm comparação ao modelo nulo, o modelo binomial negativo reduziu os resíduos em ", residuos_mod07, "%.")
+
+# Analise da deviancia das covariaveis do modelo binomial negativo final 
+secao("Analise da deviância das covariáveis do modelo binomial negativo final")
+anova(mod07, test = "Chisq")
+
+# Parecer 
+cat("\nPara o modelo binomial negativo final, em termos de redução de resíduos, as variáveis com redução significativa foram:
+    - adubação, 
+    - altitude,
+    - densidade de plantio,
+    - matéria orgânica,
+    - precipitação, e
+    - umidade."
+  )
+
+# Faixa de coeficientes possiveis para os parametros do modelo binomial negativo final
+secao("Faixa de coeficientes possíveis para os parâmetros do modelo binomial negativo final")
+confint(mod07)
+
+# Tabela de estimacao dos parametros
+secao("Estimação dos parâmetros do modelo binomial negativo final")
+summary(mod07)
+
+# Visualizar efeitos
+plot(effects::allEffects(mod07))
+
+# Parecer 
+cat("\nPara o modelo binomial negativo final, em termos de efeito, as variáveis com efeito significativo foram:
+  - adubação, 
+  - altitude, 
+  - densidade de plantio, 
+  - idade da lavoura, 
+  - matéria orgânica, e 
+  - umidade.")
+
+# ==========================================================================
+# DIAGNOSTICO E ANALISE DE RESIDUOS
+# ==========================================================================
+secao("DIAGNÓSTICO DOS RESÍDUOS")
+
+plot(mod07) 
+
+# Envelope simulado dos residuos do modelo poisson final
+res03 <- hnp(mod07, plot.sim = FALSE)
+
+# Transformar em dataframe
+res03 <- data.frame(x = res03$x, median = res03$median,
+                    lower = res03$lower, upper = res03$upper,
+                    residuals = res03$residuals)
+
+# Grafico do envelope simulado dos residuos
+p03 <- ggplot(data = res03) +
+    geom_ribbon(aes(x = x, ymin = lower, ymax = upper), alpha = 0.8) +
+    geom_line(aes(x = x, y = median), colour = "white") +
+    geom_point(aes(x = x, y = residuals), pch = 21, fill = "white",
+               colour = "black", size = 5, alpha = 0.5) +
+    labs(x = "Quantis teóricos", y = "Resíduos") +
+    theme_gray(base_size = 18)
+p03
+
+# Exportar os residuos do modelo
+res04 <- fortify(mod07)
+res04$ID <- 1:nrow(res04)
+
+# Grafico de dispersao dos residuos
+p04 <- ggplot(data = res04, aes(x = ID, y = .stdresid)) +
+    geom_point(pch = 21, fill = "white", colour = "black", size = 5,
+               alpha = 0.8) +
+    geom_hline(yintercept = 0, colour = "red") +
+    labs(x = "Índice da amostra", y = "Resíduos padronizados") +
+    theme_gray(base_size = 18)
+p04
+
+# Histograma dos residuos
+p05 <- ggplot(data = res04, aes(x = .stdresid)) +
+    geom_histogram(binwidth = 1, boundary = 1, closed = "right",
+                   fill = "white", colour = "black") +
+    scale_y_continuous(expand = c(0, 0), limits = c(0, 25)) +
+    labs(x = "Resíduos padronizados", y = "Frequência") +
+    theme_gray(base_size = 18)
+p05 # TO DO Verificar 
+
+# Visualizar os graficos lado a lado
+(p05 | p04 | p03)
 
 # ==========================================================================
 # PARECER FINAL
 # ==========================================================================
 
+# TO DO 
 # Pergunta do corpo técnico:
 # Quais condições de talhão favorecem a infestação pela broca, 
 # e quanto se ganha em pressão de praga ao alterar cada uma delas?
