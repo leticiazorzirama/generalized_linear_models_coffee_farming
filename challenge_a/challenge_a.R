@@ -255,7 +255,7 @@ mod00 <- glm(
   # intercept, indica se o intercepto deve ser incluido no modelo nulo
   # object, objeto derivado da classe glm
   # type, tipo dos pesos a serem extraidos do modelo ajustado
-)
+) # TO DO modelo nulo deve ter offset?
 
 # Verificando se intercepto do modelo nulo coincide com o log da media da variavel resposta
 mod00$coefficients
@@ -329,6 +329,9 @@ caf <- caf %>%
 
 # Adicionar a medida de esforco amostral na base de dados que esta sendo manipulada
 caf1$esforco_amostral <- caf$esforco_amostral
+
+# TO DO 
+# Criar novo modelo nulo com esforço amostral?
 
 # ====================
 # Modelo completo
@@ -715,7 +718,7 @@ secao("MODELOS LINEARES GENERALIZADOS - BINOMIAL NEGATIVA")
 mod05 <- glm.nb(
   n_brocas_capturadas ~ 1,
   data = caf1,
-  link = "log")
+  link = "log") # TO DO modelo nulo deve ter offset?
 
 # ============
 # Modelo completo
@@ -759,12 +762,6 @@ summary(mod06)
 # Parecer 
 cat("\nPara o modelo completo COM esforço amostral passado como OFFSET, em termos de efeito, as variáveis com 
     efeito significativo foram todas, exceto declividade, ph solo e precipitação.")
-
-# Verificando a superdispersao ou sobredispersao
-# Razao do desvio residual e dos graus de liberdade dos residuos
-deviance(mod06)
-df.residual(mod06)
-deviance(mod06)/df.residual(mod06)
 
 # ==========================================================================
 # MODELOS LINEARES GENERALIZADOS - BINOMIAL NEGATIVA
@@ -810,10 +807,10 @@ mod07 <- glm.nb(
     + umidade_relativa_pct 
     + offset(log(esforco_amostral)), 
   data = caf1, 
-  na.action = "na.fail", 
-  init.theta = 4.377708848, 
-  link = log
-)
+  na.action = "na.fail",
+  link = log,
+  init.theta = 4.377708848 # TO DO manter?
+) 
 
 # Teste de Verossimilhança entre os modelos binomial negativo nulo e modelo final
 secao("Teste de verossimilhança entre os modelos binomial negativo nulo e final")
@@ -856,6 +853,25 @@ cat("\nPara o modelo binomial negativo final, em termos de efeito, as variáveis
   - idade da lavoura, 
   - matéria orgânica, e 
   - umidade.")
+
+# ==================================
+# Modelo binomial negativa final TO DO verificar se esse é que fica
+# ==================================
+
+secao("Modelo binomial negativa final")
+mod08 <- glm.nb(
+  n_brocas_capturadas ~ adubacao_n_kg_ha 
+    + altitude_m 
+    + densidade_plantio 
+    + idade_lavoura_anos 
+    + materia_organica_pct 
+    + umidade_relativa_pct 
+    + offset(log(esforco_amostral)), 
+  data = caf1, 
+  na.action = "na.fail",
+  link = log,
+  init.theta = 4.377708848 # TO DO manter?
+) 
 
 # ==========================================================================
 # DIAGNOSTICO E ANALISE DE RESIDUOS
@@ -911,10 +927,56 @@ p05 # TO DO Verificar
 # PARECER FINAL
 # ==========================================================================
 
-# TO DO 
-# Pergunta do corpo técnico:
-# Quais condições de talhão favorecem a infestação pela broca, 
-# e quanto se ganha em pressão de praga ao alterar cada uma delas?
+# Pergunta do corpo tecnico:
+# Quais condicoes de talhao favorecem a infestacao pela broca, 
+# e quanto se ganha em pressao de praga ao alterar cada uma delas?
+
+# TO DO conferir
+
+# Como a binomial negativa tem o log como funcao de ligacao, para se saber quanto se ganha em pressao
+# de praga para cada condicao, deve-se fazer o inverso do log que e o exponencial e aplica-lo ao 
+# coefieciente de cada variavel que entrou no modelo final
+coef(mod07)
+exp_coeffs <- exp(coef(mod07))
+print(exp_coeffs)
+
+cat("Conforme o modelo binomial negativo final (mod07), as condições de talhão que favorecem 
+a infestação pela broca e o quanto se ganha em pressão de praga ao alterar cada uma delas, 
+mantendo as demais variáveis e o esforço amostral constantes, são:
+
+  - Adubação nitrogenada: cada aumento de 1 kg/ha reduz a taxa de captura em 
+    aproximadamente 0,08% (razão de taxa = 0.9992). Ou seja, a adubação nitrogenada 
+    atua como fator de proteção, e não de risco.
+
+  - Altitude: cada aumento de 1 metro reduz a taxa de captura em aproximadamente 0.11% 
+    (razão de taxa = 0.9989). Talhões em altitudes maiores tendem a apresentar menor 
+    pressão de praga.
+
+  - Densidade de plantio: cada planta adicional por hectare aumenta a taxa de captura 
+    em aproximadamente 0.02% (razão de taxa = 1.0002). O efeito é estatisticamente 
+    significativo, porém de magnitude muito pequena por unidade.
+
+  - Idade da lavoura: cada ano adicional de idade aumenta a taxa de captura em 
+    aproximadamente 1.73% (razão de taxa = 1.0173).
+
+  - Matéria orgânica do solo: cada aumento de 1 ponto percentual de matéria orgânica 
+    aumenta a taxa de captura em aproximadamente 13.96% (razão de taxa = 1.1396). Este 
+    é um dos efeitos de maior magnitude entre os preditores significativos.
+
+  - Umidade relativa: cada aumento de 1 ponto percentual de umidade aumenta a taxa de 
+    captura em aproximadamente 5.07% (razão de taxa = 1.0507), consistente com a 
+    associação moderada e positiva identificada na análise exploratória.
+
+  - Declividade, pH do solo e precipitação da safra não apresentaram efeito 
+    estatisticamente significativo sobre a taxa de captura (intervalos de confiança 
+    de 95% contendo o valor 1).
+
+Em síntese, matéria orgânica e umidade relativa são as condições de talhão que mais 
+favorecem a infestação pela broca, enquanto adubação nitrogenada e altitude atuam 
+como fatores de proteção. Densidade de plantio e idade da lavoura apresentam efeitos 
+positivos, porém de magnitude reduzida.")
+
+# TO DO mod08
 
 # ==========================================================================
 #                  Creative Commons License 4.0
