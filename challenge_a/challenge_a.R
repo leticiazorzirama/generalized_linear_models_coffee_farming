@@ -1,4 +1,4 @@
-# ==========================================================================
+# =======================================================================================
 # UNIVERSIDADE DO VALE DO ITAJAI - UNIVALI
 # ESCOLA POLITECNICA
 # PROGRAMA DE POS-GRADUACAO EM COMPUTACAO APLICADA - PPGCA
@@ -8,9 +8,9 @@
 # Discentes: Andre Lucas Ribeiro, Leticia Zorzi Rama, Matheus Neis
 # Itajai, Santa Catarina, Brasil
 
-# ==========================================================================
+# =======================================================================================
 # DESAFIO A
-# ==========================================================================
+# =======================================================================================
 # Descricao:
 # Modelo Poisson (ou extensao para contagens)
 # Quais condições de talhao favorecem a infestacao pela broca, 
@@ -47,23 +47,23 @@
 # - Carregar e manipular a base de dados
 # - Analise exploratoria multivariada da variavel resposta com cada uma das variaveis candidatas
 # - Analise exploratoria global da variavel resposta com todas as variaveis candidatas
-# - Distribuicao Poisson: 
+# - Modelo Poisson: 
 #   - Modelos lineares generalizados nulos e completos sem e com medidas de esforco amostral, com e sem offset
-#   - Ajuste de modelos lineares generalizados exaurindo as combinacoes entre as variaveis preditoras com esforco amostral como offset
+#   - Ajuste de modelos lineares generalizados exaurindo as combinacoes entre as variaveis preditoras com offset de esforco amostral 
 #   - Diagnostico e analise dos residuos 
 #   - Verificacao da equidispersao
-# - Distribuinao Binomial negativa
+# - Modelo Binomial negativa
 #   - Modelos lineares generalizados nulos e completo
 #   - Ajuste de modelos lineares generalizados exaurindo as combinacoes entre as variaveis preditoras
 #   - Diagnostico e analise dos residuos 
 # - Parecer final (resposta as perguntas do desafio)
 #
 # # Base de dados: cafeicultura.csv
-# ==========================================================================
+# =======================================================================================
 
-# ==========================================================================
+# =======================================================================================
 # CONFIGURAR AMBIENTE DE TRABALHO
-# ==========================================================================
+# =======================================================================================
 
 # Conferir e configurar caminhos, se necessario
 # getwd()
@@ -83,7 +83,7 @@ if(!require(pacman)) {
 }
 
 # Demais pacotes
-p_load(ggplot2, dplyr, MuMIn, ggcorrplot, patchwork, readxl, AER,
+p_load(ggplot2, dplyr, MuMIn, ggplot, ggcorrplot, patchwork, readxl, AER,
        DataExplorer, ggpubr, scatterplot3d, effects, car, hnp, statmod,
        datasets, DCluster, stargazer, olsrr, performance, report)
 
@@ -96,9 +96,9 @@ barra <- paste(rep("=", 150), collapse = "")
   cat("\n", barra, "\n", texto, "\n", barra, "\n\n", sep = "")
 }
 
-# ==========================================================================
+# =======================================================================================
 # BASE DE DADOS
-# ==========================================================================
+# =======================================================================================
 secao("CARREGAR BASE DE DADOS")
 
 # Carregar a base de dados
@@ -119,10 +119,10 @@ caf1 <- caf %>%
     umidade_relativa_pct
   )
 
-# ==========================================================================
+# =======================================================================================
 # ANALISE EXPLORATORIA MULTIVARIADA 
 # Variavel resposta com cada variavel candidata
-# ==========================================================================
+# =======================================================================================
 secao("ANÁLISE EXPLORATÓRIA MULTIVARIADA")
 
 # Verificar as relacoes da variavel resposta com as variaveis candidatas
@@ -178,10 +178,10 @@ cat("\nOs resultados das correlações indicam uma associação moderada positiv
     de brocas capturadas com a umidade. As demais variáveis possuem associação fraca 
     com a variável resposta.")
 
-# ==========================================================================
+# =======================================================================================
 # ANALISE EXPLORATORIA GLOBAL 
 # Variavel resposta com todas as variaveis candidatas
-# ==========================================================================
+# =======================================================================================
 secao("ANÁLISE EXPLORATÓRIA GLOBAL")
 
 # Matriz de correlacao
@@ -215,22 +215,22 @@ cat("\nA associação moderada e positiva do número de brocas capturadas com a 
     - adubação e altitude com direção negativa.\n
     A matriz de correlação também revelou uma associação moderada entre umidade e precipitação.")
 
-# ==========================================================================
+# =======================================================================================
 # MODELOS LINEARES GENERALIZADOS - POISSON
 # Modelos:
 # - nulo
 # - completo SEM medida de esforco amostral
 # - completo COM medida de esforco amostral como OFFSET 
 # - completo COM medida de esforco amostral como preditor livre
-# ==========================================================================
+# =======================================================================================
 secao("MODELOS LINEARES GENERALIZADOS - POISSON")
 
 # n_brocas_capturadas e uma variavel de contagem o que significa dizer que e uma variavel discreta
 # Poisson para modelar variaveis discretas
 
-# ============
+# --------------------------------------
 # Modelo nulo
-# ============
+# --------------------------------------
 # Para este primeiro caso e para fins de aprendizagem, 
 # o significado de cada argumento sera comentado conforme constante em ?glm
 #?glm
@@ -255,16 +255,16 @@ mod00 <- glm(
   # intercept, indica se o intercepto deve ser incluido no modelo nulo
   # object, objeto derivado da classe glm
   # type, tipo dos pesos a serem extraidos do modelo ajustado
-) # TO DO modelo nulo deve ter offset?
+)
 
 # Verificando se intercepto do modelo nulo coincide com o log da media da variavel resposta
 mod00$coefficients
 log(mean(caf1$n_brocas_capturadas))
 
-# ====================
+# --------------------------------------
 # Modelo completo
 # sem esforco amostral
-# ====================
+# --------------------------------------
 secao("Modelo completo SEM medida de esforço amostral")
 mod01 <- glm(
   n_brocas_capturadas ~ adubacao_n_kg_ha
@@ -308,10 +308,10 @@ summary(mod01)
 cat("\nPara o modelo completo SEM esforço amostral, em termos de efeito, as variáveis com efeito 
     significativo foram quase todas, exceto declividade, pH solo e precipitação.")
 
-# ====================
+# --------------------------------------
 # Construcao
 # do esforco amostral
-# ====================
+# --------------------------------------
 
 # Relembrando o problema
 # 1. Construam a medida de esforço amostral adequada a partir de `n_armadilhas` e
@@ -330,14 +330,11 @@ caf <- caf %>%
 # Adicionar a medida de esforco amostral na base de dados que esta sendo manipulada
 caf1$esforco_amostral <- caf$esforco_amostral
 
-# TO DO 
-# Criar novo modelo nulo com esforço amostral?
-
-# ====================
+# --------------------------------------
 # Modelo completo
 # com esforco amostral
 # passado como offset
-# ====================
+# --------------------------------------
 secao("Modelo completo COM medida de esforço amostral passada como OFFSET")
 mod02 <- glm(
   n_brocas_capturadas ~ adubacao_n_kg_ha
@@ -382,11 +379,11 @@ summary(mod02)
 cat("\nPara o modelo completo COM esforço amostral passado como OFFSET, em termos de efeito, as variáveis com 
     efeito significativo foram todas, exceto declividade, ph solo e precipitação.")
 
-# ==================================
+# --------------------------------------
 # Modelo completo
 # com esforco amostral
 # passado como preditor livre
-# ==================================
+# --------------------------------------
 secao("Modelo completo COM medida de esforço amostral passada como PREDITOR LIVRE")
 mod03 <- glm(
   n_brocas_capturadas ~ adubacao_n_kg_ha
@@ -424,10 +421,10 @@ summary(mod03)
 # TO DO Parecer (comparacao do offset e do preditor livre)
 cat("")
 
-# ==========================================================================
+# =======================================================================================
 # MODELOS LINEARES GENERALIZADOS - POISSON
 # Exaurindo as combinacoes entre as variaveis preditoras 
-# ==========================================================================
+# =======================================================================================
 secao("MODELOS LINEARES GENERALIZADOS - POISSON - Exaurindo as combinações entre as variáveis preditoras")
 
 # Ajustar diferentes modelos de forma iterativa
@@ -452,9 +449,9 @@ cat("\nConforme o AICc, o modelo que melhor se ajusta aos dados possui as seguin
   - umidade."
 )
 
-# ==================================
+# --------------------------------------
 # Modelo poisson final
-# ==================================
+# --------------------------------------
 secao("Modelo poisson final")
 mod04 <- glm(
   n_brocas_capturadas ~ adubacao_n_kg_ha 
@@ -517,9 +514,9 @@ cat("\nPara o modelo poisson final, em termos de efeito, as variáveis com efeit
   - matéria orgânica, e 
   - umidade.")
 
-# ==========================================================================
+# =======================================================================================
 # DIAGNOSTICO E ANALISE DE RESIDUOS
-# ==========================================================================
+# =======================================================================================
 secao("DIAGNÓSTICO DOS RESÍDUOS")
 
 plot(mod04) # (TO DO: verificar se podem diagnosticar glms?)
@@ -580,9 +577,9 @@ p02  # TO DO Verificar
 # Visualizar os graficos lado a lado
 (p01 | p02 | p00)
 
-# ==========================================================================
+# =======================================================================================
 # VERIFICACAO DA EQUIDISPERSAO DO MODELO POISSON
-# ==========================================================================
+# =======================================================================================
 secao("VERIFICAÇÃO DA EQUIDISPERSÃO")
 
 #?dispersiontest
@@ -590,10 +587,10 @@ secao("VERIFICAÇÃO DA EQUIDISPERSÃO")
 # Conforme a documentacao, poission assume que a esperanca condicional E[y] = μ 
 # e a variancia VAR[y] = μ sao iguais
 
-# ==================================
+# --------------------------------------
 # Calcular a esperanca e a variancia 
 # e observar se sao iguais
-# ==================================
+# --------------------------------------
 
 # Agrupar n_brocas_capturadas pela quantidade de vezes que foram capturadas
 caf2 <- caf1 %>%
@@ -619,10 +616,10 @@ n_brocas_capt_variancia/n_brocas_capt_media
 # TO DO Parecer
 cat()
 
-# ==================================
+# --------------------------------------
 # Verificar a frequencia esperada
 # e observada com um modelo poisson
-# ==================================
+# --------------------------------------
 
 # Frequencia esperada de acordo com um modelo poisson
 n_brocas_capt_freq_pois <- dpois(x = caf2$n_brocas_capturadas, lambda = n_brocas_capt_media)
@@ -651,9 +648,9 @@ pchisq(q = qui_pois, df = nrow(caf2) - 1, lower.tail = FALSE)
 # TO DO Parecer
 cat("")
 
-# ==================================
+# --------------------------------------
 # Teste formal de equidispersao
-# ==================================
+# --------------------------------------
 
 # Razao do desvio residual e dos graus de liberdade dos residuos
 deviance(mod04)
@@ -669,21 +666,21 @@ dispersiontest(mod04, trafo = 2)
 # TO DO Parecer
 cat("")
 
-# ==================================
+# --------------------------------------
 # Verificar a frequencia esperada
 # e observada com um modelo binomial
 # negativo
-# ==================================
+# --------------------------------------
 
 # Parametro de superdispersao k
 # calculado pelo metodo dos momentos
 # um parametro que entra na binomial negativa
 k <- (n_brocas_capt_media ^ 2) / (n_brocas_capt_variancia - n_brocas_capt_media)
 
-# Frequencia esperada de acordo com um modelo binomial negativo
+# Frequencia esperada de acordo com um modelo binomial negativa
 n_brocas_capt_freq_binom <- dnbinom(x = caf2$n_brocas_capturadas, size = k, mu = n_brocas_capt_media)
 
-# Visualizar diferenca entre frequencia relativa esperada e observada no modelo binomial negativo
+# Visualizar diferenca entre frequencia relativa esperada e observada no modelo binomial negativa
 barplot(t(cbind(caf2$n_brocas_capt_freq_relat, n_brocas_capt_freq_binom)),
         names.arg = caf2$n_brocas_capt_freq_relat,
         ylim = c(0, 1), xlab = "Número de brocas capturadas",
@@ -691,7 +688,7 @@ barplot(t(cbind(caf2$n_brocas_capt_freq_relat, n_brocas_capt_freq_binom)),
         legend.text = c("Observado", "Esperado"),
         main = "Binomial Negativa")
 
-# Qui-quadrado para verificar se o modelo binomial negativo se ajusta aos dados
+# Qui-quadrado para verificar se o modelo binomial negativa se ajusta aos dados
 plot(caf2$n_brocas_capturadas, n_brocas_capt_freq_binom - caf2$n_brocas_capt_freq_relat,
      xlim = c(0, 30), ylim = c(-0.6, 0.6),
      xlab = "Número de brocas capturadas", ylab = "Resíduos",
@@ -707,22 +704,22 @@ pchisq(q = qui_pois, df = nrow(caf2) - 1, lower.tail = FALSE)
 # TO DO Parecer
 cat("")
 
-# ==========================================================================
+# =======================================================================================
 # MODELOS LINEARES GENERALIZADOS - BINOMIAL NEGATIVA
-# ==========================================================================
+# =======================================================================================
 secao("MODELOS LINEARES GENERALIZADOS - BINOMIAL NEGATIVA")
 
-# ============
+# --------------------------------------
 # Modelo nulo
-# ============
+# --------------------------------------
 mod05 <- glm.nb(
   n_brocas_capturadas ~ 1,
   data = caf1,
-  link = "log") # TO DO modelo nulo deve ter offset?
+  link = "log")
 
-# ============
+# --------------------------------------
 # Modelo completo
-# ============
+# --------------------------------------
 mod06 <- glm.nb(
   n_brocas_capturadas ~ adubacao_n_kg_ha
     + altitude_m
@@ -763,10 +760,10 @@ summary(mod06)
 cat("\nPara o modelo completo COM esforço amostral passado como OFFSET, em termos de efeito, as variáveis com 
     efeito significativo foram todas, exceto declividade, ph solo e precipitação.")
 
-# ==========================================================================
+# =======================================================================================
 # MODELOS LINEARES GENERALIZADOS - BINOMIAL NEGATIVA
 # Exaurindo as combinacoes entre as variaveis preditoras 
-# ==========================================================================
+# =======================================================================================
 secao("MODELOS LINEARES GENERALIZADOS - BINOMIAL NEGATIVA - Exaurindo as combinações entre as variáveis preditoras")
 
 # Ajustar diferentes modelos de forma iterativa
@@ -791,9 +788,10 @@ cat("\nConforme o AICc, o modelo que melhor se ajusta aos dados possui as seguin
   - umidade."
 )
 
-# ==================================
-# Modelo binomial negativa final
-# ==================================
+# --------------------------------------
+# Modelo binomial negativa 
+# selecionado
+# --------------------------------------
 secao("Modelo binomial negativa final")
 mod07 <- glm.nb(
   n_brocas_capturadas ~ adubacao_n_kg_ha 
@@ -809,23 +807,23 @@ mod07 <- glm.nb(
   data = caf1, 
   na.action = "na.fail",
   link = log,
-  init.theta = 4.377708848 # TO DO manter?
+  init.theta = 4.377708848
 ) 
 
-# Teste de Verossimilhança entre os modelos binomial negativo nulo e modelo final
-secao("Teste de verossimilhança entre os modelos binomial negativo nulo e final")
+# Teste de Verossimilhança entre os modelos binomial negativa nulo e modelo final
+secao("Teste de verossimilhança entre os modelos binomial negativa nulo e final")
 anova(mod05, mod07, test = "Chisq")
 residuos_mod07 <- ((deviance(mod05) - deviance(mod07)) / deviance(mod05)) * 100
 
 # Parecer
-cat("\nEm comparação ao modelo nulo, o modelo binomial negativo reduziu os resíduos em ", residuos_mod07, "%.")
+cat("\nEm comparação ao modelo nulo, o modelo binomial negativa reduziu os resíduos em ", residuos_mod07, "%.")
 
-# Analise da deviancia das covariaveis do modelo binomial negativo final 
-secao("Analise da deviância das covariáveis do modelo binomial negativo final")
+# Analise da deviancia das covariaveis do modelo binomial negativa final 
+secao("Analise da deviância das covariáveis do modelo binomial negativa final")
 anova(mod07, test = "Chisq")
 
 # Parecer 
-cat("\nPara o modelo binomial negativo final, em termos de redução de resíduos, as variáveis com redução significativa foram:
+cat("\nPara o modelo binomial negativa final, em termos de redução de resíduos, as variáveis com redução significativa foram:
     - adubação, 
     - altitude,
     - densidade de plantio,
@@ -834,19 +832,19 @@ cat("\nPara o modelo binomial negativo final, em termos de redução de resíduo
     - umidade."
   )
 
-# Faixa de coeficientes possiveis para os parametros do modelo binomial negativo final
-secao("Faixa de coeficientes possíveis para os parâmetros do modelo binomial negativo final")
+# Faixa de coeficientes possiveis para os parametros do modelo binomial negativa final
+secao("Faixa de coeficientes possíveis para os parâmetros do modelo binomial negativa final")
 confint(mod07)
 
 # Tabela de estimacao dos parametros
-secao("Estimação dos parâmetros do modelo binomial negativo final")
+secao("Estimação dos parâmetros do modelo binomial negativa final")
 summary(mod07)
 
 # Visualizar efeitos
 plot(effects::allEffects(mod07))
 
 # Parecer 
-cat("\nPara o modelo binomial negativo final, em termos de efeito, as variáveis com efeito significativo foram:
+cat("\nPara o modelo binomial negativa final, em termos de efeito, as variáveis com efeito significativo foram:
   - adubação, 
   - altitude, 
   - densidade de plantio, 
@@ -854,9 +852,9 @@ cat("\nPara o modelo binomial negativo final, em termos de efeito, as variáveis
   - matéria orgânica, e 
   - umidade.")
 
-# ==================================
-# Modelo binomial negativa final TO DO verificar se esse é que fica
-# ==================================
+# --------------------------------------
+# Modelo binomial negativa final 
+# --------------------------------------
 
 secao("Modelo binomial negativa final")
 mod08 <- glm.nb(
@@ -870,81 +868,246 @@ mod08 <- glm.nb(
   data = caf1, 
   na.action = "na.fail",
   link = log,
-  init.theta = 4.377708848 # TO DO manter?
+  init.theta = 4.377708848
 ) 
 
-# ==========================================================================
+# Teste de Verossimilhança entre os modelos binomial negativa nulo e modelo final
+secao("Teste de verossimilhança entre os modelos binomial negativa nulo e final")
+anova(mod05, mod08, test = "Chisq")
+residuos_mod08 <- ((deviance(mod05) - deviance(mod08)) / deviance(mod05)) * 100
+
+# Parecer
+cat("\nEm comparação ao modelo nulo, o modelo binomial negativa reduziu os resíduos em ", residuos_mod08, "%.")
+
+# Analise da deviancia das covariaveis do modelo binomial negativa final 
+secao("Analise da deviância das covariáveis do modelo binomial negativa final")
+anova(mod08, test = "Chisq")
+
+# Parecer 
+cat("\nPara o modelo binomial negativa final, em termos de redução de resíduos, as variáveis com redução significativa foram:
+    - adubação, 
+    - altitude,
+    - densidade de plantio,
+    - idade da lavoura
+    - matéria orgânica, e
+    - umidade."
+  )
+
+# Faixa de coeficientes possiveis para os parametros do modelo binomial negativa final
+secao("Faixa de coeficientes possíveis para os parâmetros do modelo binomial negativa final")
+confint(mod08)
+
+# Tabela de estimacao dos parametros
+secao("Estimação dos parâmetros do modelo binomial negativa final")
+summary(mod08)
+
+# Visualizar efeitos
+plot(effects::allEffects(mod08))
+
+# =======================================================================================
 # DIAGNOSTICO E ANALISE DE RESIDUOS
-# ==========================================================================
+# =======================================================================================
 secao("DIAGNÓSTICO DOS RESÍDUOS")
 
-plot(mod07) 
+plot(mod08) 
 
 # Envelope simulado dos residuos do modelo poisson final
-res03 <- hnp(mod07, plot.sim = FALSE)
+res05 <- hnp(mod08, plot.sim = FALSE)
 
 # Transformar em dataframe
-res03 <- data.frame(x = res03$x, median = res03$median,
-                    lower = res03$lower, upper = res03$upper,
-                    residuals = res03$residuals)
+res05 <- data.frame(x = res05$x, median = res05$median,
+                    lower = res05$lower, upper = res05$upper,
+                    residuals = res05$residuals)
 
 # Grafico do envelope simulado dos residuos
-p03 <- ggplot(data = res03) +
+p06 <- ggplot(data = res05) +
     geom_ribbon(aes(x = x, ymin = lower, ymax = upper), alpha = 0.8) +
     geom_line(aes(x = x, y = median), colour = "white") +
     geom_point(aes(x = x, y = residuals), pch = 21, fill = "white",
                colour = "black", size = 5, alpha = 0.5) +
     labs(x = "Quantis teóricos", y = "Resíduos") +
     theme_gray(base_size = 18)
-p03
+p06
 
 # Exportar os residuos do modelo
-res04 <- fortify(mod07)
-res04$ID <- 1:nrow(res04)
+res06 <- fortify(mod08)
+res06$ID <- 1:nrow(res06)
 
 # Grafico de dispersao dos residuos
-p04 <- ggplot(data = res04, aes(x = ID, y = .stdresid)) +
+p07 <- ggplot(data = res06, aes(x = ID, y = .stdresid)) +
     geom_point(pch = 21, fill = "white", colour = "black", size = 5,
                alpha = 0.8) +
     geom_hline(yintercept = 0, colour = "red") +
     labs(x = "Índice da amostra", y = "Resíduos padronizados") +
     theme_gray(base_size = 18)
-p04
+p07
 
 # Histograma dos residuos
-p05 <- ggplot(data = res04, aes(x = .stdresid)) +
+p08 <- ggplot(data = res06, aes(x = .stdresid)) +
     geom_histogram(binwidth = 1, boundary = 1, closed = "right",
                    fill = "white", colour = "black") +
     scale_y_continuous(expand = c(0, 0), limits = c(0, 25)) +
     labs(x = "Resíduos padronizados", y = "Frequência") +
     theme_gray(base_size = 18)
-p05 # TO DO Verificar 
+p08 # TO DO Verificar 
 
 # Visualizar os graficos lado a lado
-(p05 | p04 | p03)
+(p08 | p07 | p06)
 
-# ==========================================================================
-# PARECER FINAL
-# ==========================================================================
+# ============================================================
+# PARECERES
+# ============================================================
+secao("PARECERES")
 
 # Pergunta do corpo tecnico:
 # Quais condicoes de talhao favorecem a infestacao pela broca, 
 # e quanto se ganha em pressao de praga ao alterar cada uma delas?
 
-# TO DO conferir
-
 # Como a binomial negativa tem o log como funcao de ligacao, para se saber quanto se ganha em pressao
 # de praga para cada condicao, deve-se fazer o inverso do log que e o exponencial e aplica-lo ao 
-# coefieciente de cada variavel que entrou no modelo final
-coef(mod07)
-exp_coeffs <- exp(coef(mod07))
-print(exp_coeffs)
+# coeficiente de cada variavel que entrou no modelo final
 
-cat("Conforme o modelo binomial negativo final (mod07), as condições de talhão que favorecem 
-a infestação pela broca e o quanto se ganha em pressão de praga ao alterar cada uma delas, 
+# --------------------------------------
+# Parecer automatizado 
+# --------------------------------------
+secao("Parecer automatizado")
+
+parecer_modelo <- function(modelo) {
+
+  # Coeficientes e intervalos de confianca
+  coeficientes <- coef(modelo)
+  ic <- suppressMessages(confint(modelo))
+
+  # Resumo do modelo
+  resumo <- summary(modelo)$coefficients
+
+  # Remover intercepto e offset
+  vars <- names(coeficientes)
+  vars <- vars[vars != "(Intercept)" &
+               !grepl("offset", vars, fixed = TRUE)]
+
+  # Legendas das variaveis
+  nomes <- c(
+    adubacao_n_kg_ha = "Adubação nitrogenada (kg/ha)",
+    altitude_m = "Altitude (m)",
+    declividade_pct = "Declividade",
+    densidade_plantio = "Densidade de plantio (plantas/ha)",
+    idade_lavoura_anos = "Idade da lavoura (anos)",
+    materia_organica_pct = "Matéria orgânica do solo (%)",
+    ph_solo = "pH do solo",
+    precipitacao_safra_mm = "Precipitação da safra (mm)",
+    umidade_relativa_pct = "Umidade relativa (%)"
+  )
+
+  # Calcular efeitos
+  resultados <- data.frame(
+    variavel = vars,
+    nome = nomes[vars],
+    coeficiente = coeficientes[vars],
+    razao_taxa = exp(coeficientes[vars]),
+    percentual = (exp(coeficientes[vars]) - 1) * 100,
+    IC95_inferior = exp(ic[vars, 1]),
+    IC95_superior = exp(ic[vars, 2]),
+    p_valor = resumo[vars, 4],
+    significativo = resumo[vars, 4] < 0.05
+  )
+
+  # Imprimir valores numericos
+  print(resultados, row.names = FALSE)
+
+  cat("\n\nPARECER\n\n")
+
+  for (i in seq_len(nrow(resultados))) {
+
+    r <- resultados[i, ]
+
+    direcao <- ifelse(r$percentual > 0, "aumenta", "reduz")
+    percentual <- abs(r$percentual)
+
+    cat(
+      sprintf(
+        "- %s: cada aumento de uma unidade %s a pressão de praga em aproximadamente %.2f%% (razão de taxa = %.4f; IC95%%: %.4f–%.4f; p = %.4f).\n",
+        r$nome,
+        direcao,
+        percentual,
+        r$razao_taxa,
+        r$IC95_inferior,
+        r$IC95_superior,
+        r$p_valor
+      )
+    )
+  }
+
+  cat("\n")
+
+  # Variaveis nao significativas
+  nao_significativos <- resultados[
+    !resultados$significativo, ]
+
+  if (nrow(nao_significativos) > 0) {
+
+    cat(
+      "Variáveis sem efeito estatisticamente significativo ",
+      "sobre a taxa de captura (p >= 0,05):\n",
+      sep = ""
+    )
+
+    cat(
+      paste(nao_significativos$nome, collapse = ", "),
+      ".\n\n",
+      sep = ""
+    )
+  }
+
+  # Significant variables
+  significativos <- resultados[
+    resultados$significativo, ]
+
+  if (nrow(significativos) > 0) {
+
+    positivos <- significativos[
+      significativos$percentual > 0, ]
+
+    negativos <- significativos[
+      significativos$percentual < 0, ]
+
+    cat("Síntese dos efeitos estatisticamente significativos:\n")
+
+    if (nrow(positivos) > 0) {
+      cat(
+        "- Efeitos positivos: ",
+        paste(positivos$nome, collapse = ", "),
+        ".\n",
+        sep = ""
+      )
+    }
+
+    if (nrow(negativos) > 0) {
+      cat(
+        "- Efeitos negativos: ",
+        paste(negativos$nome, collapse = ", "),
+        ".\n",
+        sep = ""
+      )
+    }
+  }
+
+  # Retornar a tabela numerica
+  invisible(resultados)
+}
+
+resultados_parecer <- parecer_modelo(mod08)
+
+# =======================================================================================
+# PARECER FINAL
+# =======================================================================================
+secao("PARECER FINAL")
+
+cat("Conforme o modelo binomial negativa final (mod08), as condições de talhão que favorecem 
+a infestação pela broca e o quanto se ganha ou se perde em pressão de praga ao alterar cada uma delas, 
 mantendo as demais variáveis e o esforço amostral constantes, são:
 
-  - Adubação nitrogenada: cada aumento de 1 kg/ha reduz a taxa de captura em 
+  - Adubação nitrogenada: cada aumento de 1 kg/ha reduz a pressão de praga em 
     aproximadamente 0,08% (razão de taxa = 0.9992). Ou seja, a adubação nitrogenada 
     atua como fator de proteção, e não de risco.
 
@@ -952,19 +1115,19 @@ mantendo as demais variáveis e o esforço amostral constantes, são:
     (razão de taxa = 0.9989). Talhões em altitudes maiores tendem a apresentar menor 
     pressão de praga.
 
-  - Densidade de plantio: cada planta adicional por hectare aumenta a taxa de captura 
+  - Densidade de plantio: cada planta adicional por hectare aumenta a pressão de praga 
     em aproximadamente 0.02% (razão de taxa = 1.0002). O efeito é estatisticamente 
     significativo, porém de magnitude muito pequena por unidade.
 
-  - Idade da lavoura: cada ano adicional de idade aumenta a taxa de captura em 
+  - Idade da lavoura: cada ano adicional de idade aumenta a pressão de praga em 
     aproximadamente 1.73% (razão de taxa = 1.0173).
 
   - Matéria orgânica do solo: cada aumento de 1 ponto percentual de matéria orgânica 
-    aumenta a taxa de captura em aproximadamente 13.96% (razão de taxa = 1.1396). Este 
+    aumenta a pressão de praga em aproximadamente 14.04% (razão de taxa = 1.1403). Este 
     é um dos efeitos de maior magnitude entre os preditores significativos.
 
-  - Umidade relativa: cada aumento de 1 ponto percentual de umidade aumenta a taxa de 
-    captura em aproximadamente 5.07% (razão de taxa = 1.0507), consistente com a 
+  - Umidade relativa: cada aumento de 1 ponto percentual de umidade aumenta a pressão de 
+    praga em aproximadamente 5.00% (razão de taxa = 1.0497), consistente com a 
     associação moderada e positiva identificada na análise exploratória.
 
   - Declividade, pH do solo e precipitação da safra não apresentaram efeito 
@@ -976,9 +1139,7 @@ favorecem a infestação pela broca, enquanto adubação nitrogenada e altitude 
 como fatores de proteção. Densidade de plantio e idade da lavoura apresentam efeitos 
 positivos, porém de magnitude reduzida.")
 
-# TO DO mod08
-
-# ==========================================================================
+# =======================================================================================
 #                  Creative Commons License 4.0
 #                       (CC BY-NC-SA 4.0)
 #
@@ -1009,4 +1170,4 @@ positivos, porém de magnitude reduzida.")
 #  No additional restrictions — You may not apply legal terms or
 #  technological measures that legally restrict others from doing
 #  anything the license permits.
-# ==========================================================================
+# =======================================================================================
