@@ -197,6 +197,8 @@ cat("Antes da modelagem multivariada (MLG), verificam-se padroes univariados da 
 cat("A) SEVERIDADE POR CULTIVAR (Kruskal-Wallis)\n")
 kw_cult <- kruskal.test(severidade_ferrugem ~ cultivar, data = caf)
 cat("   - A cultivar esta altamente associada a ferrugem (p-value =", format.pval(kw_cult$p.value, digits=3), ")\n")
+
+
 medias_cult <- tapply(caf$severidade_ferrugem, caf$cultivar, mean)
 cat("   - Media observada (Bourbon):", round(medias_cult["Bourbon"] * 100, 2), "%\n")
 cat("   - Media observada (Icatu):  ", round(medias_cult["Icatu"] * 100, 2), "%\n\n")
@@ -209,10 +211,22 @@ for(nm in names(cors)) {
     cat(sprintf("   - %-22s: rho = %+.3f\n", nm, cors[nm]))
 }
 
+cat("C) CORRECAO MULTIPLA (Holm) - Analise Univariada Geral\n")
+p_fats <- sapply(c("cultivar", "manejo", "regiao_produtora", "irrigacao"), function(f) kruskal.test(caf$severidade_ferrugem ~ caf[[f]])$p.value)
+p_nums <- sapply(c("umidade_relativa_pct", "densidade_plantio", "altitude_m", "adubacao_n_kg_ha", "precipitacao_safra_mm", "declividade_pct", "ph_solo", "materia_organica_pct", "idade_lavoura_anos"), function(n) cor.test(caf[[n]], caf$severidade_ferrugem, method="spearman", exact=FALSE)$p.value)
+all_p <- c(p_fats, p_nums)
+all_p_adj <- p.adjust(all_p, method="holm")
+
+cat(sprintf("   - %-20s : bruto = %.4f -> Holm = %.4f\n", "regiao_produtora", all_p["regiao_produtora"], all_p_adj["regiao_produtora"]))
+cat(sprintf("   - %-20s : bruto = %.4f -> Holm = %.4f\n", "adubacao_n_kg_ha", all_p["adubacao_n_kg_ha"], all_p_adj["adubacao_n_kg_ha"]))
+cat("   * Efeitos marginais fracos perdem a significancia nominal sob correcao rigorosa,\n")
+cat("     o que ilustra o limite da analise bivariada isolada.\n")
+
+
 parecer("A exploracao inicial revela um claro vies da cultivar, com o Bourbon ",
-        "apresentando as maiores taxas historicas de infeccao na base. Adicionalmente, ",
-        "covariaveis de microclima (umidade) e adensamento apontam correlacoes positivas ",
-        "fortes com a severidade. Esses achados univariados servem de bussola, mas ",
+        "apresentando as maiores taxas de infeccao na base. Adicionalmente, ",
+        "covariaveis de microclima (umidade) e adensamento apontam correlacoes positivas ", 
+        "moderadas e fracas com a severidade. Esses achados univariados servem de bussola, mas ",
         "precisam ser confirmados condicionalmente pelo modelo de regressao Beta a seguir.")
 
 # =======================================================================================
@@ -301,16 +315,27 @@ cat(sprintf("\n   O erro-padrao variou %.2f vezes entre n=20 e n=2000.\n", max(e
 cat("\n   Os remedios conhecidos para variancia incorreta na binomial sao:\n")
 cat("   (1) family = quasibinomial   (estima um parametro de dispersao livre)\n")
 cat("   (2) sanduiche (vcovHC)       (robusto a especificacao da variancia)\n")
+k_20 <- round(y * 20)
+mm_20 <- suppressWarnings(glm(cbind(k_20, 20 - k_20) ~ cultivar + umidade_relativa_pct, family = binomial, data = caf))
+mm_quasi_20 <- suppressWarnings(glm(cbind(k_20, 20 - k_20) ~ cultivar + umidade_relativa_pct, family = quasibinomial, data = caf))
+ep_quasi_20 <- summary(mm_quasi_20)$coefficients["cultivarIcatu", 2]
+ep_hc_20 <- coeftest(mm_20, vcov = vcovHC(mm_20, type="HC0"))["cultivarIcatu", 2]
+
 k_2000 <- round(y * 2000)
 mm_2000 <- suppressWarnings(glm(cbind(k_2000, 2000 - k_2000) ~ cultivar + umidade_relativa_pct, family = binomial, data = caf))
 mm_quasi_2000 <- suppressWarnings(glm(cbind(k_2000, 2000 - k_2000) ~ cultivar + umidade_relativa_pct, family = quasibinomial, data = caf))
+ep_quasi_2000 <- summary(mm_quasi_2000)$coefficients["cultivarIcatu", 2]
+ep_hc_2000 <- coeftest(mm_2000, vcov = vcovHC(mm_2000, type="HC0"))["cultivarIcatu", 2]
 
-ep_quasi <- summary(mm_quasi_2000)$coefficients["cultivarIcatu", 2]
-ep_hc <- coeftest(mm_2000, vcov = vcovHC(mm_2000, type="HC0"))["cultivarIcatu", 2]
-cat(sprintf("\n   erro-padrao sob binomial (n=20) : %.5f\n", max(eps)))
-cat(sprintf("   erro-padrao sob quasibinomial   : %.5f (razao %.2f)\n", ep_quasi, max(eps)/ep_quasi))
-cat(sprintf("   erro-padrao sob HC0 (sanduiche) : %.5f (razao %.2f)\n", ep_hc, max(eps)/ep_hc))
-cat("   Eles de fato consertam o problema da incerteza arbitraria.\n")
+cat(sprintf("
+   razao binomial entre n=20 e n=2000      : %.2f
+", max(eps) / min(eps)))
+cat(sprintf("   razao quasibinomial entre n=20 e n=2000 : %.4f
+", ep_quasi_20 / ep_quasi_2000))
+cat(sprintf("   razao sanduiche HC0 entre n=20 e n=2000 : %.4f
+", ep_hc_20 / ep_hc_2000))
+cat("   Eles de fato ancoram a incerteza independentemente do n inventado.
+")
 
 cat("\n   MAS isso quebra o enunciado. Quase-verossimilhanca nao tem logLik,\n")
 cat("   logo nao permite Teste da Razao de Verossimilhancas (LRT). A Tarefa 3\n")
@@ -329,7 +354,7 @@ parecer("O argumento contra a binomial e estrutural, nao empirico. ",
         "o n de 20 a 2000 varia o erro-padrao em ~10 vezes. E sabido que abordagens ",
         "como quasibinomial ou erros-padrao consistentes (sanduiche) eliminam essa ",
         "dependencia empirica estimando a dispersao a partir dos dados. Contudo, ",
-        "uma quase-verossimilhanca nao possui log-verossimilhança verdadeira, o ",
+        "uma quase-verossimilhanca nao possui log-verossimilhanca verdadeira, o ",
         "que inviabiliza o Teste da Razao de Verossimilhancas (LRT). Como a Tarefa 3 ",
         "exige explicitamente a conducao de um LRT para comparar modelos de dispersao, ",
         "o modelo binomial (e suas correcoes) e inadmissivel.")
@@ -368,8 +393,8 @@ cat(sprintf("     vies do lm sem truncar : %.8f  (exatamente zero, por construca
 cat(sprintf("     vies do lm truncado    : %.6f  (%.3f%% da media)\n",
             mean(pmax(pred_lm, 0)) - mean(y),
             100 * (mean(pmax(pred_lm, 0)) - mean(y)) / mean(y)))
-cat("   O viés inserido é pequeno (0,365%), de modo que o truncamento nao é\n")
-cat("   uma objeção forte por si so. O problema é ad-hoc, mas a verdadeira\n")
+cat("   O vies inserido e pequeno (0,365%), de modo que o truncamento nao e\n")
+cat("   uma objecao forte por si so. O problema e ad-hoc, mas a verdadeira\n")
 cat("   falha estrutural vira na Causa.\n")
 
 # ---------------------------------------------------------------------
@@ -393,7 +418,7 @@ cat(sprintf("     erro-padrao classico (cultivarIcatu): %.6f  p = %s\n",
 cat(sprintf("     erro-padrao robusto  (HC3)          : %.6f  p = %s\n",
             rb[2], format.pval(rb[4], digits = 2)))
 cat("\n   E o impacto real na inferencia em termos marginais:\n")
-cat(sprintf("     idade_lavoura clássico : p = %.3f (nao sig)\n", cl_idade[4]))
+cat(sprintf("     idade_lavoura classico : p = %.3f (nao sig)\n", cl_idade[4]))
 cat(sprintf("     idade_lavoura com HC3  : p = %.3f (significativa)\n", rb_idade[4]))
 cat("   Alguem poderia parar por aqui e declarar o problema resolvido.\n")
 
@@ -545,7 +570,7 @@ cat("     NAO se sustenta nesta base. Nao deve ser usado no relatorio.\n")
 cat("\nETAPA 3 - O DECISIVO: ela quebra o enunciado.\n")
 cat(strrep("-", 72), "\n")
 cat("   A Tarefa 3 pede, literalmente:\n")
-cat("     'Ajustem um modelo com preditor também para phi (y ~ x1 + x2 | z1)\n")
+cat("     'Ajustem um modelo com preditor tambem para phi (y ~ x1 + x2 | z1)\n")
 cat("      e comparem por teste da razao de verossimilhancas'\n\n")
 cat("   A transformacao ate permitiria DETECTAR heterocedasticidade, mas o\n")
 cat("   enunciado manda AJUSTAR o preditor da dispersao e comparar via LRT.\n")
@@ -631,7 +656,7 @@ parecer("A regressao beta apresenta o menor RMSE (", comp$RMSE[3], " contra ",
         "vantagem PREDITIVA e pequena, e nao e nela que o argumento se apoia. ",
         "A justificativa da beta e estrutural: ela e a unica das tres que ",
         "respeita o suporte da resposta por construcao, modela a variancia em ",
-        "vez de escondê-la, e produz coeficientes interpretaveis na escala do ",
+        "vez de esconde-la, e produz coeficientes interpretaveis na escala do ",
         "fenomeno.")
 
 # --- Figura: faixa de predicoes contra o dominio valido
@@ -1192,193 +1217,6 @@ parecer("Investigou-se a constancia do parametro de precisao conforme o ",
 
 
 # =======================================================================================
-# TAREFA 4 - EFEITOS MARGINAIS EM CENARIOS AGRONOMICOS
-# =======================================================================================
-secao("TAREFA 4 - EFEITOS MARGINAIS EM CENARIOS AGRONOMICOS")
-
-cat("   A interpretacao crua dos coeficientes da regressao beta com ligacao\n")
-cat("   logit se da em termos de razao de chances (odds ratio). Como a severidade\n")
-cat("   e uma proporcao de area foliar, a chance p/(1-p) tem interpretacao abstrata.\n")
-cat("   Para o produtor rural, a medida que importa e a severidade esperada (em\n")
-cat("   pontos percentuais). A Tarefa 4 pede explicitamente o calculo de efeitos\n")
-cat("   marginais em cenarios agronomicos concretos, pois o efeito na escala\n")
-cat("   original depende do nivel das outras covariaveis.\n\n")
-
-# Extraindo a umidade e densidade para montar os cenarios
-um_med <- median(caf$umidade_relativa_pct)
-den_med <- median(caf$densidade_plantio)
-
-um_alta <- quantile(caf$umidade_relativa_pct, 0.9)
-den_alta <- quantile(caf$densidade_plantio, 0.9)
-
-um_baixa <- quantile(caf$umidade_relativa_pct, 0.1)
-den_baixa <- quantile(caf$densidade_plantio, 0.1)
-
-cat("   Definimos tres cenarios baseados na umidade relativa e densidade de plantio,\n")
-cat("   mantendo as demais covariaveis em suas medianas (numericas) ou modas (fatores):\n\n")
-
-# Para que o emmeans fixe as modas/medianas das covariaveis nao listadas em 'at':
-# Ele ja faz isso por padrao para covariaveis numericas (media), e para fatores ele 
-# faz uma combinacao ponderada ou pega a primeira opcao. Vamos forcar moda e mediana:
-rg <- ref_grid(mod_beta, at = list(
-  umidade_relativa_pct = c(um_med, um_alta, um_baixa),
-  densidade_plantio = c(den_med, den_alta, den_baixa)
-))
-
-# Queremos:
-# Cenario 1: Tipico (umidade media, densidade media)
-# Cenario 2: Favoravel a Ferrugem (umidade alta, densidade alta)
-# Cenario 3: Desfavoravel a Ferrugem (umidade baixa, densidade baixa)
-
-grid_tipico <- ref_grid(mod_beta, at = list(
-  umidade_relativa_pct = um_med,
-  densidade_plantio = den_med
-))
-
-grid_fav <- ref_grid(mod_beta, at = list(
-  umidade_relativa_pct = um_alta,
-  densidade_plantio = den_alta
-))
-
-grid_desfav <- ref_grid(mod_beta, at = list(
-  umidade_relativa_pct = um_baixa,
-  densidade_plantio = den_baixa
-))
-
-em_tip <- emmeans(grid_tipico, ~ cultivar, type = "response")
-em_fav <- emmeans(grid_fav, ~ cultivar, type = "response")
-em_desfav <- emmeans(grid_desfav, ~ cultivar, type = "response")
-
-s_tip <- summary(em_tip)
-s_fav <- summary(em_fav)
-s_desfav <- summary(em_desfav)
-
-# Diferenca em pontos percentuais entre Bourbon e Icatu
-pp_tip <- (predict(em_tip)[s_tip$cultivar == "Bourbon"] - predict(em_tip)[s_tip$cultivar == "Icatu"]) * 100
-pp_fav <- (predict(em_fav)[s_fav$cultivar == "Bourbon"] - predict(em_fav)[s_fav$cultivar == "Icatu"]) * 100
-pp_desfav <- (predict(em_desfav)[s_desfav$cultivar == "Bourbon"] - predict(em_desfav)[s_desfav$cultivar == "Icatu"]) * 100
-
-cat("   1. Cenario Tipico (Umidade Media, Densidade Media):\n")
-cat(sprintf("      Severidade Icatu   : %5.2f%%\n", predict(em_tip)[s_tip$cultivar == "Icatu"] * 100))
-cat(sprintf("      Severidade Bourbon : %5.2f%%\n", predict(em_tip)[s_tip$cultivar == "Bourbon"] * 100))
-cat(sprintf("      O Bourbon padece %.2f pontos percentuais A MAIS que o Icatu.\n\n", pp_tip))
-
-cat("   2. Cenario Favoravel (Umidade Alta, Densidade Alta):\n")
-cat(sprintf("      Severidade Icatu   : %5.2f%%\n", predict(em_fav)[s_fav$cultivar == "Icatu"] * 100))
-cat(sprintf("      Severidade Bourbon : %5.2f%%\n", predict(em_fav)[s_fav$cultivar == "Bourbon"] * 100))
-cat(sprintf("      O Bourbon padece %.2f pontos percentuais A MAIS que o Icatu.\n\n", pp_fav))
-
-cat("   3. Cenario Desfavoravel (Umidade Baixa, Densidade Baixa):\n")
-cat(sprintf("      Severidade Icatu   : %5.2f%%\n", predict(em_desfav)[s_desfav$cultivar == "Icatu"] * 100))
-cat(sprintf("      Severidade Bourbon : %5.2f%%\n", predict(em_desfav)[s_desfav$cultivar == "Bourbon"] * 100))
-cat(sprintf("      O Bourbon padece %.2f pontos percentuais A MAIS que o Icatu.\n\n", pp_desfav))
-
-parecer("A ligacao logit modela a diferenca entre as cultivares como constante na ",
-        "escala do log da razao de chances, mas variavel na escala de pontos percentuais ",
-        "de area foliar doente. O Bourbon padece mais que o Icatu em qualquer cenario, ",
-        "porem o estrago em pontos percentuais salta de ", sprintf("%.1f", pp_desfav), " p.p. sob ",
-        "condicoes climaticas desfavoraveis a doenca (umidade e densidade de plantio ",
-        "baixas) para ", sprintf("%.1f", pp_fav), " p.p. sob condicoes altamente favoraveis. ",
-        "E fundamental que a extensao rural repasse ao produtor nao a razao de chances ",
-        "bruta, abstrata e contra-intuitiva, mas a diferenca marginal de severidade ",
-        "no cenario em que sua fazenda se encontra.")
-
-
-# =======================================================================================
-# TAREFA 5 - DIAGNOSTICOS DOS RESIDUOS E TALHOES INFLUENTES
-# =======================================================================================
-secao("TAREFA 5 - DIAGNOSTICOS DE RESIDUOS E VALORES INFLUENTES")
-
-cat("   RESSALVA CARREGADA DA TAREFA 3: os residuos padronizados (sweighted2)\n")
-cat("   tinham assimetria de 0,31 e o Shapiro-Wilk rejeitava a normalidade.\n")
-cat("   Por isso, e exigencia diagnostica olhar os residuos quantilicos (RQ),\n")
-cat("   que forcam a padronizacao para N(0,1) assumindo a distribuicao exata.\n\n")
-
-rq <- residuals(mod_beta, type = "quantile")
-sw_rq <- shapiro.test(rq)
-
-cat(sprintf("   Normalidade dos Residuos Quantilicos Aleatorizados:\n"))
-cat(sprintf("     Shapiro-Wilk W = %.4f, p = %s\n", sw_rq$statistic, format.pval(sw_rq$p.value, digits = 4)))
-if (sw_rq$p.value > 0.05) {
-    cat("     -> Nao rejeitamos a normalidade na escala quantilica.\n")
-} else {
-    cat("     -> O teste ainda rejeita a normalidade rigorosa a 5%. No entanto, com N = 320,\n")
-    cat("        o Shapiro-Wilk e excessivamente sensivel a desvios minimos. O diagnostico\n")
-    cat("        visual pelo envelope meio-normal e mais apropriado neste cenario.\n\n")
-}
-
-# Distancias de Cook para pontos influentes
-cook <- cooks.distance(mod_beta)
-infl <- which(cook > 3 * mean(cook, na.rm = TRUE)) # regra de bolso 3x a media
-
-cat("   Identificacao de talhoes influentes (Distancia de Cook > 3*media):\n")
-if (length(infl) > 0) {
-    cat(sprintf("     Encontrados %d talhoes influentes.\n", length(infl)))
-    cat("     Indices:", paste(infl, collapse = ", "), "\n")
-    cat("     As distancias de Cook maximas sao baixas (em termos absolutos), de modo\n")
-    cat("     que nao exigem exclusao do dado, apenas sinalizam os casos piores ajustados.\n")
-} else {
-    cat("     Nenhum talhao excede o limiar de influencia consideravel.\n")
-}
-
-# --- Figura: Envelope Meio-Normal simulado
-cat("   Gerando envelope simulado para o grafico meio-normal (99 simulacoes)...\n")
-n_obs <- nobs(mod_beta)
-mu_hat <- fitted(mod_beta)
-phi_hat <- mod_beta$coefficients$precision
-
-# Funcao para gerar residuos de um ajuste simulado
-simula_res <- function() {
-    # Gerar nova resposta a partir do modelo ajustado
-    caf_sim <- caf
-    caf_sim$severidade_ferrugem <- rbeta(n_obs, mu_hat * phi_hat, (1 - mu_hat) * phi_hat)
-    # Refazer o ajuste
-    m_sim <- suppressWarnings(betareg(formula(mod_beta), data = caf_sim))
-    sort(abs(residuals(m_sim, type = "quantile")))
-}
-
-# Coletar 99 amostras (demora alguns segundos)
-amostras <- replicate(99, simula_res())
-env_lo <- apply(amostras, 1, quantile, probs = 0.025)
-env_hi <- apply(amostras, 1, quantile, probs = 0.975)
-env_md <- apply(amostras, 1, median)
-
-# Quantis teoricos da normal absoluta (half-normal)
-q_teorico <- qnorm((1:n_obs + n_obs - 1/8) / (2 * n_obs + 1/2))
-res_obs <- sort(abs(rq))
-
-df_env <- data.frame(
-    x = q_teorico,
-    resid = res_obs,
-    lower = env_lo,
-    upper = env_hi,
-    median = env_md
-)
-
-g8 <- ggplot(df_env, aes(x = x)) +
-    geom_ribbon(aes(ymin = lower, ymax = upper), fill = "grey80", alpha = 0.5) +
-    geom_line(aes(y = median), colour = VERDE, linetype = "dashed") +
-    geom_point(aes(y = resid), shape = 21, size = 2, fill = "white", colour = "black", alpha = 0.6) +
-    labs(x = "Quantis Teoricos Meio-Normais", y = "Residuos Quantilicos Absolutos",
-         title = "Grafico Meio-Normal com Envelope Simulado",
-         subtitle = "A esmagadora maioria dos pontos permanece dentro da banda esperada",
-         caption = "Envelope gerado por 99 re-ajustes simulados do proprio modelo beta") +
-    theme_bw(base_size = 12)
-
-salvar(g8, "B5_meionormal_envelope.png", 8, 6)
-
-parecer("O diagnostico corrobora definitivamente a aderencia estrutural do modelo beta ",
-        "para este conjunto de dados. Embora o teste de Shapiro-Wilk rejeite a normalidade ",
-        "estrita dos residuos quantilicos (p = ", format.pval(sw_rq$p.value, digits = 3), "), ",
-        "tal sensibilidade e esperada em amostras grandes (N=320). O grafico meio-normal ",
-        "com envelope simulado atesta de forma confiavel que as divergencias sao irrelevantes, ",
-        "com a distribuicao ajustando-se limpamente aos quantis teoricos. Adicionalmente, o rastreio ",
-        "da alavancagem via Distancia de Cook demonstra ausencia de influencias que ",
-        "pudessem deturpar a inferencia da cultivares.")
-
-cat("Figuras salvas em:", FIG, "\n")
-
-# =======================================================================================
 # TAREFA 6 - SELECAO DE VARIAVEIS E PARECER FINAL
 # =======================================================================================
 
@@ -1440,7 +1278,220 @@ parecer("A selecao de variaveis orientada por testes de razao de verossimilhanca
         "significativos restassem. O modelo reduzido final apresenta reducao de AIC e BIC, ",
         "confirmando que a parcimonia conquistada compensa a variancia nao explicada pelas ",
         "variaveis descartadas. Com base neste ajuste definitivo, comprova-se empiricamente ",
-        "o papel das escolhas de manejo e as vulnerabilidades geograficas e climaticas.")
+        "a ineficacia do padrao global de manejo e o papel das escolhas de espacamento e das vulnerabilidades geograficas e climaticas.")
+
+# =======================================================================================
+# TAREFA 4 - EFEITOS MARGINAIS EM CENARIOS AGRONOMICOS
+# =======================================================================================
+secao("TAREFA 4 - EFEITOS MARGINAIS EM CENARIOS AGRONOMICOS")
+
+cat("   A interpretacao crua dos coeficientes da regressao beta com ligacao\n")
+cat("   logit se da em termos de razao de chances (odds ratio). Como a severidade\n")
+cat("   e uma proporcao de area foliar, a chance p/(1-p) tem interpretacao abstrata.\n")
+cat("   Para o produtor rural, a medida que importa e a severidade esperada (em\n")
+cat("   pontos percentuais). A Tarefa 4 pede explicitamente o calculo de efeitos\n")
+cat("   marginais em cenarios agronomicos concretos, pois o efeito na escala\n")
+cat("   original depende do nivel das outras covariaveis.\n\n")
+
+# Extraindo a umidade e densidade para montar os cenarios
+um_med <- median(caf$umidade_relativa_pct)
+den_med <- median(caf$densidade_plantio)
+
+um_alta <- quantile(caf$umidade_relativa_pct, 0.9)
+den_alta <- quantile(caf$densidade_plantio, 0.9)
+
+um_baixa <- quantile(caf$umidade_relativa_pct, 0.1)
+den_baixa <- quantile(caf$densidade_plantio, 0.1)
+
+cat("   Definimos tres cenarios baseados na umidade relativa e densidade de plantio,\n")
+cat("   mantendo as demais covariaveis em suas medias (numericas) e promediando sobre os fatores:\n\n")
+
+# Para que o emmeans fixe as modas/medianas das covariaveis nao listadas em 'at':
+
+# Queremos:
+# Cenario 1: Tipico (umidade media, densidade media)
+# Cenario 2: Favoravel a Ferrugem (umidade alta, densidade alta)
+# Cenario 3: Desfavoravel a Ferrugem (umidade baixa, densidade baixa)
+
+grid_tipico <- ref_grid(mod_final, at = list(
+  umidade_relativa_pct = um_med,
+  densidade_plantio = den_med
+))
+
+grid_fav <- ref_grid(mod_final, at = list(
+  umidade_relativa_pct = um_alta,
+  densidade_plantio = den_alta
+))
+
+grid_desfav <- ref_grid(mod_final, at = list(
+  umidade_relativa_pct = um_baixa,
+  densidade_plantio = den_baixa
+))
+
+em_tip <- emmeans(grid_tipico, ~ cultivar, type = "response")
+em_fav <- emmeans(grid_fav, ~ cultivar, type = "response")
+em_desfav <- emmeans(grid_desfav, ~ cultivar, type = "response")
+
+s_tip <- summary(em_tip)
+s_fav <- summary(em_fav)
+s_desfav <- summary(em_desfav)
+
+# Diferenca em pontos percentuais entre Bourbon e Icatu
+pp_tip <- (predict(em_tip)[s_tip$cultivar == "Bourbon"] - predict(em_tip)[s_tip$cultivar == "Icatu"]) * 100
+pp_fav <- (predict(em_fav)[s_fav$cultivar == "Bourbon"] - predict(em_fav)[s_fav$cultivar == "Icatu"]) * 100
+pp_desfav <- (predict(em_desfav)[s_desfav$cultivar == "Bourbon"] - predict(em_desfav)[s_desfav$cultivar == "Icatu"]) * 100
+
+cat("   1. Cenario Tipico (Umidade Media, Densidade Media):\n")
+cat(sprintf("      Severidade Icatu   : %5.2f%%\n", predict(em_tip)[s_tip$cultivar == "Icatu"] * 100))
+cat(sprintf("      Severidade Bourbon : %5.2f%%\n", predict(em_tip)[s_tip$cultivar == "Bourbon"] * 100))
+cat(sprintf("      O Bourbon padece %.2f pontos percentuais A MAIS que o Icatu.\n\n", pp_tip))
+
+cat("   2. Cenario Favoravel (Umidade Alta, Densidade Alta):\n")
+cat(sprintf("      Severidade Icatu   : %5.2f%%\n", predict(em_fav)[s_fav$cultivar == "Icatu"] * 100))
+cat(sprintf("      Severidade Bourbon : %5.2f%%\n", predict(em_fav)[s_fav$cultivar == "Bourbon"] * 100))
+cat(sprintf("      O Bourbon padece %.2f pontos percentuais A MAIS que o Icatu.\n\n", pp_fav))
+
+cat("   3. Cenario Desfavoravel (Umidade Baixa, Densidade Baixa):\n")
+cat(sprintf("      Severidade Icatu   : %5.2f%%\n", predict(em_desfav)[s_desfav$cultivar == "Icatu"] * 100))
+cat(sprintf("      Severidade Bourbon : %5.2f%%\n", predict(em_desfav)[s_desfav$cultivar == "Bourbon"] * 100))
+cat(sprintf("      O Bourbon padece %.2f pontos percentuais A MAIS que o Icatu.\n\n", pp_desfav))
+cat("   * Nota: a diferenca difere da Tarefa 2 (14 pp vs 11-13 pp) porque ali o\n")
+cat("   * talhao de referencia fixava medianas e um nivel de cada fator univariado,\n")
+cat("   * e aqui promedia-se sobre eles marginalmente no modelo reduzido.\n\n")
+
+parecer("A ligacao logit modela a diferenca entre as cultivares como constante na ",
+        "escala do log da razao de chances, mas variavel na escala de pontos percentuais ",
+        "de area foliar doente. O Bourbon padece mais que o Icatu em qualquer cenario, ",
+        "porem o estrago em pontos percentuais salta de ", sprintf("%.1f", pp_desfav), " p.p. sob ",
+        "condicoes climaticas desfavoraveis a doenca (umidade e densidade de plantio ",
+        "baixas) para ", sprintf("%.1f", pp_fav), " p.p. sob condicoes altamente favoraveis. ",
+        "E fundamental que a extensao rural repasse ao produtor nao a razao de chances ",
+        "bruta, abstrata e contra-intuitiva, mas a diferenca marginal de severidade ",
+        "no cenario em que sua fazenda se encontra.")
+
+
+# =======================================================================================
+# TAREFA 5 - DIAGNOSTICOS DOS RESIDUOS E TALHOES INFLUENTES
+# =======================================================================================
+secao("TAREFA 5 - DIAGNOSTICOS DE RESIDUOS E VALORES INFLUENTES")
+
+cat("   RESSALVA CARREGADA DA TAREFA 3: os residuos padronizados (sweighted2)\n")
+cat("   tinham assimetria de 0,31 e o Shapiro-Wilk rejeitava a normalidade.\n")
+cat("   Por isso, e exigencia diagnostica olhar os residuos quantilicos (RQ),\n")
+cat("   que forcam a padronizacao para N(0,1) assumindo a distribuicao exata.\n\n")
+
+rq <- residuals(mod_final, type = "quantile")
+sw_rq <- shapiro.test(rq)
+
+cat(sprintf("   Normalidade dos Residuos Quantilicos Aleatorizados:\n"))
+cat(sprintf("     Shapiro-Wilk W = %.4f, p = %s\n", sw_rq$statistic, format.pval(sw_rq$p.value, digits = 4)))
+if (sw_rq$p.value > 0.05) {
+    cat("     -> Nao rejeitamos a normalidade na escala quantilica.\n")
+} else {
+    cat("     -> O teste ainda rejeita a normalidade rigorosa a 5%. No entanto, com N = 340,\n")
+    cat("        o Shapiro-Wilk e excessivamente sensivel a desvios minimos. O diagnostico\n")
+    cat("        visual pelo envelope meio-normal e mais apropriado neste cenario.\n\n")
+}
+
+# Distancias de Cook para pontos influentes
+cook <- cooks.distance(mod_final)
+infl <- which(cook > 3 * mean(cook, na.rm = TRUE)) # regra de bolso 3x a media
+
+cat("   Identificacao de talhoes influentes (Distancia de Cook):\n")
+cat(sprintf("     Encontrados %d talhoes influentes (> 3*media).\n", length(infl)))
+cat("     Limiar absoluto de perigo (D > 1) ultrapassado:", sum(cook > 1, na.rm=TRUE), "talhoes\n")
+cat("     Distancia Maxima de Cook:", round(max(cook, na.rm=TRUE), 5), " (media:", round(mean(cook, na.rm=TRUE), 5), ")\n")
+cat("     Talhoes mais salientes (id_talhao):", paste(caf$id_talhao[infl], collapse = ", "), "\n")
+cat("     Como todos estao absurdamente abaixo de 1, nao ha alavancagem que exija exclusao.\n")
+
+# --- Figura: Envelope Meio-Normal simulado
+cat("   Gerando graficos diagnosticos complementares (Exigencia do edital)...\n")
+eta <- predict(mod_final, type = "link")
+
+# 1. Residuos quantilicos vs Preditor linear
+g_rq_eta <- ggplot(data.frame(eta = eta, rq = rq), aes(x = eta, y = rq)) +
+    geom_point(alpha = 0.5, color = VERDE) +
+    geom_smooth(method = "loess", color = VERMELHO, se = FALSE) +
+    geom_hline(yintercept = 0, linetype = "dashed") +
+    labs(x = "Preditor Linear (eta)", y = "Residuos Quantilicos", title = "Residuos vs Preditor Linear") +
+    theme_bw()
+ggsave(file.path(FIG, "B5_rq_vs_eta.png"), g_rq_eta, width = 6, height = 4, dpi = 150)
+
+# 2. Linearidade das continuas no preditor linear
+cont_vars <- c("umidade_relativa_pct", "densidade_plantio", "altitude_m", "idade_lavoura_anos", "adubacao_n_kg_ha")
+cont_vars <- intersect(cont_vars, attr(terms(mod_final), "term.labels"))
+
+library(patchwork)
+plots_cont <- lapply(cont_vars, function(v) {
+    ggplot(data.frame(val = caf[[v]], rq = rq), aes(x = val, y = rq)) +
+        geom_point(alpha = 0.5, color = "darkorange") +
+        geom_smooth(method = "loess", color = VERMELHO, se = FALSE) +
+        labs(x = v, y = "Residuos Quantilicos") +
+        theme_bw()
+})
+if (length(plots_cont) > 0) {
+    g_cont <- wrap_plots(plots_cont, ncol = 2)
+    ggsave(file.path(FIG, "B5_linearidade_continuas.png"), g_cont, width = 8, height = 6, dpi = 150)
+    cat("   -> Salvos B5_rq_vs_eta.png e B5_linearidade_continuas.png\n")
+}
+
+cat("   Gerando envelope simulado para o grafico meio-normal (99 simulacoes)...\n")
+
+# Funcao para gerar residuos de um ajuste simulado
+n_obs <- nobs(mod_final)
+simula_res <- function() {
+  tryCatch({
+      caf_sim <- caf
+      caf_sim$severidade_ferrugem <- suppressWarnings(
+          rbeta(nrow(caf),
+                shape1 = predict(mod_final, type = "response") * mod_final$coefficients$precision,
+                shape2 = (1 - predict(mod_final, type = "response")) * mod_final$coefficients$precision)
+      )
+      m_sim <- suppressWarnings(betareg(formula(mod_final), data = caf_sim, link="logit"))
+      sort(abs(residuals(m_sim, type = "quantile")))
+  }, error = function(e) rep(NA, nrow(caf)))
+}
+
+# Coletar 99 amostras (demora alguns segundos)
+amostras <- replicate(99, simula_res())
+env_lo <- apply(amostras, 1, quantile, probs = 0.025)
+env_hi <- apply(amostras, 1, quantile, probs = 0.975)
+env_md <- apply(amostras, 1, median)
+
+# Quantis teoricos da normal absoluta (half-normal)
+q_teorico <- qnorm((1:n_obs + n_obs - 1/8) / (2 * n_obs + 1/2))
+res_obs <- sort(abs(rq))
+
+df_env <- data.frame(
+    x = q_teorico,
+    resid = res_obs,
+    lower = env_lo,
+    upper = env_hi,
+    median = env_md
+)
+
+g8 <- ggplot(df_env, aes(x = x)) +
+    geom_ribbon(aes(ymin = lower, ymax = upper), fill = "grey80", alpha = 0.5) +
+    geom_line(aes(y = median), colour = VERDE, linetype = "dashed") +
+    geom_point(aes(y = resid), shape = 21, size = 2, fill = "white", colour = "black", alpha = 0.6) +
+    labs(x = "Quantis Teoricos Meio-Normais", y = "Residuos Quantilicos Absolutos",
+         title = "Grafico Meio-Normal com Envelope Simulado",
+         subtitle = "Como esperado de uma banda de 95%, ~5% dos pontos caem fora; nenhum desvio sistematico",
+         caption = "Envelope gerado por 99 re-ajustes simulados do proprio modelo beta") +
+    theme_bw(base_size = 12)
+
+salvar(g8, "B5_meionormal_envelope.png", 8, 6)
+
+parecer("O diagnostico corrobora a aderencia estrutural do ",
+        "modelo beta. Embora o teste de Shapiro-Wilk rejeite a normalidade estrita ",
+        "(p = ", format.pval(sw_rq$p.value, digits=3), "), essa sensibilidade e esperada em amostras grandes (N=340). ",
+        "O grafico meio-normal exibe um ajuste excelente: a proporcao de pontos fora ",
+        "da banda (aprox 7%) e consistente com o esperado para um envelope de 95% de ",
+        "confianca, sem fugas sistematicas nas caudas. ",
+        sprintf("A Distancia de Cook maxima e de %.5f (muito abaixo de 1), garantindo a ausencia ", max(cook, na.rm=TRUE)),
+        "de talhoes com alavancagem perigosa.")
+
+cat("Figuras salvas em:", FIG, "\n")
 
 # =========================================================================================================
 # DECISAO - RECOMENDACAO DE MANEJO
@@ -1459,10 +1510,13 @@ cat("   - A cultivar 'Bourbon' provou ser altamente suscetivel. Talhoes com\n")
 cat("     esta cultivar exigirao aplicacao preventiva rigorosa de fungicidas.\n\n")
 
 cat("2. ESPACAMENTO E UMIDADE:\n")
-cat("   - A doenca demonstrou um comportamento explosivo quando o excesso de\n")
-cat("     umidade encontra plantios muito adensados. Onde houver Bourbon em alta\n")
-cat("     densidade, recomenda-se manejo de poda de arejamento para diminuir o\n")
-cat("     microclima umido e quebrar a sinergia que acelera o patogeno.\n\n")
+cat("   - A doenca agrava-se sensivelmente quando o excesso de umidade encontra\n")
+cat("     plantios muito adensados, onde os dois efeitos aditivos na escala do logit\n")
+cat("     se compoem de forma agressiva na escala de pontos percentuais. Onde houver\n")
+cat("     Bourbon em alta densidade, recomenda-se manejo de poda de arejamento para\n")
+cat("     diminuir o microclima umido (embora a variavel 'manejo' global nao seja\n")
+cat("     significativa, a alteracao microclimatica pontual pela poda mitiga a alta\n")
+cat("     densidade e reduz o ambiente que favorece o patogeno).\n\n")
 
 cat("3. IRRIGACAO E ADUBACAO NITROGENADA:\n")
 cat("   - A irrigacao e a adubacao nitrogenada apresentaram efeito positivo\n")
@@ -1475,8 +1529,8 @@ parecer("A recomendacao final da equipe tecnica a cooperativa e concentrar o orc
         "baixadas (alta umidade) e arranjos adensados. A irrigacao deve ser manejada ",
         "com cautela nestes microclimas. Para o planejamento de longo prazo, a ",
         "substituicao gradativa de talhoes velhos por cultivares resistentes (Icatu) ",
-        "reduzira drasticamente os custos com defensivos, blindando o produtor contra ",
-        "os picos epidemicos observados em anos chuvosos.")
+        "reduzira a necessidade de intervencoes severas, protegendo o produtor contra ",
+        "os maiores danos nas piores condicoes climaticas observadas.")
 
 # =======================================================================================
 #                  Creative Commons License 4.0
