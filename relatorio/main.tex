@@ -1,0 +1,100 @@
+% =====================================================================
+% RELATORIO - PBL CAFEICULTURA (GRUPO 2)
+% Modelagem Estatistica | PPGCA/UNIVALI | Prof. Dr. Rodrigo Sant'Ana
+%
+% COMPILAR:  Rscript relatorio/build.R
+%            (nao compile este arquivo direto: o build regera numeros.tex antes)
+%
+% ESTRUTURA:
+%   main.tex      este arquivo  - preambulo e montagem. Raramente muda.
+%   conteudo.tex  o texto       - e aqui que voce escreve.
+%   numeros.tex   GERADO        - nao editar, e sobrescrito a cada build.
+%   refs.bib      bibliografia
+%
+% LIMITE: 8 paginas, conforme o enunciado (secao 5).
+% =====================================================================
+\documentclass[12pt,a4paper]{article}
+
+% --- idioma e codificacao ---------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazilian]{babel}
+\usepackage{lmodern}
+
+% --- layout ABNT: margens 3/2/3/2 cm ----------------------------------
+\usepackage[top=3cm,bottom=2cm,left=3cm,right=2cm]{geometry}
+\usepackage{indentfirst}          % ABNT indenta o primeiro paragrafo
+\usepackage{setspace}
+\onehalfspacing                   % entrelinhas 1,5 (ABNT NBR 14724)
+
+% --- matematica, tabelas, figuras -------------------------------------
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[font=small,labelfont=bf]{caption}
+\graphicspath{{figs/}}
+
+% --- citacao ABNT (NBR 6023), sistema autor-data ----------------------
+% Usa biblatex-abnt, nao abntex2cite: o abntex2cite esta sem manutencao e
+% quebra com o kernel LaTeX atual (colisao de \abntnextkey com o expl3).
+% O backend e o biber, que o TinyTeX instala junto.
+\usepackage{csquotes}   % o biblatex recomenda quando ha babel carregado
+\usepackage[backend=biber,style=abnt,repeatfields=false]{biblatex}
+\addbibresource{refs.bib}
+
+% --- links ------------------------------------------------------------
+\usepackage[hidelinks]{hyperref}
+\usepackage{url}
+
+% --- numeros gerados pelos modelos ------------------------------------
+% Um \newcommand por valor, produzido por relatorio/numeros.R.
+% No texto, escreva \bPhi em vez de 20,20. Se o modelo mudar, o texto
+% acompanha sozinho. Ver o README para a lista completa de macros.
+\input{numeros}
+
+% --- marcador de pendencia --------------------------------------------
+% Destaca em vermelho o que ainda falta. Antes da entrega final, procure
+% por \pendente no conteudo.tex e remova as chamadas. Para conferir se
+% sobrou alguma:  grep -c pendente relatorio/conteudo.tex
+\usepackage{xcolor}
+\newcommand{\pendente}[1]{\textcolor{red}{\textbf{[PENDENTE: #1]}}}
+
+% --- atalhos de escrita -----------------------------------------------
+\newcommand{\var}[1]{\texttt{#1}}                  % nome de variavel
+\newcommand{\pkg}[1]{\textsf{#1}}                  % nome de pacote R
+\renewcommand{\arraystretch}{1.15}
+
+% =====================================================================
+\begin{document}
+
+% --- capa simplificada (relatorio de disciplina, nao monografia) ------
+\begin{center}
+    {\large UNIVERSIDADE DO VALE DO ITAJAÍ --- UNIVALI}\\[2pt]
+    {\normalsize Escola Politécnica}\\[2pt]
+    {\normalsize Programa de Pós-Graduação em Computação Aplicada --- PPGCA}\\[2pt]
+    {\normalsize Disciplina: Modelagem Estatística}\\[2pt]
+    {\normalsize Prof. Dr. Rodrigo Sant'Ana}\\[18pt]
+
+    {\Large\bfseries Modelos Lineares Generalizados aplicados\\
+     ao manejo fitossanitário da cafeicultura}\\[6pt]
+    {\large Grupo 2 --- Broca, ferrugem e padrão de exportação}\\[18pt]
+
+    {\normalsize Matheus Piotroski Neis \quad$\cdot$\quad
+                 Letícia Zorzi Rama \quad$\cdot$\quad
+                 André Ribeiro}\\[14pt]
+
+    {\normalsize Itajaí, Santa Catarina --- Setembro de 2026}
+\end{center}
+
+\vspace{6pt}
+\hrule
+\vspace{10pt}
+
+\input{conteudo}
+
+% --- bibliografia -----------------------------------------------------
+\printbibliography[title={Referências}]
+
+\end{document}
