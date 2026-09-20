@@ -171,3 +171,19 @@ cat("\n# Parecer\n")
 cat("O ponto quase nao se move, mas a barra de incerteza passa a cruzar o zero.\n")
 cat("E a assinatura da multicolinearidade: nao erra a estimativa, destroi a\n")
 cat("precisao dela. Por isso e problema de INFERENCIA e nao de predicao.\n")
+
+
+# ---------------------------------------------------------------------------------------
+# APENDICE: COLINEARIDADE EXATA (x3 = x1 + x2)
+# Exigencia da auditoria: ilustrar a falha da inversao matricial
+# ---------------------------------------------------------------------------------------
+cat("\n\n# Demonstracao: Colinearidade Exata (x3 = x1 + x2)\n")
+set.seed(1)
+caf_dummy <- caf
+caf_dummy$x3 <- caf_dummy$umidade_relativa_pct + caf_dummy$densidade_plantio
+
+cat("Ajustando modelo linear com umidade + densidade + (umidade+densidade):\n")
+m_exato <- suppressWarnings(lm(severidade_ferrugem ~ umidade_relativa_pct + densidade_plantio + x3, data = caf_dummy))
+print(coef(m_exato))
+cat("Repare que o R insere 'NA' silenciosamente para x3 porque a matriz de delineamento X'X\n")
+cat("se torna singular (determinante nulo), inviabilizando a inversao matricial.\n")
