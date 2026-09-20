@@ -904,6 +904,16 @@ summary(mod08)
 # Visualizar efeitos
 plot(effects::allEffects(mod08))
 
+# Multicolinearidade entre as covariaveis (requisito comum, secao 4b do enunciado)
+secao("Multicolinearidade do modelo binomial negativa final (VIF)")
+vif_mod08 <- car::vif(mod08)
+print(round(vif_mod08, 3))
+cat("\nMaior VIF:", round(max(vif_mod08), 3),
+    "- limiares de referencia: 5 (atencao) e 10 (grave).\n")
+cat(if (max(vif_mod08) < 5)
+    "Abaixo de 5: nao ha inflacao de variancia que comprometa a estimacao\ndos coeficientes nem a selecao de variaveis.\n"
+    else "ATENCAO: VIF acima do limiar - revisar a selecao de variaveis.\n")
+
 # =======================================================================================
 # DIAGNOSTICO E ANALISE DE RESIDUOS
 # =======================================================================================
