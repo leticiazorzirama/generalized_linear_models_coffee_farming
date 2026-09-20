@@ -1,0 +1,314 @@
+% =====================================================================
+% CONTEUDO DO RELATORIO - e aqui que se escreve
+%
+% REGRA DE OURO: numero no texto vem de macro, nao digitado.
+%   errado:  o parametro de precisao foi 20,20
+%   certo:   o parametro de precisao foi \bPhi
+% Lista completa das macros: Rscript relatorio/numeros.R && cat numeros.tex
+%
+% MARCACOES DE PENDENCIA - buscar por "PENDENTE" antes de entregar:
+%   \pendente{...}  destaca em amarelo no PDF o que ainda falta
+% =====================================================================
+
+\section{Introdução}
+
+A cooperativa precisa decidir onde concentrar o esforço de manejo na próxima safra e
+que recomendações fazer aos cooperados quanto a cultivar, densidade de plantio,
+adubação e irrigação. O conjunto de dados reúne \baseN{} talhões de café descritos por
+\baseVars{} variáveis agronômicas, climáticas e fitossanitárias.
+
+As três perguntas do corpo técnico têm naturezas estatísticas distintas e exigem, cada
+uma, uma família diferente de modelo linear generalizado \cite{nelder1972,mccullagh1989}:
+a infestação pela broca é uma \textbf{contagem} sob esforço amostral variável; a
+severidade da ferrugem é uma \textbf{proporção contínua} sem denominador; e o padrão de
+exportação é uma resposta \textbf{binária}. Tratar as três com a mesma ferramenta seria
+ignorar o que a natureza de cada dado impõe.
+
+Este relatório apresenta os três modelos, o processo de seleção de variáveis, o
+diagnóstico de resíduos e a recomendação de manejo decorrente.
+
+\section{Materiais e métodos}
+
+\subsection{Base de dados}
+
+Os \baseN{} talhões trazem, além das covariáveis agronômicas, três desfechos distintos:
+\var{n\_brocas\_capturadas}, \var{severidade\_ferrugem} e \var{padrao\_exportacao}. Essa
+estrutura exige cuidado: \textbf{cada desfecho é variável resposta em um desafio e
+candidato a preditor nos demais}, e nem toda inclusão é legítima. A questão reaparece
+explicitamente na Seção~\ref{sec:mediacao}.
+
+Há ainda duas variáveis que descrevem o \emph{processo de medição}, não o talhão:
+\var{n\_armadilhas} e \var{dias\_exposicao}. O produto das duas define o esforço
+amostral, que varia de \baseEsforcoMin{} a \baseEsforcoMax{} unidades --- uma amplitude
+de \baseEsforcoRaz{} vezes. Comparar contagens brutas entre talhões seria, portanto,
+comparar coisas diferentes.
+
+\subsection{Procedimentos comuns}
+
+Todos os ajustes foram feitos em R \cite{rcore2026}, com scripts reprodutíveis e semente
+fixada. Três procedimentos são comuns aos três desafios:
+
+\begin{enumerate}
+    \item \textbf{Seleção de variáveis} por teste da razão de verossimilhanças, partindo
+          do modelo amplo, com exclusão prévia das variáveis irrelevantes por construção
+          e verificação de multicolinearidade pelo fator de inflação da variância.
+    \item \textbf{Diagnóstico} por resíduos quantílicos aleatorizados \cite{dunn1996},
+          envelope simulado \cite{atkinson1981}, verificação de dispersão, identificação
+          de pontos influentes e exame da linearidade das covariáveis contínuas na escala
+          do preditor linear.
+    \item \textbf{Interpretação na escala original} do fenômeno --- brocas por unidade de
+          esforço, pontos percentuais de severidade e probabilidade de exportação ---,
+          e não apenas na escala do preditor linear.
+\end{enumerate}
+
+\section{Desafio A --- infestação pela broca}
+\label{sec:desafioA}
+
+\pendente{Seção em consolidação: o modelo final da equipe ainda está sendo revisado.
+Os números abaixo já vêm das macros e se atualizam sozinhos.}
+
+\subsection{O esforço amostral e o \textit{offset}}
+
+A contagem de brocas depende de quantas armadilhas foram instaladas e por quantos dias.
+Um talhão com esforço seis vezes maior tende a capturar mais insetos sem que a
+infestação seja maior. A quantidade de interesse é a \emph{taxa} de captura por unidade
+de esforço, $\mu/E$, e não a contagem:
+
+\begin{equation}
+    \log\!\left(\frac{\mu_i}{E_i}\right) = \mathbf{x}_i'\boldsymbol{\beta}
+    \quad\Longleftrightarrow\quad
+    \log(\mu_i) = \log(E_i) + \mathbf{x}_i'\boldsymbol{\beta},
+    \label{eq:offset}
+\end{equation}
+
+\noindent com $E_i = \var{n\_armadilhas}_i \times \var{dias\_exposicao}_i$. O termo
+$\log(E_i)$ entra com coeficiente fixado em~1 --- é um \textit{offset}, não um preditor,
+e por isso não consome grau de liberdade.
+
+Essa fixação é uma hipótese testável. Deixando o coeficiente livre, obtém-se
+$\hat\gamma = \aGamaEst$, com intervalo de confiança de 95\%
+$[\aGamaIcLo;\ \aGamaIcHi]$, que \aGamaContemUm{} o valor~1.
+
+\pendente{O intervalo não contém 1 sob a especificação apenas com covariáveis numéricas.
+Com os fatores categóricos no modelo, passa a conter. A equipe precisa decidir qual
+especificação reportar e justificar a fixação do \textit{offset} à luz disso --- ou
+assumir explicitamente a proporcionalidade como hipótese de trabalho.}
+
+\subsection{Da Poisson à binomial negativa}
+
+A Poisson impõe $\mathrm{Var}[y] = \mathbb{E}[y]$. A razão entre a estatística de Pearson
+e os graus de liberdade foi \aPearsonRazao{}, muito acima de~1, e o teste de
+\textcite{cameron1990} rejeita a equidispersão ($p = \aDispersaoP$). A variância excede
+a média, e ignorar isso subestima os erros-padrão.
+
+Adotou-se então a binomial negativa \cite{hilbe2011}, que acrescenta um parâmetro de
+forma $\theta$ e admite $\mathrm{Var}[y] = \mu + \mu^2/\theta$. O ajuste resultou em
+$\hat\theta = \aTheta$ (erro-padrão \aThetaSE{}), e a razão de Pearson caiu para
+\aPearsonRazaoNB{} --- compatível com~1. O AIC passou de \aAICpois{} na Poisson para
+\aAIC{} na binomial negativa.
+
+\subsection{Efeitos estimados}
+
+Com ligação logarítmica e \textit{offset}, $\exp(\beta_j)$ lê-se como \textbf{razão de
+taxas} de captura por unidade de esforço. As estimativas do modelo final com \aNpar{}
+parâmetros indicam que a umidade relativa (razão de taxas \aIRRUmidaderelativa{} por
+ponto percentual) e a matéria orgânica do solo (\aIRRMateriaorganica{}) elevam a
+infestação, enquanto a altitude a reduz (\aIRRAltitude{}).
+
+\pendente{Diagnóstico de resíduos e figura do envelope simulado do Desafio A.}
+
+\section{Desafio B --- severidade da ferrugem}
+\label{sec:desafioB}
+
+\subsection{Por que não binomial nem regressão linear}
+
+A severidade foi medida como fração de área foliar comprometida por análise de imagem.
+\textbf{Não existe denominador}: não se contaram folhas lesionadas de um total de $N$.
+Os \baseN{} valores ocupam \bYdistintos{} níveis distintos no intervalo
+$[\bYmin;\ \bYmax]$, sem nenhuma observação exata em 0 ou 1
+(\bYzeros{} e \bYuns{}, respectivamente).
+
+Forçar a família binomial exigiria \emph{inventar} um $n$. Como a variância binomial é
+$\mu(1-\mu)/n$, essa escolha arbitrária propaga-se para toda a inferência: variando o $n$
+inventado entre 20 e 2000, o erro-padrão do coeficiente da cultivar varia cerca de dez
+vezes, sem que dado algum mude. Correções por quase-verossimilhança ou erros-padrão
+robustos eliminam essa dependência, mas ao custo de abandonar a verossimilhança --- e com
+ela o teste de razão de verossimilhanças que a análise de dispersão exige.
+
+A regressão linear, por sua vez, produz predições negativas e supõe variância constante,
+quando a variância de uma proporção é estruturalmente função da média: não há espaço para
+variar perto dos limites do intervalo.
+
+\subsection{Regressão beta}
+
+Adotou-se a regressão beta na parametrização de \textcite{ferrari2004}, implementada
+por \textcite{cribari2010}, em que $\mathbb{E}[y] = \mu$ e
+
+\begin{equation}
+    \mathrm{Var}[y] = \frac{\mu(1-\mu)}{1+\phi},
+    \label{eq:beta}
+\end{equation}
+
+\noindent com $\phi$ interpretado como \emph{precisão}: quanto maior, mais concentrada a
+distribuição em torno de $\mu$. A variância depende da média por construção, e o problema
+estrutural do modelo linear desaparece.
+
+A ligação foi escolhida por critério explícito, e não por ser o padrão do pacote.
+Comparadas as seis ligações disponíveis, \bLigacoesEquiv{} ficam dentro de
+$\Delta$AIC~$< 2$ e os dados não as distinguem; a diferença estimada entre cultivares
+permanece entre \bPPligacaoMin{} e \bPPligacaoMax{} pontos percentuais qualquer que seja
+a escolha. A \texttt{cauchit} foi eliminada por ajuste ($\Delta$AIC \bDaicCauchit{}) e a
+\texttt{log} por garantir apenas o limite inferior do
+intervalo. Entre as restantes, adotou-se a \texttt{logit} por ser a única cujos
+coeficientes exponenciados correspondem a razões de chances.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.92\textwidth]{B1_faixa_das_predicoes.png}
+    \caption{Faixa de predições das três abordagens contra o domínio válido da
+             severidade. O modelo linear invade a região impossível abaixo de zero; a
+             regressão beta não pode sair do intervalo, por construção.}
+    \label{fig:predicoes}
+\end{figure}
+
+\subsection{Dispersão constante}
+
+O enunciado pede que se investigue se $\phi$ é constante. Ajustou-se um modelo com
+preditor também para a precisão e comparou-se por razão de verossimilhanças. Nenhuma
+covariável, isolada ou em conjunto, rejeitou a constância: para a cultivar,
+$\mathrm{LR} = \bLRphi{}$ com $p = \bPphi$.
+
+A sustentação positiva vem do exame direto dos resíduos padronizados: ao longo de cinco
+faixas do valor ajustado, a média varia \bRazaoMu{} vezes e a variância bruta
+\bRazaoVar{} vezes, enquanto o desvio dos resíduos varia apenas \bRazaoSdResid{} vezes,
+sem que os testes de Bartlett ($p = \bBartlettP$) ou de Brown-Forsythe
+($p = \bBrownForsytheP$) acusem heterogeneidade. Adotou-se,
+portanto, $\phi$ constante, estimado em \bPhi{}.
+
+Registre-se o alcance dessa conclusão: o intervalo de confiança das razões de $\phi$
+entre cultivares vai de \bPhiIcLo{} a \bPhiIcHi{}. Descarta-se variação ampla de
+precisão, não qualquer variação.
+
+\subsection{Seleção e efeitos}
+
+A seleção \textit{backward} por razão de verossimilhanças reduziu o modelo de
+\bNparFull{} para \bNpar{} parâmetros, com melhora simultânea de AIC
+(\bAICfull{} $\rightarrow$ \bAIC{}) e BIC (\bBICfull{} $\rightarrow$ \bBIC{}). O modelo
+final alcança pseudo-$R^2$ de \bPseudoR{}.
+
+\begin{table}[H]
+    \centering
+    \caption{Efeito da cultivar sobre a severidade da ferrugem, em razões de chances,
+             tomando a Bourbon como referência.}
+    \label{tab:cultivar}
+    \begin{tabular}{lrrl}
+        \toprule
+        Cultivar & Coeficiente & Razão de chances & IC 95\% \\
+        \midrule
+        Catuaí      & \bCoefCatuai     & \bORCatuai     & [\bORloCatuai;\ \bORhiCatuai] \\
+        Icatu       & \bCoefIcatu      & \bORIcatu      & [\bORloIcatu;\ \bORhiIcatu] \\
+        Mundo Novo  & \bCoefMundoNovo  & \bORMundoNovo  & [\bORloMundoNovo;\ \bORhiMundoNovo] \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Como a ligação \texttt{logit} é não linear, o efeito em pontos percentuais depende do
+nível das demais covariáveis. Num talhão típico --- umidade e densidade nas medianas ---,
+a severidade esperada é \bBourbonPct\% para a Bourbon contra \bIcatuPct\% para a Icatu,
+uma diferença de \bDifPP{} pontos percentuais. Sob condições favoráveis à doença essa
+diferença sobe a \bPPfavoravel{} pontos; sob condições desfavoráveis, cai a
+\bPPdesfavoravel{}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{B5_meionormal_envelope.png}
+    \caption{Gráfico meio-normal com envelope simulado por 99 reajustes do próprio
+             modelo. A proporção de pontos fora da banda é compatível com o esperado
+             para um envelope de 95\%, sem fugas sistemáticas nas caudas.}
+    \label{fig:envelope}
+\end{figure}
+
+\section{Desafio C --- padrão de exportação}
+\label{sec:desafioC}
+
+\pendente{Seção preliminar. O modelo logístico final ainda não foi ajustado; ver o plano
+de implementação. Os números abaixo são descritivos e de mediação, já extraídos da base.}
+
+\subsection{A resposta}
+
+Dos \baseN{} talhões, \cExporta{} atingem o padrão de exportação e \cNaoExporta{} não,
+o que corresponde a uma prevalência de \cPrevalencia\%. A resposta é, portanto,
+\textbf{balanceada} --- fato que importa para a Seção~\ref{sec:corte}, porque desloca a
+discussão do ponto de corte do desbalanceamento para o custo assimétrico dos erros.
+
+A classe minoritária com \cExporta{} casos admite, pela regra de dez eventos por
+variável \cite{peduzzi1996}, cerca de \cEPV{} parâmetros. O modelo amplo com a severidade
+excede esse limite, o que torna a seleção de variáveis uma necessidade, e não uma
+preferência estética.
+
+\subsection{Efeito total e efeito direto da cultivar}
+\label{sec:mediacao}
+
+A \var{severidade\_ferrugem} é ela própria um desfecho, influenciada pela cultivar.
+Incluí-la como preditor da exportação muda o que o coeficiente da cultivar significa
+\cite{pearl2009,vanderweele2016}.
+
+Os dados revelam uma configuração instrutiva: a cultivar Icatu apresenta \emph{a menor}
+severidade média e, simultaneamente, \emph{a menor} taxa de exportação. Os dois caminhos
+causais operam em direções opostas.
+
+\begin{table}[H]
+    \centering
+    \caption{Coeficientes da cultivar na predição da exportação, com e sem a severidade
+             no modelo. Referência: Bourbon.}
+    \label{tab:mediacao}
+    \begin{tabular}{lrr}
+        \toprule
+        Cultivar & Efeito total & Efeito direto \\
+                 & (sem severidade) & (com severidade) \\
+        \midrule
+        Catuaí     & \cTotalCatuai     & \cDiretoCatuai \\
+        Icatu      & \cTotalIcatu      & \cDiretoIcatu \\
+        Mundo Novo & \cTotalMundoNovo  & \cDiretoMundoNovo \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+No modelo que inclui a severidade, o coeficiente desta é \cSevCoef{} ($p = \cSevP$): a
+ferrugem de fato reduz a chance de exportação. A Icatu adoece menos, o que a beneficia
+por esse caminho; mas seu coeficiente direto é \cDiretoIcatu{}, contra \cTotalIcatu{} no
+efeito total. A penalidade direta é parcialmente compensada pelo ganho via menor doença.
+
+\textbf{Qual deles responde à pergunta do produtor?} O produtor escolhe a cultivar
+\emph{antes do plantio} e herda os dois caminhos --- o direto e o mediado pela ferrugem.
+O \textbf{efeito total} é, portanto, o que responde à sua pergunta. O efeito direto
+responde a outra, também legítima: quanto restaria da cultivar se a ferrugem fosse
+controlada por outro meio.
+
+Cabe a ressalva: a leitura causal dessa decomposição pressupõe ausência de confundidor
+não medido entre ferrugem e exportação --- hipótese que \textbf{não é testável} com estes
+dados.
+
+\subsection{Capacidade preditiva e ponto de corte}
+\label{sec:corte}
+
+\pendente{Matriz de confusão, curva ROC, AUC com intervalo de DeLong \cite{delong1988},
+validação cruzada com seleção dentro do \textit{fold}, calibração e escolha do ponto de
+corte por custo assimétrico.}
+
+\section{Decisão e recomendação de manejo}
+
+\pendente{Consolidar após o fechamento dos Desafios A e C. A recomendação deve quantificar
+os efeitos na escala original: brocas por unidade de esforço, pontos percentuais de
+severidade e probabilidade de exportação.}
+
+A escolha da cultivar é o fator de maior impacto sobre a ferrugem: \bDifPP{} pontos
+percentuais de severidade separam a Bourbon da Icatu num talhão típico. Essa vantagem,
+contudo, não se traduz automaticamente em exportação --- a Seção~\ref{sec:mediacao}
+mostra que a Icatu carrega uma penalidade direta que compensa parte do ganho
+fitossanitário. A recomendação de cultivar, portanto, não pode ser derivada apenas do
+Desafio B.
+
+\section{Considerações finais}
+
+\pendente{Redigir ao final.}

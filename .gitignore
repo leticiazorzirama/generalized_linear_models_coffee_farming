@@ -49,3 +49,20 @@ po/*~
 rsconnect/
 Rplots.pdf
 *.Rproj
+
+# LaTeX - intermediarios do relatorio
+relatorio/*.aux
+relatorio/*.bbl
+relatorio/*.blg
+relatorio/*.log
+relatorio/*.out
+relatorio/*.toc
+relatorio/*.fls
+relatorio/*.fdb_latexmk
+relatorio/*.synctex.gz
+
+# figs/ e copia de challenge_*/figuras - o build.R regenera
+relatorio/figs/
+
+relatorio/*.bcf
+relatorio/*.run.xml
