@@ -535,6 +535,7 @@ plot(mod04) # (TO DO: verificar se podem diagnosticar glms?)
 # Verifica se os valores extremos influenciam no modelo 
 
 # Envelope simulado dos residuos do modelo poisson final
+set.seed(20260922)   # envelope simulado: semente para o script ser reproduzivel
 res01 <- hnp(mod04, plot.sim = FALSE)
 
 # Transformar em dataframe
@@ -922,6 +923,7 @@ secao("DIAGNÓSTICO DOS RESÍDUOS")
 plot(mod08) 
 
 # Envelope simulado dos residuos do modelo poisson final
+set.seed(20260922)   # envelope simulado: semente para o script ser reproduzivel
 res05 <- hnp(mod08, plot.sim = FALSE)
 
 # Transformar em dataframe
