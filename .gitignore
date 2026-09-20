@@ -66,3 +66,4 @@ relatorio/figs/
 
 relatorio/*.bcf
 relatorio/*.run.xml
+**/.DS_Store
