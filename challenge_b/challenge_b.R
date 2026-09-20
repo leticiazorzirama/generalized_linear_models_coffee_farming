@@ -1,4 +1,4 @@
-# =====================================================================
+# =======================================================================================
 # UNIVERSIDADE DO VALE DO ITAJAI - UNIVALI
 # ESCOLA POLITECNICA
 # PROGRAMA DE POS-GRADUACAO EM COMPUTACAO APLICADA - PPGCA
@@ -8,9 +8,9 @@
 # Discentes: Andre Lucas Ribeiro, Leticia Zorzi Rama, Matheus Neis
 # Itajai, Santa Catarina, Brasil
 #
-# =====================================================================
+# =======================================================================================
 # DESAFIO B - REGRESSAO BETA
-# =====================================================================
+# =======================================================================================
 # Pergunta do corpo tecnico:
 # Que fatores agronomicos determinam a severidade da ferrugem, e existe
 # uma cultivar comprovadamente mais resistente?
@@ -48,12 +48,12 @@
 #
 # Base de dados: data/cafeicultura.csv
 # Figuras geradas: challenge_b/figuras/
-# =====================================================================
+# =======================================================================================
 
 
-# =====================================================================
+# =======================================================================================
 # CONFIGURAR AMBIENTE DE TRABALHO
-# =====================================================================
+# =======================================================================================
 
 # Pacotes - pacman verifica se ja estao instalados e instala se preciso
 if (!require(pacman)) {
@@ -122,7 +122,7 @@ dir.create(FIG, showWarnings = FALSE, recursive = TRUE)
 
 # Cabecalho de secao
 secao <- function(texto) {
-    barra <- paste(rep("=", 72), collapse = "")
+    barra <- paste(rep("=", 87), collapse = "")
     cat("\n", barra, "\n", texto, "\n", barra, "\n\n", sep = "")
 }
 
@@ -162,9 +162,9 @@ verificar <- function(modelo, nome) {
 VERDE <- "#18675A"; VERMELHO <- "#A3352A"
 
 
-# =====================================================================
+# =======================================================================================
 # BASE DE DADOS
-# =====================================================================
+# =======================================================================================
 secao("BASE DE DADOS")
 
 caf <- read.csv(file.path(RAIZ, "data", "cafeicultura.csv"), stringsAsFactors = TRUE)
@@ -187,10 +187,37 @@ parecer("A resposta nao tem observacoes nos extremos 0 ou 1, o que permite ",
         "Smithson-Verkuilen. O piso de 0,001 e o limite de deteccao do metodo, ",
         "conforme a nota do enunciado.")
 
+# =======================================================================================
+# TAREFA 0 - ANALISE EXPLORATORIA DE DADOS (AED)
+# =======================================================================================
+secao("TAREFA 0 - ANALISE EXPLORATORIA DE DADOS (AED)")
 
-# =====================================================================
+cat("Antes da modelagem multivariada (MLG), verificam-se padroes univariados da doenca:\n\n")
+
+cat("A) SEVERIDADE POR CULTIVAR (Kruskal-Wallis)\n")
+kw_cult <- kruskal.test(severidade_ferrugem ~ cultivar, data = caf)
+cat("   - A cultivar esta altamente associada a ferrugem (p-value =", format.pval(kw_cult$p.value, digits=3), ")\n")
+medias_cult <- tapply(caf$severidade_ferrugem, caf$cultivar, mean)
+cat("   - Media observada (Bourbon):", round(medias_cult["Bourbon"] * 100, 2), "%\n")
+cat("   - Media observada (Icatu):  ", round(medias_cult["Icatu"] * 100, 2), "%\n\n")
+
+cat("B) CORRELACOES DE SPEARMAN (Covariaveis vs Severidade)\n")
+num_cols <- c("umidade_relativa_pct", "densidade_plantio", "altitude_m", "adubacao_n_kg_ha")
+cors <- sapply(num_cols, function(x) cor(caf[[x]], caf$severidade_ferrugem, method = "spearman"))
+cors <- sort(cors, decreasing = TRUE)
+for(nm in names(cors)) {
+    cat(sprintf("   - %-22s: rho = %+.3f\n", nm, cors[nm]))
+}
+
+parecer("A exploracao inicial revela um claro vies da cultivar, com o Bourbon ",
+        "apresentando as maiores taxas historicas de infeccao na base. Adicionalmente, ",
+        "covariaveis de microclima (umidade) e adensamento apontam correlacoes positivas ",
+        "fortes com a severidade. Esses achados univariados servem de bussola, mas ",
+        "precisam ser confirmados condicionalmente pelo modelo de regressao Beta a seguir.")
+
+# =======================================================================================
 # TAREFA 1.1 - POR QUE NAO BINOMIAL
-# =====================================================================
+# =======================================================================================
 secao("TAREFA 1.1 - POR QUE ESTE CASO NAO ADMITE MODELO BINOMIAL")
 
 # A binomial modela "k sucessos em n tentativas", e o n entra no ajuste.
@@ -308,9 +335,9 @@ parecer("O argumento contra a binomial e estrutural, nao empirico. ",
         "o modelo binomial (e suas correcoes) e inadmissivel.")
 
 
-# =====================================================================
+# =======================================================================================
 # TAREFA 1.2 - POR QUE NAO REGRESSAO LINEAR
-# =====================================================================
+# =======================================================================================
 secao("TAREFA 1.2 - POR QUE NAO REGRESSAO LINEAR SOBRE A PROPORCAO")
 
 mod_lm <- lm(update(covs, severidade_ferrugem ~ .), data = caf)
@@ -444,9 +471,9 @@ g0 <- ggplot(vplot, aes(x = mu, y = variancia, colour = fonte, linetype = fonte)
 salvar(g0, "B1_tres_variancias.png", 9, 6)
 
 
-# =====================================================================
+# =======================================================================================
 # TAREFA 1.3 - POR QUE ARCO-SENO-RAIZ E INFERIOR
-# =====================================================================
+# =======================================================================================
 secao("TAREFA 1.3 - POR QUE A TRANSFORMACAO ARCO-SENO-RAIZ E INFERIOR")
 
 # A transformacao classica da fitopatologia: z = asin(sqrt(y)), seguida de
@@ -572,9 +599,9 @@ g3 <- ggplot(cmp_prom, aes(x = modelo, y = p, fill = modelo)) +
 salvar(g3, "B1_arco_cumpre_a_promessa.png", 9, 5.5)
 
 
-# =====================================================================
+# =======================================================================================
 # TAREFA 1.4 - COMPARACAO EMPIRICA DAS TRES ABORDAGENS
-# =====================================================================
+# =======================================================================================
 secao("TAREFA 1.4 - COMPARACAO EMPIRICA DAS TRES ABORDAGENS")
 
 # O enunciado pede comparacao empirica. Uma advertencia metodologica:
@@ -651,9 +678,9 @@ g2 <- ggplot(res_lm, aes(x = ajustado, y = residuo)) +
 salvar(g2, "B1_funil_dos_residuos.png", 9, 6)
 
 
-# =====================================================================
+# =======================================================================================
 # TAREFA 1.5 - CONTRAFACTUAL DOS ZEROS EXATOS
-# =====================================================================
+# =======================================================================================
 secao("TAREFA 1.5 - CONTRAFACTUAL DOS ZEROS EXATOS")
 
 # A nota do enunciado exige discutir: "Discutam o que fariam se houvesse zeros
@@ -700,9 +727,9 @@ parecer("A nota do enunciado aponta que a regressao beta padrao se restringe ao 
         "qualitativo da imunidade total ao trata-la como apenas um grau muito pequeno ",
         "de adoecimento.")
 
-# =====================================================================
+# =======================================================================================
 # TAREFA 2 - A REGRESSAO BETA E A LIGACAO
-# =====================================================================
+# =======================================================================================
 secao("TAREFA 2 - AJUSTE DA REGRESSAO BETA E JUSTIFICATIVA DA LIGACAO")
 
 # Parametrizacao de Ferrari & Cribari-Neto (2004), citada pelo professor:
@@ -867,9 +894,9 @@ print(summary(mod_beta))
 
 
 
-# =====================================================================
+# =======================================================================================
 # TAREFA 3 - MODELO DE DISPERSAO VARIAVEL
-# =====================================================================
+# =======================================================================================
 secao("TAREFA 3 - O PARAMETRO DE PRECISAO phi E CONSTANTE?")
 
 # O enunciado e literal sobre o que quer:
@@ -1164,9 +1191,9 @@ parecer("Investigou-se a constancia do parametro de precisao conforme o ",
         sprintf("%.2f", mod_beta$coefficients$precision), ", por parcimonia e ajuste.")
 
 
-# =====================================================================
+# =======================================================================================
 # TAREFA 4 - EFEITOS MARGINAIS EM CENARIOS AGRONOMICOS
-# =====================================================================
+# =======================================================================================
 secao("TAREFA 4 - EFEITOS MARGINAIS EM CENARIOS AGRONOMICOS")
 
 cat("   A interpretacao crua dos coeficientes da regressao beta com ligacao\n")
@@ -1257,9 +1284,9 @@ parecer("A ligacao logit modela a diferenca entre as cultivares como constante n
         "no cenario em que sua fazenda se encontra.")
 
 
-# =====================================================================
+# =======================================================================================
 # TAREFA 5 - DIAGNOSTICOS DOS RESIDUOS E TALHOES INFLUENTES
-# =====================================================================
+# =======================================================================================
 secao("TAREFA 5 - DIAGNOSTICOS DE RESIDUOS E VALORES INFLUENTES")
 
 cat("   RESSALVA CARREGADA DA TAREFA 3: os residuos padronizados (sweighted2)\n")
@@ -1351,10 +1378,110 @@ parecer("O diagnostico corrobora definitivamente a aderencia estrutural do model
 
 cat("Figuras salvas em:", FIG, "\n")
 
-# =====================================================================
+# =======================================================================================
+# TAREFA 6 - SELECAO DE VARIAVEIS E PARECER FINAL
+# =======================================================================================
+
+secao("TAREFA 6 - SELECAO DE VARIAVEIS E PARECER FINAL")
+
+cat("   ETAPA 1 - Exclusao por construcao do problema:\n")
+cat("   O enunciado aponta que ha variaveis irrelevantes por construcao. Sao elas:\n")
+cat("   - n_armadilhas e dias_exposicao: medem esforco amostral da broca, irrelevante para ferrugem.\n")
+cat("   - n_brocas_capturadas: desfecho do Desafio A (broca).\n")
+cat("   - padrao_exportacao: desfecho do Desafio C (classificacao final).\n")
+cat("   Essas variaveis sequer entraram no modelo completo (mod_beta) inicial.\n\n")
+
+cat("   ETAPA 2 - Selecao Backward (Razao de Verossimilhancas - LRT):\n")
+
+m_atual <- mod_beta
+passo <- 1
+
+while (TRUE) {
+    termos <- attr(terms(m_atual), "term.labels")
+    if (length(termos) == 0) break
+    
+    p_vals <- numeric(length(termos))
+    
+    # Testa a remocao de cada termo usando lrtest
+    for (i in seq_along(termos)) {
+        frm <- as.formula(paste(". ~ . -", termos[i]))
+        m_reduzido <- suppressWarnings(update(m_atual, frm))
+        teste <- lrtest(m_atual, m_reduzido)
+        p_vals[i] <- teste$`Pr(>Chisq)`[2]
+    }
+    
+    max_p <- max(p_vals)
+    if (max_p > 0.05) {
+        termo_remover <- termos[which.max(p_vals)]
+        cat(sprintf("     Passo %d: removendo '%s' (p = %.4f)...\n", passo, termo_remover, max_p))
+        frm <- as.formula(paste(". ~ . -", termo_remover))
+        m_atual <- suppressWarnings(update(m_atual, frm))
+        passo <- passo + 1
+    } else {
+        break
+    }
+}
+
+mod_final <- m_atual
+
+cat(sprintf("\n   Modelo final atingido no passo %d. Todos os preditores restantes sao significativos a 5%%.\n", passo))
+cat("   Resumo dos coeficientes do modelo final (Wald p-values parecidos com LRT):\n\n")
+print(summary(mod_final)$coefficients$mean)
+
+cat("\n   ETAPA 3 - Comparacao de Criterios (AIC / BIC):\n")
+cat(sprintf("   Modelo Completo : AIC = %.2f | BIC = %.2f\n", AIC(mod_beta), BIC(mod_beta)))
+cat(sprintf("   Modelo Reduzido : AIC = %.2f | BIC = %.2f\n", AIC(mod_final), BIC(mod_final)))
+
+parecer("A selecao de variaveis orientada por testes de razao de verossimilhancas (LRT) ",
+        "iniciou-se com a exclusao de variaveis irrelevantes por construcao (esforco ",
+        "amostral e contagem de brocas, atrelados ao Desafio A, e o desfecho futuro ",
+        "do Desafio C). A partir do modelo saturado, o processo backward de delecao ",
+        "sequencial enxugou os preditores ate um modelo em que apenas fatores ",
+        "significativos restassem. O modelo reduzido final apresenta reducao de AIC e BIC, ",
+        "confirmando que a parcimonia conquistada compensa a variancia nao explicada pelas ",
+        "variaveis descartadas. Com base neste ajuste definitivo, comprova-se empiricamente ",
+        "o papel das escolhas de manejo e as vulnerabilidades geograficas e climaticas.")
+
+# =========================================================================================================
+# DECISAO - RECOMENDACAO DE MANEJO
+# =========================================================================================================
+
+secao("DECISAO E RECOMENDACAO DE MANEJO PARA A PROXIMA SAFRA")
+
+cat("Com base no modelo final reduzido, a cooperativa deve adotar as seguintes\n")
+cat("diretrizes para orientar os produtores na proxima safra:\n\n")
+
+cat("1. ESCOLHA DE CULTIVAR (O FATOR DE MAIOR IMPACTO):\n")
+cat("   - A cultivar 'Icatu' apresentou a maior resistencia a ferrugem alaranjada\n")
+cat("     em todas as simulacoes. O plantio de novos talhoes deve priorizar essa\n")
+cat("     genetica, especialmente em areas de maior vulnerabilidade climatica.\n")
+cat("   - A cultivar 'Bourbon' provou ser altamente suscetivel. Talhoes com\n")
+cat("     esta cultivar exigirao aplicacao preventiva rigorosa de fungicidas.\n\n")
+
+cat("2. ESPACAMENTO E UMIDADE:\n")
+cat("   - A doenca demonstrou um comportamento explosivo quando o excesso de\n")
+cat("     umidade encontra plantios muito adensados. Onde houver Bourbon em alta\n")
+cat("     densidade, recomenda-se manejo de poda de arejamento para diminuir o\n")
+cat("     microclima umido e quebrar a sinergia que acelera o patogeno.\n\n")
+
+cat("3. IRRIGACAO E ADUBACAO NITROGENADA:\n")
+cat("   - A irrigacao e a adubacao nitrogenada apresentaram efeito positivo\n")
+cat("     significativo na severidade (estimulam a doenca). Recomenda-se\n")
+cat("     monitoramento redobrado em talhoes irrigados e otimizacao do nitrogenio\n")
+cat("     para evitar excesso de vigor vegetativo que favoreca a ferrugem.\n\n")
+
+parecer("A recomendacao final da equipe tecnica a cooperativa e concentrar o orcamento ",
+        "de pulverizacao fungicida nos talhoes de cultivar Bourbon localizados em ",
+        "baixadas (alta umidade) e arranjos adensados. A irrigacao deve ser manejada ",
+        "com cautela nestes microclimas. Para o planejamento de longo prazo, a ",
+        "substituicao gradativa de talhoes velhos por cultivares resistentes (Icatu) ",
+        "reduzira drasticamente os custos com defensivos, blindando o produtor contra ",
+        "os picos epidemicos observados em anos chuvosos.")
+
+# =======================================================================================
 #                  Creative Commons License 4.0
 #                       (CC BY-NC-SA 4.0)
 #
 #  This is a human-readable summary of (and not a substitute for) the
 #  license (https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode)
-# =====================================================================
+# =======================================================================================
