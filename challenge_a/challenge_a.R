@@ -845,22 +845,22 @@ logLik_mod08 <- as.numeric(logLik(mod08))
 dev_mod07 <- 2 * logLik_mod07   # equivalente a "2 x log-lik." do mod07 no anova()
 dev_mod08 <- 2 * logLik_mod08   # equivalente a "2 x log-lik." do mod08 no anova()
 
-LR_stat <- dev_mod08 - dev_mod07
-df_LR    <- length(coef(mod08)) - length(coef(mod07))
-p_valor  <- pchisq(LR_stat, df = df_LR, lower.tail = FALSE)
+LR_stat_mod07_mod08 <- dev_mod08 - dev_mod07
+df_LR_mod07_mod08 <- length(coef(mod08)) - length(coef(mod07))
+p_valor_mod07_mod08 <- pchisq(LR_stat_mod07_mod08, df = df_LR_mod07_mod08, lower.tail = FALSE)
 
 cat("\n2 x log-lik. mod07 (nulo):   ", round(dev_mod07, 3),
     "\n2 x log-lik. mod08 (completo):", round(dev_mod08, 3),
-    "\nLR stat. (diferenca):         ", round(LR_stat, 4),
-    "\ngraus de liberdade:           ", df_LR,
-    "\np-valor:                      ", format.pval(p_valor, digits = 4, eps = .Machine$double.eps))
+    "\nLR stat. (diferenca):         ", round(LR_stat_mod07_mod08, 4),
+    "\ngraus de liberdade:           ", df_LR_mod07_mod08,
+    "\np-valor:                      ", format.pval(p_valor_mod07_mod08, digits = 4, eps = .Machine$double.eps))
 
 # Parecer
 cat("\nO teste de razão de verossimilhanças entre o modelo nulo (mod07) e o modelo completo (mod08),
-    ambos COM esforço amostral passado como OFFSET, resultou em 2 x log-lik. = -2067,525 para o modelo
-    nulo e -1933,985 para o modelo completo, cuja diferença fornece LR stat. = 133,54 (9 g.l.), com
-    p-valor < 0,001 (essencialmente 0, confirmado pelo cálculo manual acima). Portanto, rejeita-se a
-    hipótese nula de que os coeficientes das covariáveis agronômicas e ambientais são simultaneamente
+    ambos COM esforço amostral passado como OFFSET, resultou em 2 x log-lik. =", dev_mod07,
+    "para o modelo nulo e", dev_mod08, "para o modelo completo, cuja diferença fornece LR stat. =", 
+    LR_stat_mod07_mod08 ,"(9 g.l.), com p-valor <", p_valor_mod07_mod08, "(essencialmente 0, confirmado pelo cálculo manual acima). 
+    Portanto, rejeita-se a hipótese nula de que os coeficientes das covariáveis agronômicas e ambientais são simultaneamente
     iguais a zero, ou seja, o modelo completo apresenta redução altamente significativa da deviância em
     relação ao modelo nulo. O conjunto de covariáveis incluídas contribui de forma significativa para
     explicar a variação no número de brocas capturadas, e o modelo completo (mod08) deve ser preferido
@@ -937,31 +937,30 @@ secao("Teste de verossimilhança entre os modelos binomial negativa nulo e com m
 anova(mod07, mod09, test = "Chisq")
 
 # Calculo manual das deviances (2 x log-lik) e do LR stat, para conferencia do teste acima
-logLik_mod07 <- as.numeric(logLik(mod07))
 logLik_mod09 <- as.numeric(logLik(mod09))
 
-dev_mod07 <- 2 * logLik_mod07   # equivalente a "2 x log-lik." do mod07 no anova()
 dev_mod09 <- 2 * logLik_mod09   # equivalente a "2 x log-lik." do mod09 no anova()
 
-LR_stat_09 <- dev_mod09 - dev_mod07
-df_LR_09   <- length(coef(mod09)) - length(coef(mod07))
-p_valor_09 <- pchisq(LR_stat_09, df = df_LR_09, lower.tail = FALSE)
+LR_stat_mod07_mod09 <- dev_mod09 - dev_mod07
+df_LR_mod07_mod09 <- length(coef(mod09)) - length(coef(mod07))
+p_valor_mod07_mod09 <- pchisq(LR_stat_mod07_mod09, df = df_LR_mod07_mod09, lower.tail = FALSE)
 
 cat("\n2 x log-lik. mod07 (nulo):        ", round(dev_mod07, 3),
     "\n2 x log-lik. mod09 (minimo AICc):  ", round(dev_mod09, 3),
-    "\nLR stat. (diferenca):              ", round(LR_stat_09, 4),
-    "\ngraus de liberdade:                ", df_LR_09,
-    "\np-valor:                           ", format.pval(p_valor_09, digits = 4, eps = .Machine$double.eps))
+    "\nLR stat. (diferenca):              ", round(LR_stat_mod07_mod09, 4),
+    "\ngraus de liberdade:                ", df_LR_mod07_mod09,
+    "\np-valor:                           ", format.pval(p_valor_mod07_mod09, digits = 4, eps = .Machine$double.eps))
 
 # Parecer
 cat("\nO teste de razão de verossimilhanças entre o modelo nulo (mod07) e o modelo com mínimo AICc (mod09),
-    ambos COM esforço amostral passado como OFFSET, resultou em 2 x log-lik. = -2067,525 para o modelo
-    nulo e -1933,985 para o modelo mod09, cuja diferença fornece LR stat. = 133,54 (9 g.l.), com
-    p-valor < 0,001 (essencialmente 0). Portanto, rejeita-se a hipótese nula de que os coeficientes das
-    covariáveis selecionadas por mínimo AICc são simultaneamente iguais a zero, ou seja, o modelo mod09
-    apresenta redução altamente significativa da deviância em relação ao modelo nulo, devendo ser
-    preferido a este. Note-se que os valores de deviância e de LR stat. de mod09 coincidem com os de
-    mod08 (mesmo conjunto de 9 covariáveis), diferindo apenas na estimativa inicial de theta fornecida.")
+    ambos COM esforço amostral passado como OFFSET, resultou em 2 x log-lik. =", dev_mod07,
+    "para o modelo nulo e", dev_mod09, "para o modelo mod09, cuja diferença fornece LR stat. =", 
+    LR_stat_mod07_mod09 ,"(9 g.l.), com p-valor <", p_valor_mod07_mod09, "(essencialmente 0, confirmado pelo cálculo manual acima). 
+    Portanto, rejeita-se a hipótese nula de que os coeficientes das covariáveis selecionadas por mínimo
+    AICc são simultaneamente iguais a zero, ou seja, o modelo mod09 apresenta redução altamente
+    significativa da deviância em relação ao modelo nulo, devendo ser preferido a este. Note-se que os
+    valores de deviância e de LR stat. de mod09 coincidem com os de mod08 (mesmo conjunto de 9
+    covariáveis), diferindo apenas na estimativa inicial de theta fornecida.")
 
 # Analise da deviancia das covariaveis do modelo binomial negativa com minimo AICc 
 secao("Analise da deviância das covariáveis do modelo binomial negativa com minimo AICc")
@@ -1022,30 +1021,30 @@ anova(mod07, mod10, test = "Chisq")
 
 # Calculo manual das deviances (2 x log-lik) e do LR stat, para conferencia do teste acima
 logLik_mod10 <- as.numeric(logLik(mod10))
-
 dev_mod10 <- 2 * logLik_mod10   # equivalente a "2 x log-lik." do mod10 no anova()
 
-LR_stat_10 <- dev_mod10 - dev_mod07
-df_LR_10   <- length(coef(mod10)) - length(coef(mod07))
-p_valor_10 <- pchisq(LR_stat_10, df = df_LR_10, lower.tail = FALSE)
+LR_stat_mod07_mod10 <- dev_mod10 - dev_mod07
+df_LR_mod07_mod10 <- length(coef(mod10)) - length(coef(mod07))
+p_valor_mod07_mod10 <- pchisq(LR_stat_mod07_mod10, df = df_LR_mod07_mod10, lower.tail = FALSE)
 
 cat("\n2 x log-lik. mod07 (nulo): ", round(dev_mod07, 3),
     "\n2 x log-lik. mod10 (final): ", round(dev_mod10, 3),
-    "\nLR stat. (diferenca):       ", round(LR_stat_10, 4),
-    "\ngraus de liberdade:         ", df_LR_10,
-    "\np-valor:                    ", format.pval(p_valor_10, digits = 4, eps = .Machine$double.eps))
+    "\nLR stat. (diferenca):       ", round(LR_stat_mod07_mod10, 4),
+    "\ngraus de liberdade:         ", df_LR_mod07_mod10,
+    "\np-valor:                    ", format.pval(p_valor_mod07_mod10, digits = 4, eps = .Machine$double.eps))
 
 # Parecer
 cat("\nO teste de razão de verossimilhanças entre o modelo nulo (mod07) e o modelo final (mod10),
-    ambos COM esforço amostral passado como OFFSET, resultou em 2 x log-lik. = -2067,525 para o modelo
-    nulo e -1934,132 para o modelo mod10, cuja diferença fornece LR stat. = 133,39 (6 g.l.), com
-    p-valor < 0,001 (essencialmente 0). Portanto, rejeita-se a hipótese nula de que os coeficientes das
-    seis covariáveis do modelo final são simultaneamente iguais a zero, ou seja, o modelo mod10
-    apresenta redução altamente significativa da deviância em relação ao modelo nulo, devendo ser
-    preferido a este. Vale notar que, com apenas 6 covariáveis (3 a menos que mod09), mod10 obteve um
-    LR stat. praticamente idêntico (133,39 vs. 133,54), indicando que a remoção de declividade, ph do
-    solo e precipitação não comprometeu de forma relevante a capacidade explicativa do modelo, o que é
-    consistente com a escolha de mod10 como modelo mais parcimonioso.")
+    ambos COM esforço amostral passado como OFFSET, resultou em 2 x log-lik. =", dev_mod07,
+    "para o modelo nulo e", dev_mod10, "para o modelo mod10, cuja diferença fornece LR stat. =", 
+    LR_stat_mod07_mod10 ,"(6 g.l.), com p-valor <", p_valor_mod07_mod10, "(essencialmente 0, confirmado pelo cálculo manual acima). 
+    Portanto, rejeita-se a hipótese nula de que os coeficientes das seis covariáveis do modelo final são
+    simultaneamente iguais a zero, ou seja, o modelo mod10 apresenta redução altamente significativa da
+    deviância em relação ao modelo nulo, devendo ser preferido a este. Vale notar que, com apenas 6
+    covariáveis (3 a menos que mod09), mod10 obteve um LR stat. praticamente idêntico ao de mod09,
+    indicando que a remoção de declividade, ph do solo e precipitação não comprometeu de forma relevante
+    a capacidade explicativa do modelo, o que é consistente com a escolha de mod10 como modelo mais
+    parcimonioso.")
 
 # Analise da deviancia das covariaveis do modelo binomial negativa final 
 secao("Analise da deviância das covariáveis do modelo binomial negativa final")
