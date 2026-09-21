@@ -311,7 +311,7 @@ anova(mod00, mod01, test = "Chisq")
 residuos_mod01 <- ((deviance(mod00) - deviance(mod01)) / deviance(mod00)) * 100
 
 # Parecer
-cat("\nEm comparação ao modelo nulo, o modelo completo SEM esforço amostral reduziu a deviância nula em ",
+cat("\nEm comparação ao modelo nulo (mod00), o modelo completo SEM esforço amostral (mod01) reduziu a deviância nula em ",
     residuos_mod01, "%, indicando que o modelo explicou esse percentual da deviância nula")
 
 # Analise da deviancia das covariaveis do modelo completo SEM esforco amostral
@@ -393,7 +393,7 @@ anova(mod02, mod03, test = "Chisq")
 residuos_mod03 <- ((deviance(mod02) - deviance(mod03)) / deviance(mod02)) * 100
 
 # Parecer
-cat("\nEm comparação ao modelo nulo, o modelo completo COM esforço amostral passado como OFFSET reduziu 
+cat("\nEm comparação ao modelo nulo (mod02), o modelo completo COM esforço amostral passado como OFFSET (mod03) reduziu 
     a deviância nula em ", residuos_mod03, "%, indicando que o modelo explicou esse percentual da deviância nula. 
     A redução da deviância entre os modelos nulo e completo SEM offset de esforço amostral foi de", residuos_mod01, "%. 
     Portanto, a incorporação do offset no mecanismo do modelo linear generalizado resultou em uma diferença de", 
@@ -446,7 +446,7 @@ summary(mod04)
 
 # Parecer da comparacao do esforco amostral enquanto offset e enquanto preditor livre
 cat("Ao observar o coeficiente estimado para o log do esforço amostral passado como preditor livre, observa-se que o coeficiente de é muito de 1. 
-    Isso sugere ajustar um modelo com o coeficiente fixado em 1. Dessa forma, modelamos a taxa de captura de brocas mantendo, ao mesmo tempo, 
+    Isso sugere ajustar um modelo com o coeficiente fixado em 1. Dessa forma, modelou-se a taxa de captura de brocas mantendo, ao mesmo tempo, 
     a contagem como variável resposta para o modelo de Poisson. 
     Segundo Faraway (2006), esse tipo de abordagem é conhecido como modelo de taxa. Fixa-se o coeficiente em 1 utilizando um termo de offset. 
     Tal termo, presente no lado do preditor da equação do modelo, não possui parâmetro associado.")
@@ -588,9 +588,9 @@ summary(mod06)
 plot(effects::allEffects(mod06))
 
 # Parecer
-cat("\nEm comparação ao modelo nulo, o modelo completo COM esforço amostral passado como OFFSET, com o AICc mínimo e com variaveis
-    de efeitos significativo selecionadas, reduziu a deviância nula em ", residuos_mod06, "%, indicando que o modelo explicou esse 
-    percentual da deviância nula. O modelo de AICc mínimo antes do teste de efeito significativo das variáveis reduziu a deviância em",
+cat("\nEm comparação ao modelo nulo (mod02), o modelo completo COM esforço amostral passado como OFFSET, com o AICc mínimo e com variáveis
+    de efeitos significativo selecionadas (mod06), reduziu a deviância nula em ", residuos_mod06, "%, indicando que o modelo explicou esse 
+    percentual da deviância nula. O modelo de AICc mínimo antes do teste de efeito significativo das variáveis (mod05) reduziu a deviância em",
     residuos_mod05,". Apesar de uma redução maior, o modelo final com as variáveis sem efeito significativo removidas, resultou em um AICc 
     ligeiramente menor (2261.2) quando comparado aquele em que as mesmas foram mantidas (2263.1).")
 
@@ -637,8 +637,8 @@ p <- 6
 n <- nrow(caf)
 alavanca <- 2 * p / n
 
-cat("Para um ponto de alavancagem de", alavanca, "não há valores atípicos nos
-    coeficientes das variáveis preditoras.")
+cat("Para um ponto de alavancagem de", alavanca, "contata-se valores atípicos nos
+    coeficientes das variáveis preditoras, sobretudo para as observações 148 e 214.")
 
 # Checar o quanto os valores atípicos influenciam no modelo 
 # A distancia de Cook combina magnitude residual e alavancagem para medir a influencia global
@@ -654,7 +654,7 @@ halfnorm(cooks.distance(mod06))
 # sobre os parametros do modelo poisson.
 
 # Parecer
-cat("A observação 321 apresentou uma distância de cook muito acima do restante da curva, indicando uma influencia
+cat("A observação 321 apresentou uma distância de Cook muito acima do restante da curva, indicando uma influência
     global no modelo.")
 
 # =======================================================================================
@@ -726,7 +726,7 @@ qui_pois <- with(caf2,
                      (n_brocas_capt_freq_pois * sum(count))))
 pchisq(q = qui_pois, df = nrow(caf2) - 1, lower.tail = FALSE)
 
-# TO DO Parecer
+# Parecer
 cat("As inspeções visuais também mostram uma desencaixe entre os valores observados e esperados para um 
     modelo poisson.")
 
@@ -754,7 +754,7 @@ summary(mod06, dispersion = mod06_dis_pear)
 # dp < 1 = subdispersao
 ?dispersiontest
 
-# TO DO Parecer
+# Parecer
 cat("Os testes formais de equidispersão evidenciam a superdispersão nos dados.
     O teste formal de dispersão indicou um nível de significância superior a zero
     e a variância sendo uma função quadrática. Neste caso, recomenda-se a binomial negativa.")
@@ -794,7 +794,7 @@ qui_pois <- with(caf2,
                      (n_brocas_capt_freq_pois * sum(count))))
 pchisq(q = qui_pois, df = nrow(caf2) - 1, lower.tail = FALSE)
 
-# TO DO Parecer
+# Parecer
 cat("As inspeções visuais mostram um melhor encaixe entre os valores observados e esperados para um 
     modelo binomial negativa, bem como uma diminuição dos resíduos.")
 
@@ -870,7 +870,7 @@ cat("\nO teste de razão de verossimilhanças entre o modelo nulo (mod07) e o mo
 secao("Analise da deviância das covariáveis do modelo completo COM medida de esforço amostral")
 anova(mod08, test = "Chisq")
 
-# TO DO Parecer
+# Parecer
 cat("\nPara o modelo completo COM esforço amostral passado como OFFSET, em termos de redução de resíduos, 
     as variáveis com redução significativa foram todas, exceto declividade, idade da lavoura e ph solo.")
 
@@ -1072,6 +1072,11 @@ summary(mod10)
 # Visualizar efeitos
 plot(effects::allEffects(mod10))
 
+# Parecer
+cat("\nEm comparação ao modelo completo (mod09), o modelo com o AICc mínimo e com variáveis de efeitos significativo selecionadas (mod10), 
+    apresentou uma ligeira diferença na verossimilhança. O mod10 resultou em um AICc ligeiramente menor (1950) quando comparado com o 
+    modelo 09 cujas variáveis sem efeito significativo foram mantidas (1956).")
+
 # =======================================================================================
 # DIAGNOSTICO E ANALISE DE RESIDUOS
 # =======================================================================================
@@ -1092,14 +1097,14 @@ p <- 6
 n <- nrow(caf)
 alavanca <- 2 * p / n
 
-cat("Para um ponto de alavancagem de", alavanca, "não há valores atípicos nos
-    coeficientes das variáveis preditoras.")
+cat("Para um ponto de alavancagem de", alavanca, "contata-se valores atípicos nos
+    coeficientes das variáveis preditoras, com maior atenção às observações 85 e 148.")
 
 # Distancia de cook 
 halfnorm(cooks.distance(mod10)) 
 
 # Parecer
-cat("As observações 84 e 272 apresentaram uma distância de cook muito acima do restante da curva, 
+cat("As observações 84 e 272 apresentaram uma distância de Cook muito acima do restante da curva, 
     indicando uma influência global no modelo.")
 
 # ============================================================
