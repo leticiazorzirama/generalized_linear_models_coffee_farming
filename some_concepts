@@ -1,0 +1,11 @@
+Conceitos retirados de Faraway (2006):
+
+Deviance: 
+The term deviance is a general measure of fit
+The deviance measures how well the model fits in an absolute sense, but it does not tell us how well the model fits in a relative sense.
+
+Null and residual deviance:
+Residual deviance is the deviance for the current model while the Null deviance is the deviance for a model with no predictors and just an intercept term.
+
+Degrees of freedom:
+The degrees of freedom for a linear model is the number of cases minus the number of coefficients.

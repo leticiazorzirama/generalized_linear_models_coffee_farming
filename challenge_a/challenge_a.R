@@ -85,7 +85,7 @@ if(!require(pacman)) {
 # Demais pacotes
 p_load(ggplot2, dplyr, MuMIn, ggplot, ggcorrplot, patchwork, readxl, AER,
        DataExplorer, ggpubr, scatterplot3d, effects, car, hnp, statmod,
-       datasets, DCluster, stargazer, olsrr, performance, report)
+       datasets, DCluster, stargazer, olsrr, performance, report, faraway)
 
 # Opcoes gerais
 options(scipen = 10)
@@ -218,10 +218,13 @@ cat("\nA associação moderada e positiva do número de brocas capturadas com a 
 # =======================================================================================
 # MODELOS LINEARES GENERALIZADOS - POISSON
 # Modelos:
-# - nulo
-# - completo SEM medida de esforco amostral
-# - completo COM medida de esforco amostral como OFFSET 
-# - completo COM medida de esforco amostral como preditor livre
+# - mod00: nulo
+# - mod01: completo SEM medida de esforco amostral
+# - mod02: modelo nulo COM medida de esforco amostral como OFFSET
+# - mod03: completo COM medida de esforco amostral como OFFSET 
+# - mdo04: completo COM log da medida de esforco amostral como preditor livre
+# - mod05: modelo com minimo AICc
+# - mod06: modelo final
 # =======================================================================================
 secao("MODELOS LINEARES GENERALIZADOS - POISSON")
 
@@ -229,7 +232,7 @@ secao("MODELOS LINEARES GENERALIZADOS - POISSON")
 # Poisson para modelar variaveis discretas
 
 # --------------------------------------
-# Modelo nulo
+# mod00: modelo poisson nulo
 # --------------------------------------
 # Para este primeiro caso e para fins de aprendizagem, 
 # o significado de cada argumento sera comentado conforme constante em ?glm
@@ -262,7 +265,7 @@ mod00$coefficients
 log(mean(caf1$n_brocas_capturadas))
 
 # --------------------------------------
-# Modelo completo
+# mod01: modelo poisson completo
 # sem esforco amostral
 # --------------------------------------
 secao("Modelo completo SEM medida de esforço amostral")
@@ -281,23 +284,42 @@ mod01 <- glm(
   na.action = "na.fail"
 )
 
-
 # Teste de verossimilhanca entre os modelos nulo e completo SEM esforco amostral
 secao("Teste de verossimilhança entre os modelos nulo e completo SEM medida de esforço amostral")
+
+# Calcular o teste qui-quadrado passo a passo 
+# Obter o log da verossimilhanca de cada modelo
+ll_null <- logLik(mod00)
+ll_full <- logLik(mod01)
+
+# Obter o dobro da diferenca
+chi_sq_stat <- as.numeric(2 * (ll_full - ll_null))
+
+# Obter a diferenca dos graus de liberdade
+df_diff <- attr(ll_full, "df") - attr(ll_null, "df")
+
+# Calcular o p-valor
+p_value <- pchisq(chi_sq_stat, df = df_diff, lower.tail = FALSE)
+
+# Imprimir os resultados
+cat("Chi-Square Stat:", chi_sq_stat, "\nDF:", df_diff, "\np-value:", p_value, "\n")
+
+# Verificar que os mesmos resultados sao retornados com anova utilizando o teste qui-quadrado
 anova(mod00, mod01, test = "Chisq")
+
+# Reducao percentual da deviancia nula
 residuos_mod01 <- ((deviance(mod00) - deviance(mod01)) / deviance(mod00)) * 100
-#?anova
 
 # Parecer
-cat("\nEm comparação ao modelo nulo, o modelo completo SEM esforço amostral reduziu os resíduos em ",
-    residuos_mod01, "%.")
+cat("\nEm comparação ao modelo nulo, o modelo completo SEM esforço amostral reduziu a deviância nula em ",
+    residuos_mod01, "%, indicando que o modelo explicou esse percentual da deviância nula")
 
 # Analise da deviancia das covariaveis do modelo completo SEM esforco amostral
 secao("Analise da deviância das covariáveis do modelo completo SEM medida de esforço amostral")
 anova(mod01, test = "Chisq")
 
 # Parecer 
-cat("\nPara o modelo completo SEM esforço amostral, em termos de redução de resíduos, as variáveis com 
+cat("\nPara o modelo completo SEM esforço amostral, em termos de redução de resíduos de deviância nula, as variáveis com 
     redução significativa foram todas, exceto pH solo.")
 
 # Tabela de estimacao dos parametros do modelo completo SEM esforco amostral
@@ -309,8 +331,7 @@ cat("\nPara o modelo completo SEM esforço amostral, em termos de efeito, as var
     significativo foram quase todas, exceto declividade, pH solo e precipitação.")
 
 # --------------------------------------
-# Construcao
-# do esforco amostral
+# Construcao do esforco amostral
 # --------------------------------------
 
 # Relembrando o problema
@@ -331,12 +352,24 @@ caf <- caf %>%
 caf1$esforco_amostral <- caf$esforco_amostral
 
 # --------------------------------------
-# Modelo completo
-# com esforco amostral
-# passado como offset
+# mod02: modelo nulo com esforco
+# amostral passado como offset
+# --------------------------------------
+secao("Modelo nulo COM medida de esforço amostral passada como OFFSET")
+mod02 <- glm(
+  n_brocas_capturadas ~ 1, 
+  family = poisson(link = "log"),
+  data = caf1,
+  na.action = "na.fail",
+  offset = log(esforco_amostral)
+)
+
+# --------------------------------------
+# mod03: modelo completo com esforco 
+# amostral passado como offset
 # --------------------------------------
 secao("Modelo completo COM medida de esforço amostral passada como OFFSET")
-mod02 <- glm(
+mod03 <- glm(
   n_brocas_capturadas ~ adubacao_n_kg_ha
     + altitude_m
     + declividade_pct
@@ -353,39 +386,41 @@ mod02 <- glm(
 )
 
 # Teste de verossimilhanca entre os modelos nulo e completo COM esforco amostral passado como OFFSET
-secao("Teste de verossimilhança entre os modelos nulo e completo COM medida de esforço amostral passado como OFFSET")
-anova(mod00, mod02, test = "Chisq")
-residuos_mod02 <- ((deviance(mod00) - deviance(mod02)) / deviance(mod00)) * 100
+secao("Teste de verossimilhança entre os modelos nulo e completo COM medida de esforço amostral passada como OFFSET")
+anova(mod02, mod03, test = "Chisq")
+
+# Reducao percentual da deviancia nula
+residuos_mod03 <- ((deviance(mod02) - deviance(mod03)) / deviance(mod02)) * 100
 
 # Parecer
 cat("\nEm comparação ao modelo nulo, o modelo completo COM esforço amostral passado como OFFSET reduziu 
-    os resíduos em ", residuos_mod02, "%. A redução de resíduos no modelo completo sem medida de esforço 
-    amostral foi de", residuos_mod01, "%. Portanto, a incorporação do offset no mecanismo do modelo
-    linear generalizado resultou em uma diferença de", residuos_mod02 - residuos_mod01, "%.")
+    a deviância nula em ", residuos_mod03, "%, indicando que o modelo explicou esse percentual da deviância nula. 
+    A redução da deviância entre os modelos nulo e completo SEM offset de esforço amostral foi de", residuos_mod01, "%. 
+    Portanto, a incorporação do offset no mecanismo do modelo linear generalizado resultou em uma diferença de", 
+    residuos_mod03 - residuos_mod01, "% na redução da deviância nula e no ganho de explicação da mesma.")
 
 # Analise da deviancia das covariaveis do modelo completo COM esforco amostral passado como OFFSET
 secao("Analise da deviância das covariáveis do modelo completo COM medida de esforço amostral")
-anova(mod02, test = "Chisq")
+anova(mod03, test = "Chisq")
 
 # Parecer 
-cat("\nPara o modelo completo COM esforço amostral passado como OFFSET, em termos de redução de resíduos, 
+cat("\nPara o modelo completo COM esforço amostral passado como OFFSET, em termos de redução de resíduos de deviância nula, 
     as variáveis com redução significativa foram todas, exceto declividade e ph solo.")
 
 # Tabela de estimacao dos parametros do modelo completo COM esforco amostral passado como OFFSET
 secao("Estimação dos parâmetros do modelo completo COM medida de esforço amostral passada como OFFSET")
-summary(mod02)
+summary(mod03)
 
 # Parecer 
 cat("\nPara o modelo completo COM esforço amostral passado como OFFSET, em termos de efeito, as variáveis com 
     efeito significativo foram todas, exceto declividade, ph solo e precipitação.")
 
 # --------------------------------------
-# Modelo completo
-# com esforco amostral
-# passado como preditor livre
+# mod04: modelo completo com log do esforco 
+# amostral passado como preditor livre
 # --------------------------------------
 secao("Modelo completo COM medida de esforço amostral passada como PREDITOR LIVRE")
-mod03 <- glm(
+mod04 <- glm(
   n_brocas_capturadas ~ adubacao_n_kg_ha
     + altitude_m
     + declividade_pct
@@ -395,31 +430,26 @@ mod03 <- glm(
     + ph_solo
     + precipitacao_safra_mm
     + umidade_relativa_pct
-    + esforco_amostral, 
+    + log(esforco_amostral), # log
   family = poisson(link = "log"),
   data = caf1,
   na.action = "na.fail"
 )
 
 # Teste de verossimilhanca entre os modelos nulo e completo COM esforco amostral passado como PREDITOR LIVRE
-secao("Teste de verossimilhança entre os modelos nulo e completo COM medida de esforço amostral passado como PREDITOR LIVRE")
-anova(mod00, mod03, test = "Chisq")
-residuos_mod03 <- ((deviance(mod00) - deviance(mod03)) / deviance(mod00)) * 100
-
-# # Teste de verossimilhanca entre os modelos completo COM esforco amostral passado como PREDITOR LIVRE e como OFFSET
-# secao("Teste de verossimilhança entre os modelos completos COM esforco amostral passado como PREDITOR LIVRE e como OFFSET")
-# anova(mod02, mod03, test = "Chisq")
-# residuos2_mod03 <- ((deviance(mod02) - deviance(mod03)) / deviance(mod02)) * 100
-
-# Parecer
-cat("\nO modelo completo COM esforço amostral passado como PREDITOR LIVRE aumentou os resíduos em ", residuos_mod02-residuos_mod03, "%.")
+secao("Teste de verossimilhança entre os modelos nulo e completo COM medida de esforço amostral passada como PREDITOR LIVRE")
+anova(mod02, mod04, test = "Chisq")
 
 # Tabela de estimacao dos parametros do modelo completo COM esforco amostral passado como PREDITOR LIVRE
 secao("Estimação dos parâmetros do modelo completo COM medida de esforço amostral passada como PREDITOR LIVRE")
-summary(mod03)
+summary(mod04)
 
-# TO DO Parecer (comparacao do offset e do preditor livre)
-cat("")
+# Parecer da comparacao do esforco amostral enquanto offset e enquanto preditor livre
+cat("Ao observar o coeficiente estimado para o log do esforço amostral passado como preditor livre, observa-se que o coeficiente de é muito de 1. 
+    Isso sugere ajustar um modelo com o coeficiente fixado em 1. Dessa forma, modelamos a taxa de captura de brocas mantendo, ao mesmo tempo, 
+    a contagem como variável resposta para o modelo de Poisson. 
+    Segundo Faraway (2006), esse tipo de abordagem é conhecido como modelo de taxa. Fixa-se o coeficiente em 1 utilizando um termo de offset. 
+    Tal termo, presente no lado do preditor da equação do modelo, não possui parâmetro associado.")
 
 # =======================================================================================
 # MODELOS LINEARES GENERALIZADOS - POISSON
@@ -428,7 +458,7 @@ cat("")
 secao("MODELOS LINEARES GENERALIZADOS - POISSON - Exaurindo as combinações entre as variáveis preditoras")
 
 # Ajustar diferentes modelos de forma iterativa
-tab01 <- dredge(mod02, extra = "R^2")
+tab01 <- dredge(mod03, extra = "R^2")
 
 # Quantidade de modelos ajustados
 dim(tab01)
@@ -450,10 +480,10 @@ cat("\nConforme o AICc, o modelo que melhor se ajusta aos dados possui as seguin
 )
 
 # --------------------------------------
-# Modelo poisson final
+# mod05: modelo poisson com minimo AICc
 # --------------------------------------
-secao("Modelo poisson final")
-mod04 <- glm(
+secao("Modelo poisson com minimo AICc")
+mod05 <- glm(
   n_brocas_capturadas ~ adubacao_n_kg_ha 
     + altitude_m 
     + declividade_pct 
@@ -469,22 +499,25 @@ mod04 <- glm(
   offset = log(esforco_amostral)
 )
 
-# OBS.: modelo poisson final (mod04) identifica-se com o modelo completo com medida de esforco amostral como offset (mod02)
+# OBS.: modelo poisson com minimo AICc (mod05) identifica-se com o modelo completo com medida de esforco amostral como offset (mod03)
 
-# Teste de Verossimilhança entre os modelos nulo e modelo poisson final
-secao("Teste de verossimilhança entre os modelos poisson nulo e final")
-anova(mod00, mod04, test = "Chisq")
-residuos_mod04 <- ((deviance(mod00) - deviance(mod04)) / deviance(mod00)) * 100
+# Teste de Verossimilhanca entre os modelos nulo e poisson com minimo AICc
+secao("Teste de verossimilhança entre os modelos poisson nulo e com minimo AICc")
+anova(mod02, mod05, test = "Chisq")
+
+# Reducao percentual da deviancia nula
+residuos_mod05 <- ((deviance(mod02) - deviance(mod05)) / deviance(mod02)) * 100
 
 # Parecer
-cat("\nEm comparação ao modelo nulo, o modelo poisson final reduziu os resíduos em ", residuos_mod04, "%.")
+cat("\nEm comparação ao modelo nulo, o modelo completo COM esforço amostral passado como OFFSET, com o AICc mínimo, reduziu 
+    a deviância nula em ", residuos_mod05, "%, indicando que o modelo explicou esse percentual da deviância nula.")
 
-# Analise da deviancia das covariaveis do modelo poisson final 
-secao("Analise da deviância das covariáveis do modelo poisson final")
-anova(mod04, test = "Chisq")
+# Analise da deviancia das covariaveis do modelo poisson com minimo AICc 
+secao("Analise da deviância das covariáveis do modelo poisson com minimo AICc")
+anova(mod05, test = "Chisq")
 
 # Parecer 
-cat("\nPara o modelo poisson final, em termos de redução de resíduos, as variáveis com redução significativa foram:
+cat("\nPara o modelo poisson com minimo AICc, em termos de redução de resíduos de deviância nula, as variáveis com redução significativa foram:
     - adubação, 
     - altitude,
     - densidade de plantio,
@@ -494,88 +527,135 @@ cat("\nPara o modelo poisson final, em termos de redução de resíduos, as vari
     - umidade."
   )
 
-# Faixa de coeficientes possiveis para os parametros do modelo poisson final
-secao("Faixa de coeficientes possíveis para os parâmetros do modelo poisson final")
-confint(mod04)
+# Faixa de coeficientes possiveis para os parametros do modelo poisson com minimo AICc
+secao("Faixa de coeficientes possíveis para os parâmetros do modelo poisson com minimo AICc")
+confint(mod05)
 
 # Tabela de estimacao dos parametros
-secao("Estimação dos parâmetros do modelo poisson final")
-summary(mod04)
+secao("Estimação dos parâmetros do modelo poisson com minimo AICc")
+summary(mod05)
 
 # Visualizar efeitos
-plot(effects::allEffects(mod04))
+plot(effects::allEffects(mod05))
 
 # Parecer 
-cat("\nPara o modelo poisson final, em termos de efeito, as variáveis com efeito significativo foram:
+cat("\nPara o modelo poisson com minimo AICc, em termos de efeito, as variáveis com efeito significativo foram:
   - adubação, 
   - altitude, 
   - densidade de plantio, 
   - idade da lavoura, 
   - matéria orgânica, e 
-  - umidade.")
+  - umidade.
+  Um modelo final será ajustado apenas com essas variáveis a fim de se observar se há um ajuste ainda melhor.")
+
+# --------------------------------------
+# mod06: modelo poisson final
+# --------------------------------------
+secao("Modelo poisson final")
+mod06 <- glm(
+  n_brocas_capturadas ~ adubacao_n_kg_ha 
+    + altitude_m 
+    + densidade_plantio 
+    + idade_lavoura_anos 
+    + materia_organica_pct 
+    + umidade_relativa_pct, 
+  family = poisson(link = "log"), 
+  data = caf1, 
+  na.action = "na.fail", 
+  offset = log(esforco_amostral)
+)
+
+# Teste de Verossimilhanca entre os modelos nulo e poisson final
+secao("Teste de verossimilhança entre os modelos poisson nulo e final")
+anova(mod02, mod06, test = "Chisq")
+
+# Reducao percentual da deviancia nula
+residuos_mod06 <- ((deviance(mod02) - deviance(mod06)) / deviance(mod02)) * 100
+
+# Analise da deviancia das covariaveis do modelo poisson final 
+secao("Analise da deviância das covariáveis do modelo poisson finalc")
+anova(mod06, test = "Chisq")
+
+# Faixa de coeficientes possiveis para os parametros do modelo poisson final
+secao("Faixa de coeficientes possíveis para os parâmetros do modelo poisson final")
+confint(mod06)
+
+# Tabela de estimacao dos parametros
+secao("Estimação dos parâmetros do modelo poisson final")
+summary(mod06)
+
+# Visualizar efeitos
+plot(effects::allEffects(mod06))
+
+# Parecer
+cat("\nEm comparação ao modelo nulo, o modelo completo COM esforço amostral passado como OFFSET, com o AICc mínimo e com variaveis
+    de efeitos significativo selecionadas, reduziu a deviância nula em ", residuos_mod06, "%, indicando que o modelo explicou esse 
+    percentual da deviância nula. O modelo de AICc mínimo antes do teste de efeito significativo das variáveis reduziu a deviância em",
+    residuos_mod05,". Apesar de uma redução maior, o modelo final com as variáveis sem efeito significativo removidas, resultou em um AICc 
+    ligeiramente menor (2261.2) quando comparado aquele em que as mesmas foram mantidas (2263.1).")
 
 # =======================================================================================
 # DIAGNOSTICO E ANALISE DE RESIDUOS
 # =======================================================================================
 secao("DIAGNÓSTICO DOS RESÍDUOS")
 
-plot(mod04) # (TO DO: verificar se podem diagnosticar glms?)
-# Interpretacao:
-# Residuals vs. Fitted: detecta se ha falta de ajuste e se a variancia e constante
-# se os residuos mostram tendencia curvilinea, sinal de que pode haver relacoes nao-lineares
+# Detectar valores atipicos
+# Faraway (2006) recomenda detectar valores atipicos com distribuicao meia-normal
+# porque a resolucao do plot e dobrada ao ter todos os pontos em uma cauda
 
-# Scale-Location: mostra se os residuos estao distribuidos igualmente para verificar
-# se ha homocedasticidade (igual variancia) demonstrado por uma linha horizontal com pontos
-# distribuidos de forma igual e aleatoria
+# Checar valores atipicos na variavel resposta
+# Rstudent
+halfnorm(rstudent(mod06))
+# Como interpretar
+# Os pontos devem se alinhar de forma proxima a uma trajetoria retilinea
+# Por se tratar de um modelo de Poisson, pequenas variacoes sao comuns, mas a 
+# estrutura geral deve ser uniforme
+# Quaisquer pontos isolados no canto superior direito que se afastem da tendencia
+# linear e apresentem um salto acentuado para cima sao valores atipicos
+# Geralmente, residuos estudentizados com valores absolutos superiores a 2 ou 3 
+# justificam uma inspecao cuidadosa, pois representam contagens que o modelo de Poisson 
+# nao conseguiu prever com precisao
 
-# Q-Q plot
-# Compara os residuos com observacoes ideais e mostra a distribuicao dos mesmos
+# Parecer
+cat("Presença de valores atípicos para a variável resposta, principalmente as observações
+    321 e 287.")
 
-# Residuals vs. Leverage
-# Verifica se os valores extremos influenciam no modelo 
+# Checar valores atipicos nos coeficientes das variaveis preditoras
+# Leverage
+halfnorm(influence(mod06)$hat) 
+# Como interpretar
+# A maioria dos pontos deve estar agrupada na parte inferior esquerda, 
+# representando configuracoes de dados padrao 
+# Pontos na parte superior direita que estejam separados do restante do conjunto 
+# por um intervalo visual perceptivel são pontos de alta alavancagem 
+# Uma regra pratica geral para o limite de alta alavancagem e 2p/n 
+# p = numero de parametros estimados 
+# n = tamanho da amostra
+# Se um ponto se desviar visualmente da linha de meia-normal e exceder esse valor, 
+# seus valores preditores sao extremos
+p <- 6
+n <- nrow(caf)
+alavanca <- 2 * p / n
 
-# Envelope simulado dos residuos do modelo poisson final
-res01 <- hnp(mod04, plot.sim = FALSE)
+cat("Para um ponto de alavancagem de", alavanca, "não há valores atípicos nos
+    coeficientes das variáveis preditoras.")
 
-# Transformar em dataframe
-res01 <- data.frame(x = res01$x, median = res01$median,
-                    lower = res01$lower, upper = res01$upper,
-                    residuals = res01$residuals)
+# Checar o quanto os valores atípicos influenciam no modelo 
+# A distancia de Cook combina magnitude residual e alavancagem para medir a influencia global
+# Ela quantifica o quanto as estimativas dos coeficientes do modelo mudariam se aquela observacao
+# especifica fosse completamente alterada
+# Distancia de cook 
+halfnorm(cooks.distance(mod06)) 
+# Como analisar
+# Pontos individuais no canto superior direito que se destaquem muito acima de todas as outras observacoes
+# Se um ponto apresentar valores elevados tanto de alavancagem quanto de residuo, sua distancia de Cook ira disparar
+# Em um grafico de meia-normal, observar a distancia relativa em vez de limites absolutos fixos (como 1,0)
+# Se um ou dois pontos estiverem situados muito acima do restante da curva, eles estarao exercendo uma influencia significativa 
+# sobre os parametros do modelo poisson.
 
-# Grafico do envelope simulado dos residuos
-p00 <- ggplot(data = res01) +
-    geom_ribbon(aes(x = x, ymin = lower, ymax = upper), alpha = 0.8) +
-    geom_line(aes(x = x, y = median), colour = "white") +
-    geom_point(aes(x = x, y = residuals), pch = 21, fill = "white",
-               colour = "black", size = 5, alpha = 0.5) +
-    labs(x = "Quantis teóricos", y = "Resíduos") +
-    theme_gray(base_size = 18)
-p00
-
-# Exportar os residuos do modelo
-res02 <- fortify(mod04)
-res02$ID <- 1:nrow(res02)
-
-# Grafico de dispersao dos residuos
-p01 <- ggplot(data = res02, aes(x = ID, y = .stdresid)) +
-    geom_point(pch = 21, fill = "white", colour = "black", size = 5,
-               alpha = 0.8) +
-    geom_hline(yintercept = 0, colour = "red") +
-    labs(x = "Índice da amostra", y = "Resíduos padronizados") +
-    theme_gray(base_size = 18)
-p01
-
-# Histograma dos residuos
-p02 <- ggplot(data = res02, aes(x = .stdresid)) +
-    geom_histogram(binwidth = 1, boundary = 1, closed = "right",
-                   fill = "white", colour = "black") +
-    scale_y_continuous(expand = c(0, 0), limits = c(0, 25)) +
-    labs(x = "Resíduos padronizados", y = "Frequência") +
-    theme_gray(base_size = 18)
-p02  # TO DO Verificar 
-
-# Visualizar os graficos lado a lado
-(p01 | p02 | p00)
+# Parecer
+cat("A observação 321 apresentou uma distância de cook muito acima do restante da curva, indicando uma influencia
+    global no modelo.")
 
 # =======================================================================================
 # VERIFICACAO DA EQUIDISPERSAO DO MODELO POISSON
@@ -584,8 +664,8 @@ secao("VERIFICAÇÃO DA EQUIDISPERSÃO")
 
 #?dispersiontest
 
-# Conforme a documentacao, poission assume que a esperanca condicional E[y] = μ 
-# e a variancia VAR[y] = μ sao iguais
+# Conforme a documentacao, poission assume que:
+# a esperanca condicional E[y] = μ e a variancia VAR[y] = μ sao iguais
 
 # --------------------------------------
 # Calcular a esperanca e a variancia 
@@ -598,7 +678,6 @@ caf2 <- caf1 %>%
   summarize(count = n())
 
 # Frequencia relativa
-#####@> Frequencia relativa
 caf2$n_brocas_capt_freq_relat <- caf2$count/sum(caf2$count)
 
 # Media de brocas capturadas
@@ -611,10 +690,12 @@ n_brocas_capt_variancia <- sum((caf2$n_brocas_capturadas - n_brocas_capt_media)^
 n_brocas_capt_media == n_brocas_capt_variancia
 
 # Divisao da variancia pela media
-n_brocas_capt_variancia/n_brocas_capt_media
+brocas_var_media <- n_brocas_capt_variancia/n_brocas_capt_media
 
-# TO DO Parecer
-cat()
+# Parecer
+cat("Diante da proporção de", brocas_var_media, "entre a variância e a média do número de brocas no nível 
+    marginal dos dados brutos, as contagens apresentam mais variabilidade do que uma distribuição de Poisson 
+    permitiria.")
 
 # --------------------------------------
 # Verificar a frequencia esperada
@@ -646,25 +727,37 @@ qui_pois <- with(caf2,
 pchisq(q = qui_pois, df = nrow(caf2) - 1, lower.tail = FALSE)
 
 # TO DO Parecer
-cat("")
+cat("As inspeções visuais também mostram uma desencaixe entre os valores observados e esperados para um 
+    modelo poisson.")
 
 # --------------------------------------
 # Teste formal de equidispersao
 # --------------------------------------
 
 # Razao do desvio residual e dos graus de liberdade dos residuos
-deviance(mod04)
-df.residual(mod04)
-deviance(mod04)/df.residual(mod04)
+deviance(mod06)
+df.residual(mod06)
+deviance(mod06)/df.residual(mod05)
 
 # Testar sobre a hipotese alternativa da variancia ser uma funcao linear
-dispersiontest(mod04, trafo = 1)
+dispersiontest(mod05, trafo = 1)
 
 # Testar sobre a hipotese alternativa da variancia ser uma funcao quadratica
-dispersiontest(mod04, trafo = 2)
+dispersiontest(mod05, trafo = 2)
+
+# Testar a dispersao com pearson
+mod06_dis_pear <- sum(residuals(mod06, type = "pearson")^2) / df.residual(mod06)
+summary(mod06, dispersion = mod06_dis_pear)
+# Como interpretar
+# dp ≈ 1 = dispersao consistente com poisson
+# dp > 1 = superdispersao
+# dp < 1 = subdispersao
+?dispersiontest
 
 # TO DO Parecer
-cat("")
+cat("Os testes formais de equidispersão evidenciam a superdispersão nos dados.
+    O teste formal de dispersão indicou um nível de significância superior a zero
+    e a variância sendo uma função quadrática. Neste caso, recomenda-se a binomial negativa.")
 
 # --------------------------------------
 # Verificar a frequencia esperada
@@ -702,25 +795,31 @@ qui_pois <- with(caf2,
 pchisq(q = qui_pois, df = nrow(caf2) - 1, lower.tail = FALSE)
 
 # TO DO Parecer
-cat("")
+cat("As inspeções visuais mostram um melhor encaixe entre os valores observados e esperados para um 
+    modelo binomial negativa, bem como uma diminuição dos resíduos.")
 
 # =======================================================================================
 # MODELOS LINEARES GENERALIZADOS - BINOMIAL NEGATIVA
+# mod07: modelo nulo
+# mod08: modelo completo
+# mod09: modelo com minimo AICC
+# mod10: modelo final
 # =======================================================================================
 secao("MODELOS LINEARES GENERALIZADOS - BINOMIAL NEGATIVA")
 
 # --------------------------------------
-# Modelo nulo
+# mod07: modelo nulo
 # --------------------------------------
-mod05 <- glm.nb(
-  n_brocas_capturadas ~ 1,
+mod07 <- glm.nb(
+  n_brocas_capturadas ~ 1 + offset(log(esforco_amostral)),
   data = caf1,
-  link = "log")
+  na.action = "na.fail"
+)
 
 # --------------------------------------
-# Modelo completo
+# mod08: modelo completo
 # --------------------------------------
-mod06 <- glm.nb(
+mod08 <- glm.nb(
   n_brocas_capturadas ~ adubacao_n_kg_ha
     + altitude_m
     + declividade_pct
@@ -736,25 +835,48 @@ mod06 <- glm.nb(
 )
 
 # Teste de verossimilhanca entre os modelos nulo e completo COM esforco amostral passado como OFFSET
-secao("Teste de verossimilhança entre os modelos nulo e completo COM medida de esforço amostral passado como OFFSET")
-anova(mod05, mod06, test = "Chisq")
-residuos_mod06 <- ((deviance(mod05) - deviance(mod06)) / deviance(mod05)) * 100
+secao("Teste de verossimilhança entre os modelos nulo e completo COM medida de esforço amostral passada como OFFSET")
+anova(mod07, mod08, test = "Chisq")
+
+# Calculo manual das deviances (2 x log-lik) e do LR stat, para conferencia do teste acima
+logLik_mod07 <- as.numeric(logLik(mod07))
+logLik_mod08 <- as.numeric(logLik(mod08))
+
+dev_mod07 <- 2 * logLik_mod07   # equivalente a "2 x log-lik." do mod07 no anova()
+dev_mod08 <- 2 * logLik_mod08   # equivalente a "2 x log-lik." do mod08 no anova()
+
+LR_stat_mod07_mod08 <- dev_mod08 - dev_mod07
+df_LR_mod07_mod08 <- length(coef(mod08)) - length(coef(mod07))
+p_valor_mod07_mod08 <- pchisq(LR_stat_mod07_mod08, df = df_LR_mod07_mod08, lower.tail = FALSE)
+
+cat("\n2 x log-lik. mod07 (nulo):   ", round(dev_mod07, 3),
+    "\n2 x log-lik. mod08 (completo):", round(dev_mod08, 3),
+    "\nLR stat. (diferenca):         ", round(LR_stat_mod07_mod08, 4),
+    "\ngraus de liberdade:           ", df_LR_mod07_mod08,
+    "\np-valor:                      ", format.pval(p_valor_mod07_mod08, digits = 4, eps = .Machine$double.eps))
 
 # Parecer
-cat("\nEm comparação ao modelo nulo, o modelo completo COM esforço amostral passado como OFFSET reduziu 
-    os resíduos em ", residuos_mod06, "%.")
+cat("\nO teste de razão de verossimilhanças entre o modelo nulo (mod07) e o modelo completo (mod08),
+    ambos COM esforço amostral passado como OFFSET, resultou em 2 x log-lik. =", dev_mod07,
+    "para o modelo nulo e", dev_mod08, "para o modelo completo, cuja diferença fornece LR stat. =", 
+    LR_stat_mod07_mod08 ,"(9 g.l.), com p-valor <", p_valor_mod07_mod08, "(essencialmente 0, confirmado pelo cálculo manual acima). 
+    Portanto, rejeita-se a hipótese nula de que os coeficientes das covariáveis agronômicas e ambientais são simultaneamente
+    iguais a zero, ou seja, o modelo completo apresenta redução altamente significativa da deviância em
+    relação ao modelo nulo. O conjunto de covariáveis incluídas contribui de forma significativa para
+    explicar a variação no número de brocas capturadas, e o modelo completo (mod08) deve ser preferido
+    em relação ao nulo (mod07).")
 
 # Analise da deviancia das covariaveis do modelo completo COM esforco amostral passado como OFFSET
 secao("Analise da deviância das covariáveis do modelo completo COM medida de esforço amostral")
-anova(mod06, test = "Chisq")
+anova(mod08, test = "Chisq")
 
-# Parecer 
+# TO DO Parecer
 cat("\nPara o modelo completo COM esforço amostral passado como OFFSET, em termos de redução de resíduos, 
     as variáveis com redução significativa foram todas, exceto declividade, idade da lavoura e ph solo.")
 
 # Tabela de estimacao dos parametros do modelo completo COM esforco amostral passado como OFFSET
 secao("Estimação dos parâmetros do modelo completo COM medida de esforço amostral passada como OFFSET")
-summary(mod06)
+summary(mod08)
 
 # Parecer 
 cat("\nPara o modelo completo COM esforço amostral passado como OFFSET, em termos de efeito, as variáveis com 
@@ -767,7 +889,7 @@ cat("\nPara o modelo completo COM esforço amostral passado como OFFSET, em term
 secao("MODELOS LINEARES GENERALIZADOS - BINOMIAL NEGATIVA - Exaurindo as combinações entre as variáveis preditoras")
 
 # Ajustar diferentes modelos de forma iterativa
-tab02 <- dredge(mod06, extra = "R^2")
+tab02 <- dredge(mod08, extra = "R^2")
 
 # Quantidade de modelos ajustados
 dim(tab02)
@@ -789,11 +911,11 @@ cat("\nConforme o AICc, o modelo que melhor se ajusta aos dados possui as seguin
 )
 
 # --------------------------------------
-# Modelo binomial negativa 
-# selecionado
+# mod09: modelo binomial negativa 
+# com minimo AICc
 # --------------------------------------
-secao("Modelo binomial negativa final")
-mod07 <- glm.nb(
+secao("Modelo binomial negativa com minimo AICc")
+mod09 <- glm.nb(
   n_brocas_capturadas ~ adubacao_n_kg_ha 
     + altitude_m 
     + declividade_pct 
@@ -810,20 +932,42 @@ mod07 <- glm.nb(
   init.theta = 4.377708848
 ) 
 
-# Teste de Verossimilhança entre os modelos binomial negativa nulo e modelo final
-secao("Teste de verossimilhança entre os modelos binomial negativa nulo e final")
-anova(mod05, mod07, test = "Chisq")
-residuos_mod07 <- ((deviance(mod05) - deviance(mod07)) / deviance(mod05)) * 100
+# Teste de Verossimilhanca entre os modelos binomial negativa nulo e modelo com minimo AICc
+secao("Teste de verossimilhança entre os modelos binomial negativa nulo e com minimo AICc")
+anova(mod07, mod09, test = "Chisq")
+
+# Calculo manual das deviances (2 x log-lik) e do LR stat, para conferencia do teste acima
+logLik_mod09 <- as.numeric(logLik(mod09))
+
+dev_mod09 <- 2 * logLik_mod09   # equivalente a "2 x log-lik." do mod09 no anova()
+
+LR_stat_mod07_mod09 <- dev_mod09 - dev_mod07
+df_LR_mod07_mod09 <- length(coef(mod09)) - length(coef(mod07))
+p_valor_mod07_mod09 <- pchisq(LR_stat_mod07_mod09, df = df_LR_mod07_mod09, lower.tail = FALSE)
+
+cat("\n2 x log-lik. mod07 (nulo):        ", round(dev_mod07, 3),
+    "\n2 x log-lik. mod09 (minimo AICc):  ", round(dev_mod09, 3),
+    "\nLR stat. (diferenca):              ", round(LR_stat_mod07_mod09, 4),
+    "\ngraus de liberdade:                ", df_LR_mod07_mod09,
+    "\np-valor:                           ", format.pval(p_valor_mod07_mod09, digits = 4, eps = .Machine$double.eps))
 
 # Parecer
-cat("\nEm comparação ao modelo nulo, o modelo binomial negativa reduziu os resíduos em ", residuos_mod07, "%.")
+cat("\nO teste de razão de verossimilhanças entre o modelo nulo (mod07) e o modelo com mínimo AICc (mod09),
+    ambos COM esforço amostral passado como OFFSET, resultou em 2 x log-lik. =", dev_mod07,
+    "para o modelo nulo e", dev_mod09, "para o modelo mod09, cuja diferença fornece LR stat. =", 
+    LR_stat_mod07_mod09 ,"(9 g.l.), com p-valor <", p_valor_mod07_mod09, "(essencialmente 0, confirmado pelo cálculo manual acima). 
+    Portanto, rejeita-se a hipótese nula de que os coeficientes das covariáveis selecionadas por mínimo
+    AICc são simultaneamente iguais a zero, ou seja, o modelo mod09 apresenta redução altamente
+    significativa da deviância em relação ao modelo nulo, devendo ser preferido a este. Note-se que os
+    valores de deviância e de LR stat. de mod09 coincidem com os de mod08 (mesmo conjunto de 9
+    covariáveis), diferindo apenas na estimativa inicial de theta fornecida.")
 
-# Analise da deviancia das covariaveis do modelo binomial negativa final 
-secao("Analise da deviância das covariáveis do modelo binomial negativa final")
-anova(mod07, test = "Chisq")
+# Analise da deviancia das covariaveis do modelo binomial negativa com minimo AICc 
+secao("Analise da deviância das covariáveis do modelo binomial negativa com minimo AICc")
+anova(mod09, test = "Chisq")
 
 # Parecer 
-cat("\nPara o modelo binomial negativa final, em termos de redução de resíduos, as variáveis com redução significativa foram:
+cat("\nPara o modelo binomial negativa com minimo AICc, em termos de redução de resíduos, as variáveis com redução significativa foram:
     - adubação, 
     - altitude,
     - densidade de plantio,
@@ -832,32 +976,32 @@ cat("\nPara o modelo binomial negativa final, em termos de redução de resíduo
     - umidade."
   )
 
-# Faixa de coeficientes possiveis para os parametros do modelo binomial negativa final
-secao("Faixa de coeficientes possíveis para os parâmetros do modelo binomial negativa final")
-confint(mod07)
+# Faixa de coeficientes possiveis para os parametros do modelo binomial negativa com minimo AICc
+secao("Faixa de coeficientes possíveis para os parâmetros do modelo binomial negativa com minimo AICc")
+confint(mod09)
 
 # Tabela de estimacao dos parametros
-secao("Estimação dos parâmetros do modelo binomial negativa final")
-summary(mod07)
+secao("Estimação dos parâmetros do modelo binomial negativa com minimo AICc")
+summary(mod09)
 
 # Visualizar efeitos
-plot(effects::allEffects(mod07))
+plot(effects::allEffects(mod09))
 
 # Parecer 
-cat("\nPara o modelo binomial negativa final, em termos de efeito, as variáveis com efeito significativo foram:
+cat("\nPara o modelo binomial negativa com minimo AICc, em termos de efeito, as variáveis com efeito significativo foram:
   - adubação, 
   - altitude, 
   - densidade de plantio, 
   - idade da lavoura, 
   - matéria orgânica, e 
-  - umidade.")
+  - umidade.
+  Um modelo final será ajustado apenas com essas variáveis a fim de se observar se há um ajuste ainda melhor.")
 
 # --------------------------------------
-# Modelo binomial negativa final 
+# mod10: modelo binomial negativa final 
 # --------------------------------------
-
 secao("Modelo binomial negativa final")
-mod08 <- glm.nb(
+mod10 <- glm.nb(
   n_brocas_capturadas ~ adubacao_n_kg_ha 
     + altitude_m 
     + densidade_plantio 
@@ -871,20 +1015,44 @@ mod08 <- glm.nb(
   init.theta = 4.377708848
 ) 
 
-# Teste de Verossimilhança entre os modelos binomial negativa nulo e modelo final
+# Teste de Verossimilhanca entre os modelos binomial negativa nulo e modelo final
 secao("Teste de verossimilhança entre os modelos binomial negativa nulo e final")
-anova(mod05, mod08, test = "Chisq")
-residuos_mod08 <- ((deviance(mod05) - deviance(mod08)) / deviance(mod05)) * 100
+anova(mod07, mod10, test = "Chisq")
+
+# Calculo manual das deviances (2 x log-lik) e do LR stat, para conferencia do teste acima
+logLik_mod10 <- as.numeric(logLik(mod10))
+dev_mod10 <- 2 * logLik_mod10   # equivalente a "2 x log-lik." do mod10 no anova()
+
+LR_stat_mod07_mod10 <- dev_mod10 - dev_mod07
+df_LR_mod07_mod10 <- length(coef(mod10)) - length(coef(mod07))
+p_valor_mod07_mod10 <- pchisq(LR_stat_mod07_mod10, df = df_LR_mod07_mod10, lower.tail = FALSE)
+
+cat("\n2 x log-lik. mod07 (nulo): ", round(dev_mod07, 3),
+    "\n2 x log-lik. mod10 (final): ", round(dev_mod10, 3),
+    "\nLR stat. (diferenca):       ", round(LR_stat_mod07_mod10, 4),
+    "\ngraus de liberdade:         ", df_LR_mod07_mod10,
+    "\np-valor:                    ", format.pval(p_valor_mod07_mod10, digits = 4, eps = .Machine$double.eps))
 
 # Parecer
-cat("\nEm comparação ao modelo nulo, o modelo binomial negativa reduziu os resíduos em ", residuos_mod08, "%.")
+cat("\nO teste de razão de verossimilhanças entre o modelo nulo (mod07) e o modelo final (mod10),
+    ambos COM esforço amostral passado como OFFSET, resultou em 2 x log-lik. =", dev_mod07,
+    "para o modelo nulo e", dev_mod10, "para o modelo mod10, cuja diferença fornece LR stat. =", 
+    LR_stat_mod07_mod10 ,"(6 g.l.), com p-valor <", p_valor_mod07_mod10, "(essencialmente 0, confirmado pelo cálculo manual acima). 
+    Portanto, rejeita-se a hipótese nula de que os coeficientes das seis covariáveis do modelo final são
+    simultaneamente iguais a zero, ou seja, o modelo mod10 apresenta redução altamente significativa da
+    deviância em relação ao modelo nulo, devendo ser preferido a este. Vale notar que, com apenas 6
+    covariáveis (3 a menos que mod09), mod10 obteve um LR stat. praticamente idêntico ao de mod09,
+    indicando que a remoção de declividade, ph do solo e precipitação não comprometeu de forma relevante
+    a capacidade explicativa do modelo, o que é consistente com a escolha de mod10 como modelo mais
+    parcimonioso.")
 
 # Analise da deviancia das covariaveis do modelo binomial negativa final 
 secao("Analise da deviância das covariáveis do modelo binomial negativa final")
-anova(mod08, test = "Chisq")
+anova(mod10, test = "Chisq")
 
 # Parecer 
-cat("\nPara o modelo binomial negativa final, em termos de redução de resíduos, as variáveis com redução significativa foram:
+cat("\nPara o modelo binomial negativa final, com o AICc mínimo e com variaveis
+    de efeitos significativo selecionadas, as variáveis com redução significativa foram:
     - adubação, 
     - altitude,
     - densidade de plantio,
@@ -895,64 +1063,44 @@ cat("\nPara o modelo binomial negativa final, em termos de redução de resíduo
 
 # Faixa de coeficientes possiveis para os parametros do modelo binomial negativa final
 secao("Faixa de coeficientes possíveis para os parâmetros do modelo binomial negativa final")
-confint(mod08)
+confint(mod10)
 
 # Tabela de estimacao dos parametros
 secao("Estimação dos parâmetros do modelo binomial negativa final")
-summary(mod08)
+summary(mod10)
 
 # Visualizar efeitos
-plot(effects::allEffects(mod08))
+plot(effects::allEffects(mod10))
 
 # =======================================================================================
 # DIAGNOSTICO E ANALISE DE RESIDUOS
 # =======================================================================================
 secao("DIAGNÓSTICO DOS RESÍDUOS")
 
-plot(mod08) 
+# Checar valores atipicos na variavel resposta
+# Rstudent
+halfnorm(rstudent(mod10))
 
-# Envelope simulado dos residuos do modelo poisson final
-res05 <- hnp(mod08, plot.sim = FALSE)
+# Parecer
+cat("Presença de valores atípicos para a variável resposta, principalmente as observações
+    213 e 287.")
 
-# Transformar em dataframe
-res05 <- data.frame(x = res05$x, median = res05$median,
-                    lower = res05$lower, upper = res05$upper,
-                    residuals = res05$residuals)
+# Checar valores atipicos nos coeficientes das variaveis preditoras
+# Leverage
+halfnorm(influence(mod10)$hat) 
+p <- 6
+n <- nrow(caf)
+alavanca <- 2 * p / n
 
-# Grafico do envelope simulado dos residuos
-p06 <- ggplot(data = res05) +
-    geom_ribbon(aes(x = x, ymin = lower, ymax = upper), alpha = 0.8) +
-    geom_line(aes(x = x, y = median), colour = "white") +
-    geom_point(aes(x = x, y = residuals), pch = 21, fill = "white",
-               colour = "black", size = 5, alpha = 0.5) +
-    labs(x = "Quantis teóricos", y = "Resíduos") +
-    theme_gray(base_size = 18)
-p06
+cat("Para um ponto de alavancagem de", alavanca, "não há valores atípicos nos
+    coeficientes das variáveis preditoras.")
 
-# Exportar os residuos do modelo
-res06 <- fortify(mod08)
-res06$ID <- 1:nrow(res06)
+# Distancia de cook 
+halfnorm(cooks.distance(mod10)) 
 
-# Grafico de dispersao dos residuos
-p07 <- ggplot(data = res06, aes(x = ID, y = .stdresid)) +
-    geom_point(pch = 21, fill = "white", colour = "black", size = 5,
-               alpha = 0.8) +
-    geom_hline(yintercept = 0, colour = "red") +
-    labs(x = "Índice da amostra", y = "Resíduos padronizados") +
-    theme_gray(base_size = 18)
-p07
-
-# Histograma dos residuos
-p08 <- ggplot(data = res06, aes(x = .stdresid)) +
-    geom_histogram(binwidth = 1, boundary = 1, closed = "right",
-                   fill = "white", colour = "black") +
-    scale_y_continuous(expand = c(0, 0), limits = c(0, 25)) +
-    labs(x = "Resíduos padronizados", y = "Frequência") +
-    theme_gray(base_size = 18)
-p08 # TO DO Verificar 
-
-# Visualizar os graficos lado a lado
-(p08 | p07 | p06)
+# Parecer
+cat("As observações 84 e 272 apresentaram uma distância de cook muito acima do restante da curva, 
+    indicando uma influência global no modelo.")
 
 # ============================================================
 # PARECERES
@@ -1096,14 +1244,14 @@ parecer_modelo <- function(modelo) {
   invisible(resultados)
 }
 
-resultados_parecer <- parecer_modelo(mod08)
+resultados_parecer <- parecer_modelo(mod10)
 
 # =======================================================================================
 # PARECER FINAL
 # =======================================================================================
 secao("PARECER FINAL")
 
-cat("Conforme o modelo binomial negativa final (mod08), as condições de talhão que favorecem 
+cat("Conforme o modelo binomial negativa final (mod10), as condições de talhão que favorecem 
 a infestação pela broca e o quanto se ganha ou se perde em pressão de praga ao alterar cada uma delas, 
 mantendo as demais variáveis e o esforço amostral constantes, são:
 
