@@ -655,6 +655,404 @@ parecer("CONCLUSAO LITERAL. De cada ", nrow(dados_cafe), " talhoes da cooperativ
         "modelar (Step 3).")
 
 
+# =====================================================================
+# ---- STEP 1 ---- EXPLORACAO CONDICIONAL: FATORES
+# =====================================================================
+secao("STEP 1 - EXPLORACAO CONDICIONAL: FATORES")
+
+# Pergunta do step: olhando uma caracteristica de cada vez, quais parecem
+# mudar a proporcao de lotes com padrao de exportacao? E, para as
+# caracteristicas numericas, essa mudanca parece "em linha reta" na
+# escala em que o modelo trabalha (o logit)?
+#
+# Aviso que vale para todo o step: cada tabela e cada grafico daqui olha
+# UMA caracteristica de cada vez, sem levar em conta as demais. Isso se
+# chama analise marginal. Uma diferenca vista aqui pode encolher, crescer
+# ou mudar de sinal quando as outras caracteristicas entrarem no modelo
+# (Step 3). Por isso tudo neste step e hipotese, nao conclusao.
+
+# ---------------------------------------------------------------------
+# Proporcao condicional por nivel de cada fator
+# ---------------------------------------------------------------------
+# OBJETIVO: ver a proporcao de lotes com padrao de exportacao dentro de
+#   cada grupo (so os talhoes Bourbon, so os organicos, e assim por diante).
+# O QUE O CODIGO FAZ: para cada fator, agrupa os talhoes por nivel e
+#   calcula, em cada nivel, o numero de talhoes (n), quantos atingiram o
+#   padrao e a proporcao. Calcula tambem a chance, p / (1 - p), ja
+#   apresentada no Step 0.
+# POR QUE ISSO E NECESSARIO: a proporcao dentro de um grupo e chamada de
+#   proporcao condicional. Comparar as proporcoes condicionais entre os
+#   niveis e a forma mais simples de perceber se um fator parece estar
+#   associado a resposta.
+# COMO INTERPRETAR: um nivel com proporcao acima da geral parece
+#   favorecer o padrao de exportacao; abaixo, parece desfavorecer. A
+#   coluna n importa: uma proporcao alta num grupo pequeno e menos
+#   confiavel do que num grupo grande.
+#
+# [APROFUNDAMENTO] Intervalo de confianca de Wilson para uma proporcao.
+# A proporcao de cada grupo e uma estimativa e carrega incerteza. O
+# intervalo de Wilson e uma forma de expressar essa incerteza que se
+# comporta bem mesmo em grupos pequenos ou com proporcoes perto de 0 ou
+# de 1. No R, prop.test() sem correcao de continuidade devolve esse
+# intervalo. Ele aparece como barra de erro na figura C1.
+tabela_por_fator <- function(f) {
+    tab <- dados_cafe %>%
+        group_by(nivel = .data[[f]]) %>%
+        summarise(n         = n(),
+                  atingiu   = sum(padrao_exportacao),
+                  proporcao = mean(padrao_exportacao),
+                  .groups   = "drop") %>%
+        mutate(fator  = f,
+               chance = proporcao / (1 - proporcao))
+    ic <- mapply(function(x, n) prop.test(x, n, correct = FALSE)$conf.int,
+                 tab$atingiu, tab$n)
+    tab$ic_inf <- ic[1, ]
+    tab$ic_sup <- ic[2, ]
+    tab
+}
+
+tab_fatores <- bind_rows(lapply(fatores, tabela_por_fator))
+
+cat(sprintf("proporcao geral de referencia: %.3f\n", proporcao_exportacao))
+for (f in fatores) {
+    cat("\n", f, "\n", sep = "")
+    t_f <- tab_fatores %>% filter(fator == f)
+    print(data.frame(nivel     = as.character(t_f$nivel),
+                     n         = t_f$n,
+                     atingiu   = t_f$atingiu,
+                     proporcao = round(t_f$proporcao, 3),
+                     chance    = round(t_f$chance, 3),
+                     IC95_inf  = round(t_f$ic_inf, 3),
+                     IC95_sup  = round(t_f$ic_sup, 3)),
+          row.names = FALSE)
+}
+
+# Verificacao: grupos pequenos. Abaixo de ~15 observacoes, a proporcao
+# de um nivel e pouco confiavel. O limite e uma regra pratica deste
+# projeto para emitir um alerta, nao um criterio estatistico formal.
+MINIMO_POR_NIVEL <- 15
+niveis_pequenos <- tab_fatores %>% filter(n < MINIMO_POR_NIVEL)
+if (nrow(niveis_pequenos) > 0) {
+    cat("\n   [ATENCAO] niveis com menos de ", MINIMO_POR_NIVEL, " observacoes:\n", sep = "")
+    print(niveis_pequenos[, c("fator", "nivel", "n")], row.names = FALSE)
+} else {
+    cat(sprintf("\n   [ok] todos os niveis tem pelo menos %d observacoes (menor: %d)\n",
+                MINIMO_POR_NIVEL, min(tab_fatores$n)))
+}
+
+# Amplitude de cada fator: diferenca entre a maior e a menor proporcao
+# entre os niveis. E uma medida informal de "quanto o fator parece
+# importar" na analise marginal. Sera usada no parecer.
+amplitude_fatores <- tab_fatores %>%
+    group_by(fator) %>%
+    summarise(nivel_max = as.character(nivel[which.max(proporcao)]),
+              prop_max  = max(proporcao),
+              nivel_min = as.character(nivel[which.min(proporcao)]),
+              prop_min  = min(proporcao),
+              amplitude = prop_max - prop_min,
+              .groups   = "drop") %>%
+    arrange(desc(amplitude))
+
+cat("\namplitude da proporcao entre niveis (maior - menor), por fator:\n")
+print(data.frame(fator     = amplitude_fatores$fator,
+                 maior     = sprintf("%s (%.3f)", amplitude_fatores$nivel_max, amplitude_fatores$prop_max),
+                 menor     = sprintf("%s (%.3f)", amplitude_fatores$nivel_min, amplitude_fatores$prop_min),
+                 amplitude = round(amplitude_fatores$amplitude, 3)),
+      row.names = FALSE)
+
+# ---------------------------------------------------------------------
+# Figura C1: proporcao por nivel de cada fator
+# ---------------------------------------------------------------------
+# Pergunta que responde: qual nivel de cada fator tem maior proporcao de
+# lotes com padrao de exportacao?
+# Como ler: a altura da barra e a proporcao do nivel; a barra de erro e o
+# intervalo de confianca de Wilson (95%); o n esta escrito na base da
+# barra; a linha tracejada e a proporcao geral da base. Barras cujo
+# intervalo cruza a linha tracejada nao se distinguem claramente da media.
+# Limitacao: analise marginal. As diferencas podem mudar quando os fatores
+# forem considerados em conjunto.
+tab_fatores_plot <- tab_fatores %>%
+    mutate(nivel = factor(nivel, levels = unique(nivel)),
+           fator = factor(fator, levels = fatores))
+
+g_fatores <- ggplot(tab_fatores_plot, aes(x = nivel, y = proporcao)) +
+    geom_hline(yintercept = proporcao_exportacao, linetype = "dashed", colour = VERMELHO) +
+    geom_col(fill = VERDE, colour = "black", width = .65) +
+    geom_errorbar(aes(ymin = ic_inf, ymax = ic_sup), width = .2, colour = "black") +
+    geom_text(aes(y = 0.03, label = sprintf("n = %d", n)), colour = "white", size = 3.2) +
+    facet_wrap(~ fator, scales = "free_x") +
+    scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, .2)) +
+    labs(x = NULL, y = "proporcao com padrao de exportacao",
+         title = "Proporcao de lotes com padrao de exportacao, por nivel de cada fator",
+         subtitle = sprintf("barras de erro: IC de Wilson 95%%; linha tracejada: proporcao geral = %.3f",
+                            proporcao_exportacao),
+         caption = "analise marginal: uma caracteristica de cada vez, sem ajuste pelas demais") +
+    theme_bw(base_size = 11) +
+    theme(axis.text.x = element_text(angle = 15, hjust = 1))
+salvar(g_fatores, "C1_proporcao_por_fator.png", 11, 8)
+
+
+# =====================================================================
+# ---- STEP 1 ---- EXPLORACAO CONDICIONAL: NUMERICAS
+# =====================================================================
+secao("STEP 1 - EXPLORACAO CONDICIONAL: NUMERICAS")
+
+# OBJETIVO: ver se as caracteristicas numericas (altitude, idade da
+#   lavoura, ...) diferem entre os talhoes que atingiram o padrao e os
+#   que nao atingiram.
+# O QUE O CODIGO FAZ: identifica as candidatas numericas a partir da
+#   formula do Step 0 (tudo o que nao e fator), reorganiza a base no
+#   formato longo (uma linha por talhao e por variavel) e calcula a
+#   mediana de cada variavel dentro de cada classe da resposta.
+# POR QUE ISSO E NECESSARIO: e a versao, para variaveis numericas, da
+#   pergunta feita aos fatores. Se a mediana de altitude dos talhoes que
+#   atingiram o padrao e maior do que a dos que nao atingiram, a altitude
+#   parece estar associada a resposta.
+# COMO INTERPRETAR: diferencas de mediana grandes em relacao a dispersao
+#   da variavel sugerem associacao; medianas quase iguais sugerem pouca
+#   associacao. Nada aqui diz qual e a causa e qual e o efeito.
+numericas <- setdiff(attr(terms(formula_candidatas), "term.labels"), fatores)
+cat("candidatas numericas:", length(numericas), "\n")
+
+dados_longos <- dados_cafe %>%
+    select(all_of(numericas), padrao_exportacao) %>%
+    pivot_longer(all_of(numericas), names_to = "variavel", values_to = "valor") %>%
+    mutate(classe = factor(ifelse(padrao_exportacao == 1, "Atingiu (1)", "Nao atingiu (0)"),
+                           levels = c("Nao atingiu (0)", "Atingiu (1)")),
+           variavel = factor(variavel, levels = numericas))
+
+tab_medianas <- dados_longos %>%
+    group_by(variavel, classe) %>%
+    summarise(mediana = median(valor), .groups = "drop") %>%
+    pivot_wider(names_from = classe, values_from = mediana) %>%
+    mutate(diferenca = `Atingiu (1)` - `Nao atingiu (0)`)
+
+cat("\nmediana de cada variavel numerica, por classe da resposta:\n")
+print(data.frame(variavel          = as.character(tab_medianas$variavel),
+                 mediana_nao       = round(tab_medianas$`Nao atingiu (0)`, 2),
+                 mediana_atingiu   = round(tab_medianas$`Atingiu (1)`, 2),
+                 diferenca         = round(tab_medianas$diferenca, 2)),
+      row.names = FALSE)
+
+# ---------------------------------------------------------------------
+# Figura C1: distribuicao das numericas por classe da resposta
+# ---------------------------------------------------------------------
+# Pergunta que responde: as caracteristicas numericas diferem entre quem
+# atingiu e quem nao atingiu o padrao?
+# Como ler: cada painel e uma variavel; cada caixa resume a distribuicao
+# em uma classe (linha central = mediana; caixa = metade central dos
+# talhoes). Caixas deslocadas uma da outra sugerem associacao; caixas
+# sobrepostas sugerem pouca associacao.
+# Limitacao: este e um painel de exploracao. So as variaveis com
+# diferenca visivel merecem ir para o relatorio. O grafico tambem nao
+# mostra a forma da relacao na escala do modelo; isso e feito a seguir.
+g_numericas <- ggplot(dados_longos, aes(x = classe, y = valor, fill = classe)) +
+    geom_boxplot(width = .6, outlier.size = 1, outlier.alpha = .5) +
+    scale_fill_manual(values = c(VERMELHO, VERDE), guide = "none") +
+    facet_wrap(~ variavel, scales = "free_y", ncol = 3) +
+    labs(x = NULL, y = NULL,
+         title = "Distribuicao de cada caracteristica numerica, por classe da resposta",
+         subtitle = "caixas deslocadas sugerem associacao; caixas sobrepostas sugerem pouca associacao",
+         caption = "painel de exploracao; analise marginal") +
+    theme_bw(base_size = 11)
+salvar(g_numericas, "C1_numericas_por_resposta.png", 11, 9)
+
+
+# =====================================================================
+# ---- STEP 1 ---- LOGIT EMPIRICO: A RELACAO PARECE LINEAR NA ESCALA DO MODELO?
+# =====================================================================
+secao("STEP 1 - LOGIT EMPIRICO")
+
+# Por que olhar o logit, e nao a probabilidade:
+# O modelo logistico e linear na escala do logit (Step 0). Isso quer
+# dizer que, se a altitude entrar no modelo "como esta", o modelo assume
+# que cada metro a mais soma a mesma quantidade ao logit, em qualquer
+# ponto da faixa de altitude. Uma relacao que parece reta na escala da
+# probabilidade seria curva no logit, e vice-versa. Por isso a pergunta
+# "parece linear?" tem de ser feita na escala do logit.
+#
+# Logit empirico, em linguagem simples: dividir os talhoes em faixas de
+# uma variavel (por exemplo, cinco faixas de altitude com o mesmo numero
+# de talhoes), calcular a proporcao de sucesso em cada faixa e converter
+# essa proporcao em logit. Cinco pontos quase alinhados sugerem que o
+# termo linear e adequado; uma curva sugere que a variavel pode precisar
+# de transformacao. O nome tecnico e "logit empirico" (Agresti, Categorical
+# Data Analysis, cap. 4); e um metodo informal, de exploracao.
+#
+# OBJETIVO: ver, para cada numerica, se a relacao com a resposta parece
+#   aproximadamente linear na escala do logit.
+# O QUE O CODIGO FAZ: a funcao logit_empirico() corta a variavel em k
+#   faixas de tamanho parecido (quantis), calcula em cada faixa o n, o
+#   numero de sucessos, a proporcao, o valor medio da variavel e o logit.
+# POR QUE ISSO E NECESSARIO: a linearidade no logit e uma suposicao do
+#   modelo. Ver os dados agora evita descobrir tarde (no diagnostico do
+#   Step 5) que uma variavel precisava de outra forma.
+# COMO INTERPRETAR: pontos alinhados = termo linear plausivel; pontos em
+#   curva = hipotese de nao linearidade, a ser testada formalmente no
+#   Step 5. Pontos muito espalhados, com barras de erro largas, indicam
+#   que os dados nao permitem distinguir uma tendencia do ruido.
+#
+# [APROFUNDAMENTO] Correcao de continuidade e erro-padrao do logit.
+# Se uma faixa tiver proporcao 0 ou 1, o logit e -infinito ou +infinito e
+# nao pode ser desenhado. A correcao usada aqui soma 0,5 aos sucessos e
+# aos fracassos: logit = log((s + 0,5) / (n - s + 0,5)), com s = sucessos
+# e n = talhoes na faixa. Quando a proporcao esta longe de 0 e de 1, a
+# correcao quase nao muda o valor. O erro-padrao aproximado desse logit e
+# sqrt(1/(s + 0,5) + 1/(n - s + 0,5)); ele define as barras de erro da
+# figura (logit +- 1,96 erro-padrao).
+logit_empirico <- function(x, y, k = 5) {
+    cortes <- unique(quantile(x, probs = seq(0, 1, length.out = k + 1)))
+    faixa  <- cut(x, breaks = cortes, include.lowest = TRUE)
+    data.frame(faixa    = levels(faixa),
+               n        = as.vector(table(faixa)),
+               sucessos = as.vector(tapply(y, faixa, sum)),
+               x_medio  = as.vector(tapply(x, faixa, mean))) %>%
+        mutate(proporcao       = sucessos / n,
+               logit_bruto     = qlogis(proporcao),
+               logit_corrigido = log((sucessos + 0.5) / (n - sucessos + 0.5)),
+               ep_logit        = sqrt(1 / (sucessos + 0.5) + 1 / (n - sucessos + 0.5)))
+}
+
+K_FAIXAS <- 5
+tab_logit_empirico <- bind_rows(lapply(numericas, function(v) {
+    cbind(variavel = v, logit_empirico(dados_cafe[[v]], resposta_exportacao, k = K_FAIXAS))
+})) %>% mutate(variavel = factor(variavel, levels = numericas))
+
+for (v in numericas) {
+    cat("\n", v, "\n", sep = "")
+    t_v <- tab_logit_empirico %>% filter(variavel == v)
+    print(data.frame(faixa           = t_v$faixa,
+                     n               = t_v$n,
+                     sucessos        = t_v$sucessos,
+                     proporcao       = round(t_v$proporcao, 3),
+                     logit_bruto     = round(t_v$logit_bruto, 3),
+                     logit_corrigido = round(t_v$logit_corrigido, 3)),
+          row.names = FALSE)
+}
+
+# Verificacoes: numero de faixas efetivo (quantis repetidos reduzem o
+# numero de faixas) e faixas em que a correcao de continuidade foi
+# necessaria (proporcao 0 ou 1).
+faixas_por_variavel <- tab_logit_empirico %>% count(variavel, name = "faixas")
+if (any(faixas_por_variavel$faixas < K_FAIXAS)) {
+    cat("\n   [ATENCAO] variaveis com menos de ", K_FAIXAS, " faixas (quantis repetidos):\n", sep = "")
+    print(faixas_por_variavel %>% filter(faixas < K_FAIXAS), row.names = FALSE)
+} else {
+    cat(sprintf("\n   [ok] todas as %d variaveis foram divididas em %d faixas\n",
+                length(numericas), K_FAIXAS))
+}
+faixas_extremas <- sum(tab_logit_empirico$proporcao %in% c(0, 1))
+cat(sprintf("   [ok] faixas com proporcao exatamente 0 ou 1 (correcao necessaria): %d\n",
+            faixas_extremas))
+cat(sprintf("   [ok] menor faixa: %d talhoes; erro-padrao tipico do logit: %.2f\n",
+            min(tab_logit_empirico$n), median(tab_logit_empirico$ep_logit)))
+
+# Resumo por variavel: amplitude do logit entre a primeira e a ultima
+# faixa (sinal e tamanho da tendencia) e o R2 de uma reta passada pelos
+# k pontos (quanto da variacao entre faixas uma reta explica). Sao
+# medidas informais para ordenar as hipoteses; nao sao testes.
+resumo_logit <- tab_logit_empirico %>%
+    group_by(variavel) %>%
+    summarise(logit_faixa1   = first(logit_corrigido),
+              logit_faixaK   = last(logit_corrigido),
+              amplitude      = logit_faixaK - logit_faixa1,
+              r2_reta        = cor(x_medio, logit_corrigido)^2,
+              .groups        = "drop") %>%
+    arrange(desc(abs(amplitude)))
+
+cat("\nresumo por variavel (ordenado pela amplitude absoluta do logit):\n")
+print(data.frame(variavel     = as.character(resumo_logit$variavel),
+                 logit_faixa1 = round(resumo_logit$logit_faixa1, 3),
+                 logit_faixaK = round(resumo_logit$logit_faixaK, 3),
+                 amplitude    = round(resumo_logit$amplitude, 3),
+                 r2_reta      = round(resumo_logit$r2_reta, 2)),
+      row.names = FALSE)
+
+# ---------------------------------------------------------------------
+# Figura C1: logit empirico por faixa
+# ---------------------------------------------------------------------
+# Pergunta que responde: a relacao de cada numerica com a resposta parece
+# linear na escala do logit?
+# Como ler: cada ponto e uma faixa (eixo x = valor medio da variavel na
+# faixa; eixo y = logit da proporcao de sucesso); a barra de erro e
+# logit +- 1,96 erro-padrao; a linha pontilhada vermelha e uma reta
+# ajustada aos pontos, so como referencia visual; a linha tracejada cinza
+# e o logit da proporcao geral. O eixo y e o mesmo em todos os paineis,
+# para que as inclinacoes sejam comparaveis.
+# Limitacao: poucos pontos por variavel; as faixas sao arbitrarias; e um
+# metodo informal. A verificacao formal da escala fica para o Step 5.
+g_logit_emp <- ggplot(tab_logit_empirico, aes(x = x_medio, y = logit_corrigido)) +
+    geom_hline(yintercept = logit_proporcao, linetype = "dashed", colour = CINZA) +
+    geom_smooth(method = "lm", formula = y ~ x, se = FALSE,
+                colour = VERMELHO, linewidth = .6, linetype = "dotted") +
+    geom_errorbar(aes(ymin = logit_corrigido - 1.96 * ep_logit,
+                      ymax = logit_corrigido + 1.96 * ep_logit),
+                  width = 0, colour = CINZA) +
+    geom_line(colour = VERDE, linewidth = .5) +
+    geom_point(colour = VERDE, size = 2.5) +
+    facet_wrap(~ variavel, scales = "free_x", ncol = 3) +
+    labs(x = "valor medio da variavel na faixa", y = "logit empirico da proporcao de sucesso",
+         title = "Logit empirico por faixa: a relacao parece linear na escala do modelo?",
+         subtitle = sprintf("%d faixas de tamanho parecido por variavel; barras: logit +- 1,96 EP; pontilhado: reta de referencia",
+                            K_FAIXAS),
+         caption = "metodo informal de exploracao; a verificacao formal da escala e feita no Step 5") +
+    theme_bw(base_size = 11)
+salvar(g_logit_emp, "C1_logit_empirico.png", 11, 9)
+
+# ---------------------------------------------------------------------
+# Parecer do Step 1
+# ---------------------------------------------------------------------
+# O parecer lista hipoteses, nao conclusoes. Os criterios abaixo sao
+# regras praticas declaradas para ordenar o que parece importar:
+#   - fatores: ordenados pela amplitude da proporcao entre niveis;
+#   - numericas: ordenadas pela amplitude absoluta do logit entre a
+#     primeira e a ultima faixa; uma amplitude menor do que o dobro do
+#     erro-padrao tipico e tratada como "nao distinguivel do ruido";
+#   - possivel nao linearidade: amplitude acima desse limite, mas reta
+#     explicando menos da metade da variacao entre faixas (R2 < 0,5).
+limite_ruido <- 2 * median(tab_logit_empirico$ep_logit)
+num_tendencia <- resumo_logit %>% filter(abs(amplitude) >= limite_ruido)
+num_ruido     <- resumo_logit %>% filter(abs(amplitude) <  limite_ruido)
+num_curva     <- num_tendencia %>% filter(r2_reta < 0.5)
+
+descreve_tendencia <- function(t) {
+    if (nrow(t) == 0) return("nenhuma")
+    paste(sprintf("%s (%s, amplitude %.2f)", t$variavel,
+                  ifelse(t$amplitude > 0, "crescente", "decrescente"), t$amplitude),
+          collapse = "; ")
+}
+
+parecer("CONCLUSAO LITERAL. Entre os fatores, a maior diferenca de proporcao ",
+        "entre niveis aparece em ", amplitude_fatores$fator[1], ": de ",
+        sprintf("%.1f%%", 100 * amplitude_fatores$prop_min[1]), " em ",
+        amplitude_fatores$nivel_min[1], " a ",
+        sprintf("%.1f%%", 100 * amplitude_fatores$prop_max[1]), " em ",
+        amplitude_fatores$nivel_max[1], ". A menor aparece em ",
+        amplitude_fatores$fator[nrow(amplitude_fatores)], " (",
+        sprintf("%.1f", 100 * amplitude_fatores$amplitude[nrow(amplitude_fatores)]),
+        " pontos percentuais entre o maior e o menor nivel). Entre as numericas, ",
+        "as que mostram tendencia acima do ruido na escala do logit sao: ",
+        descreve_tendencia(num_tendencia), ". As que nao se distinguem do ruido ",
+        "com ", K_FAIXAS, " faixas sao: ",
+        if (nrow(num_ruido) > 0) paste(num_ruido$variavel, collapse = ", ") else "nenhuma", ". ",
+        "CONCLUSAO ESTATISTICA. Todas as diferencas acima sao marginais: cada ",
+        "caracteristica foi olhada isoladamente, sem ajuste pelas demais. Para as ",
+        "numericas com tendencia, a reta ajustada aos ", K_FAIXAS, " pontos explica ",
+        "de ", sprintf("%.0f%%", 100 * min(num_tendencia$r2_reta)), " a ",
+        sprintf("%.0f%%", 100 * max(num_tendencia$r2_reta)), " da variacao entre ",
+        "faixas, o que e compativel com o termo linear no logit para ",
+        if (nrow(num_curva) == 0) "todas elas" else
+            paste0("a maioria; ", paste(num_curva$variavel, collapse = ", "),
+                   " tem sinal de possivel nao linearidade a testar"), ". ",
+        "RESPOSTA PARCIAL. Ha caracteristicas candidatas fortes e fracas, mas ",
+        "nenhuma delas pode ainda ser chamada de determinante: a associacao marginal ",
+        "nao diz se o efeito se mantem quando as outras caracteristicas sao ",
+        "consideradas, nem qual e a direcao causal. ",
+        "O QUE FICA PARA OS PROXIMOS STEPS: os efeitos condicionais, com todas as ",
+        "candidatas juntas (Step 3); a verificacao formal da escala de cada numerica ",
+        "no preditor linear (Step 5).")
+
+
 # =======================================================================================
 #                  Creative Commons License 4.0
 #                       (CC BY-NC-SA 4.0)
