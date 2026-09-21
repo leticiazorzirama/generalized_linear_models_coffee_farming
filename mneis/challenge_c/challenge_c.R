@@ -32,6 +32,7 @@ parecer <- function(...) {
 }
 
 salvar <- function(gg, nome, w=8, h=6) {
+    print(gg)   # mostra no painel de Plots; sem isto a figura so vai para o disco
     suppressWarnings(ggsave(file.path(FIGPATH, nome), gg, width=w, height=h, dpi=300))
     cat("   -> Figura salva:", nome, "\n")
 }
@@ -401,8 +402,9 @@ cat("      overdispersion aqui e um equivoco sem validade matematica.\n\n")
 
 cat("   2. Residuos quantilicos simulados (DHARMa):\n")
 suppressWarnings(res_sim <- simulateResiduals(m_total, n = 250))
+plot(res_sim)   # na tela
 png(file.path(FIGPATH, "C5_dharma_diagnosticos.png"), width = 1600, height = 800, res = 150)
-plot(res_sim)
+plot(res_sim)   # e no arquivo
 invisible(dev.off())
 
 # Os p-valores sao impressos tambem aqui, e nao so dentro do PNG: e este texto
