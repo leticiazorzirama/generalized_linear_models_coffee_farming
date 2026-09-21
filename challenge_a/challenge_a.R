@@ -85,7 +85,7 @@ if(!require(pacman)) {
 # Demais pacotes
 p_load(ggplot2, dplyr, MuMIn, ggplot, ggcorrplot, patchwork, readxl, AER,
        DataExplorer, ggpubr, scatterplot3d, effects, car, hnp, statmod,
-       datasets, DCluster, stargazer, olsrr, performance, report)
+       datasets, DCluster, stargazer, olsrr, performance, report, faraway)
 
 # Opcoes gerais
 options(scipen = 10)
@@ -599,69 +599,22 @@ cat("\nEm comparação ao modelo nulo, o modelo completo COM esforço amostral p
 # =======================================================================================
 secao("DIAGNÓSTICO DOS RESÍDUOS")
 
-<<<<<<< Updated upstream
-plot(mod04) # (TO DO: verificar se podem diagnosticar glms?)
-# Interpretacao:
-# Residuals vs. Fitted: detecta se ha falta de ajuste e se a variancia e constante
-# se os residuos mostram tendencia curvilinea, sinal de que pode haver relacoes nao-lineares
+par(mfrow = c(3, 1))
 
-# Scale-Location: mostra se os residuos estao distribuidos igualmente para verificar
-# se ha homocedasticidade (igual variancia) demonstrado por uma linha horizontal com pontos
-# distribuidos de forma igual e aleatoria
+# Detectar outliers
+# Faraway (2006) recomenda detectar outliers com distribuicao semi-normal
+# porque a resolucao do plot e dobrada ao ter todos os pontos em uma cauda
 
-# Q-Q plot
-# Compara os residuos com observacoes ideais e mostra a distribuicao dos mesmos
+# Comparar residuos absolutos e o quantis
+halfnorm(rstudent(mod06))
 
-# Residuals vs. Leverage
-# Verifica se os valores extremos influenciam no modelo 
+# Verificar a influencia de outliers com leverage
+halfnorm(influence(mod06)$hat) 
 
-# Envelope simulado dos residuos do modelo poisson final
-set.seed(20260922)   # envelope simulado: semente para o script ser reproduzivel
-res01 <- hnp(mod04, plot.sim = FALSE)
+# Verificar a influencia de outliers com a distancia de cook 
+halfnorm(cooks.distance(mod06)) 
 
-# Transformar em dataframe
-res01 <- data.frame(x = res01$x, median = res01$median,
-                    lower = res01$lower, upper = res01$upper,
-                    residuals = res01$residuals)
-
-# Grafico do envelope simulado dos residuos
-p00 <- ggplot(data = res01) +
-    geom_ribbon(aes(x = x, ymin = lower, ymax = upper), alpha = 0.8) +
-    geom_line(aes(x = x, y = median), colour = "white") +
-    geom_point(aes(x = x, y = residuals), pch = 21, fill = "white",
-               colour = "black", size = 5, alpha = 0.5) +
-    labs(x = "Quantis teóricos", y = "Resíduos") +
-    theme_gray(base_size = 18)
-p00
-
-# Exportar os residuos do modelo
-res02 <- fortify(mod04)
-res02$ID <- 1:nrow(res02)
-
-# Grafico de dispersao dos residuos
-p01 <- ggplot(data = res02, aes(x = ID, y = .stdresid)) +
-    geom_point(pch = 21, fill = "white", colour = "black", size = 5,
-               alpha = 0.8) +
-    geom_hline(yintercept = 0, colour = "red") +
-    labs(x = "Índice da amostra", y = "Resíduos padronizados") +
-    theme_gray(base_size = 18)
-p01
-
-# Histograma dos residuos
-p02 <- ggplot(data = res02, aes(x = .stdresid)) +
-    geom_histogram(binwidth = 1, boundary = 1, closed = "right",
-                   fill = "white", colour = "black") +
-    scale_y_continuous(expand = c(0, 0), limits = c(0, 25)) +
-    labs(x = "Resíduos padronizados", y = "Frequência") +
-    theme_gray(base_size = 18)
-p02  # TO DO Verificar 
-
-# Visualizar os graficos lado a lado
-(p01 | p02 | p00)
-=======
-par(mfrow = c(2, 2))
-plot(mod06)
->>>>>>> Stashed changes
+par(mfrow = c(1, 1))
 
 # =======================================================================================
 # VERIFICACAO DA EQUIDISPERSAO DO MODELO POISSON
@@ -684,7 +637,6 @@ caf2 <- caf1 %>%
   summarize(count = n())
 
 # Frequencia relativa
-#####@> Frequencia relativa
 caf2$n_brocas_capt_freq_relat <- caf2$count/sum(caf2$count)
 
 # Media de brocas capturadas
@@ -990,16 +942,6 @@ summary(mod10)
 # Visualizar efeitos
 plot(effects::allEffects(mod10))
 
-# Multicolinearidade entre as covariaveis (requisito comum, secao 4b do enunciado)
-secao("Multicolinearidade do modelo binomial negativa final (VIF)")
-vif_mod08 <- car::vif(mod08)
-print(round(vif_mod08, 3))
-cat("\nMaior VIF:", round(max(vif_mod08), 3),
-    "- limiares de referencia: 5 (atencao) e 10 (grave).\n")
-cat(if (max(vif_mod08) < 5)
-    "Abaixo de 5: nao ha inflacao de variancia que comprometa a estimacao\ndos coeficientes nem a selecao de variaveis.\n"
-    else "ATENCAO: VIF acima do limiar - revisar a selecao de variaveis.\n")
-
 # =======================================================================================
 # DIAGNOSTICO E ANALISE DE RESIDUOS
 # =======================================================================================
@@ -1007,14 +949,8 @@ secao("DIAGNÓSTICO DOS RESÍDUOS")
 
 plot(mod10) 
 
-<<<<<<< Updated upstream
-# Envelope simulado dos residuos do modelo poisson final
-set.seed(20260922)   # envelope simulado: semente para o script ser reproduzivel
-res05 <- hnp(mod08, plot.sim = FALSE)
-=======
 # Envelope simulado dos residuos do modelo binomial negativa
 res05 <- hnp(mod10, plot.sim = FALSE)
->>>>>>> Stashed changes
 
 # Transformar em dataframe
 res05 <- data.frame(x = res05$x, median = res05$median,
