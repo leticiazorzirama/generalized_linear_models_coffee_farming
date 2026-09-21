@@ -212,7 +212,7 @@ Uma linha em branco separa parágrafos.
 \end{figure}
 ```
 
-A imagem precisa estar em `challenge_a/figuras/`, `challenge_b/figuras/` ou
+A imagem precisa estar em  `exploratory_analysis/figuras/`, `challenge_a/figuras/`, `challenge_b/figuras/` ou
 `challenge_c/figuras/`. O `build.R` copia todas sozinho — use só o nome do arquivo, sem
 caminho.
 
