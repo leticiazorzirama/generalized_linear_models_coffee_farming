@@ -1683,7 +1683,7 @@ g_rq_eta <- ggplot(data.frame(eta = eta, rq = rq), aes(x = eta, y = rq)) +
     geom_hline(yintercept = 0, linetype = "dashed") +
     labs(x = "Preditor Linear (eta)", y = "Residuos Quantilicos", title = "Residuos vs Preditor Linear") +
     theme_bw()
-ggsave(file.path(FIG, "B5_rq_vs_eta.png"), g_rq_eta, width = 6, height = 4, dpi = 150)
+salvar(g_rq_eta, "B5_rq_vs_eta.png", 6, 4)
 
 # 2. Linearidade das continuas no preditor linear
 cont_vars <- c("umidade_relativa_pct", "densidade_plantio", "altitude_m", "idade_lavoura_anos", "adubacao_n_kg_ha")
@@ -1699,8 +1699,7 @@ plots_cont <- lapply(cont_vars, function(v) {
 })
 if (length(plots_cont) > 0) {
     g_cont <- wrap_plots(plots_cont, ncol = 2)
-    ggsave(file.path(FIG, "B5_linearidade_continuas.png"), g_cont, width = 8, height = 6, dpi = 150)
-    cat("   -> Salvos B5_rq_vs_eta.png e B5_linearidade_continuas.png\n")
+    salvar(g_cont, "B5_linearidade_continuas.png", 8, 6)
 }
 
 cat("   Gerando envelope simulado para o grafico meio-normal (99 simulacoes)...\n")
