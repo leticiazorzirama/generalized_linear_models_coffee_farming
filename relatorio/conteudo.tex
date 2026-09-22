@@ -10,20 +10,36 @@
 %   \pendente{...}  destaca em amarelo no PDF o que ainda falta
 % =====================================================================
 
+Uma cooperativa de cafeicultores de Minas Gerais enfrenta três problemas simultâneos que
+consomem seu orçamento técnico e definem sua margem:
 
+\begin{itemize}
+    \item a \textbf{broca-do-café} (\emph{Hypothenemus hampei}), monitorada por armadilhas instaladas em cada talhão;
+    \item a \textbf{ferrugem alaranjada} (\emph{Hemileia vastatrix}), avaliada pela severidade — a fração da área foliar lesionada;
+    \item a \textbf{classificação do lote} para o mercado de exportação, que define o preço recebido.
+\end{itemize}
 
-
-A cooperativa precisa decidir onde concentrar o esforço de manejo na próxima safra e
+O corpo técnico precisa decidir onde concentrar o esforço de manejo na próxima safra e
 que recomendações fazer aos cooperados quanto a cultivar, densidade de plantio,
 adubação e irrigação. O conjunto de dados reúne \baseN{} talhões de café descritos por
-\baseVars{} variáveis agronômicas, climáticas e fitossanitárias.
+\baseVars{} variáveis agronômicas, climáticas e fitossanitárias. O talhão refere-se a determinada 
+área da lavoura cafeeira que pode ser considerada homogênea, por ter a mesma variedade de 
+café plantada na mesma data, em um solo de características físicas, químicas e topográficas 
+semelhantes, além de receber o mesmo manejo agronômico e o mesmo tratamento administrativo \cite{santos2009analise}.
 
-As três perguntas do corpo técnico têm naturezas estatísticas distintas e exigem, cada
-uma, uma família diferente de modelo linear generalizado \cite{nelder1972,mccullagh1989}:
-a infestação pela broca é uma \textbf{contagem} sob esforço amostral variável; a
-severidade da ferrugem é uma \textbf{proporção contínua} sem denominador; e o padrão de
-exportação é uma resposta \textbf{binária}. Tratar as três com a mesma ferramenta seria
-ignorar o que a natureza de cada dado impõe.
+Três perguntas foram formuladas com base nos problemas:
+\begin{itemize}
+  \item Quais condições de talhão favorecem a infestação pela broca, e quanto se ganha em pressão de praga ao alterar cada uma delas?
+  \item Que fatores agronômicos determinam a severidade da ferrugem, e existe uma cultivar comprovadamente mais resistente?
+  \item O que determina a chance de um lote atingir o padrão de exportação?
+\end{itemize}
+
+Tais perguntas têm naturezas estatísticas distintas e exigem, cada uma, uma família diferente de modelo linear 
+generalizado \cite{nelder1972,mccullagh1989}: a infestação pela broca é uma \textbf{contagem} sob esforço amostral variável; 
+a severidade da ferrugem é uma \textbf{proporção contínua} sem denominador; 
+e o padrão de exportação é uma resposta \textbf{binária}. 
+Tratar as três com a mesma ferramenta seria ignorar o que a natureza de cada dado impõe. Portanto, cada pergunta se transformou
+em um desafio particular a ser tratado conforme suas especificidades.
 
 Após a análise exploratória univariada\footnote{Acesse a análise exploratória completa no repositório do github do projeto.}, este relatório apresenta os três modelos, o processo de seleção de variáveis, o
 diagnóstico de resíduos e a recomendação de manejo decorrente.
