@@ -481,19 +481,31 @@ A regressão linear, por sua vez, produz predições negativas e supõe variânc
 quando a variância de uma proporção é estruturalmente função da média: não há espaço para
 variar perto dos limites do intervalo.
 
+Resta a transformação arco-seno-raiz, histórica em fitopatologia. Testada nesta base, ela
+\emph{cumpre} o que promete: estabiliza a variância e remove a não-linearidade. O
+argumento contra ela é outro. Primeiro, a volta à escala original é enviesada pela
+desigualdade de Jensen. Segundo, e decisivo, o modelo linear transformado não possui
+parâmetro de dispersão a ser modelado, o que inviabiliza a exigência literal da terceira
+tarefa do enunciado --- ajustar um preditor para $\phi$ e compará-lo por razão de
+verossimilhanças.
+
+A nota do enunciado pede ainda que se discuta o que fazer diante de zeros exatos. Esta
+base não os tem (\bYzeros{} ocorrências), mas a regressão beta padrão não os admite,
+porque a log-verossimilhança avalia $\log(y)$. Havendo talhões com severidade nula, duas
+saídas se apresentam: a transformação de \textcite{smithson2006}, que comprime a resposta
+para dentro do intervalo aberto, ou um modelo inflacionado de zeros. A primeira é
+conveniente mas \emph{ad hoc} --- trata a imunidade total como um grau muito pequeno de
+doença. A segunda é biologicamente mais honesta: separa a probabilidade de a doença se
+instalar, modelada por regressão logística, da severidade dado que se instalou, modelada
+pela beta. São dois processos distintos, e o custo é o dobro de parâmetros.
+
 \subsection{Regressão beta}
 
-Adotou-se a regressão beta na parametrização de \textcite{ferrari2004}, implementada
-por \textcite{cribari2010}, em que $\mathbb{E}[y] = \mu$ e
-
-\begin{equation}
-    \mathrm{Var}[y] = \frac{\mu(1-\mu)}{1+\phi},
-    \label{eq:beta}
-\end{equation}
-
-\noindent com $\phi$ interpretado como \emph{precisão}: quanto maior, mais concentrada a
-distribuição em torno de $\mu$. A variância depende da média por construção, e o problema
-estrutural do modelo linear desaparece.
+Adotou-se a regressão beta na parametrização de \textcite{ferrari2004}, implementada por
+\textcite{cribari2010}, em que $\mathbb{E}[y] = \mu$ e $\mathrm{Var}[y] =
+\mu(1-\mu)/(1+\phi)$, com $\phi$ interpretado como \emph{precisão}: quanto maior, mais
+concentrada a distribuição em torno de $\mu$. A variância depende da média por
+construção, e o problema estrutural do modelo linear desaparece.
 
 A ligação foi escolhida por critério explícito, e não por ser o padrão do pacote.
 Comparadas as seis ligações disponíveis, \bLigacoesEquiv{} ficam dentro de
@@ -538,37 +550,63 @@ A seleção \textit{backward} por razão de verossimilhanças reduziu o modelo d
 (\bAICfull{} $\rightarrow$ \bAIC{}) e BIC (\bBICfull{} $\rightarrow$ \bBIC{}). O modelo
 final alcança pseudo-$R^2$ de \bPseudoR{}.
 
+Em razões de chances, tomando a Bourbon como referência, a Icatu apresenta
+$\mathrm{OR} = \bORIcatu$ com intervalo de 95\% de [\bORloIcatu;\ \bORhiIcatu] --- a
+cultivar mais resistente da base, com chance de adoecimento cerca de quatro vezes menor.
+Catuaí (\bORCatuai) e Mundo Novo (\bORMundoNovo) situam-se entre os dois extremos, e os
+três intervalos excluem a unidade.
+
+\subsection{Efeitos marginais em cenários agronômicos}
+
+Razão de chances não é probabilidade, e a ligação \texttt{logit} é não linear: o mesmo
+coeficiente vale diferentes pontos percentuais conforme o nível das demais covariáveis.
+A recomendação ao produtor exige, portanto, a escala original. Fixando as covariáveis
+numéricas e variando apenas umidade relativa e densidade de plantio, obtêm-se três
+cenários:
+
 \begin{table}[H]
     \centering
-    \caption{Efeito da cultivar sobre a severidade da ferrugem, em razões de chances,
-             tomando a Bourbon como referência.}
-    \label{tab:cultivar}
-    \begin{tabular}{lrrl}
+    \caption{Severidade esperada por cenário, em pontos percentuais de área foliar.}
+    \label{tab:cenarios}
+    \begin{tabular}{lrrr}
         \toprule
-        Cultivar & Coeficiente & Razão de chances & IC 95\% \\
+        Cenário & Bourbon & Icatu & Diferença \\
         \midrule
-        Catuaí      & \bCoefCatuai     & \bORCatuai     & [\bORloCatuai;\ \bORhiCatuai] \\
-        Icatu       & \bCoefIcatu      & \bORIcatu      & [\bORloIcatu;\ \bORhiIcatu] \\
-        Mundo Novo  & \bCoefMundoNovo  & \bORMundoNovo  & [\bORloMundoNovo;\ \bORhiMundoNovo] \\
+        Desfavorável à doença (decil 10) & --- & --- & \bPPdesfavoravel{} p.p. \\
+        Típico (medianas)                & \bBourbonPct\% & \bIcatuPct\% & \bDifPP{} p.p. \\
+        Favorável à doença (decil 90)    & --- & --- & \bPPfavoravel{} p.p. \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-Como a ligação \texttt{logit} é não linear, o efeito em pontos percentuais depende do
-nível das demais covariáveis. Num talhão típico --- umidade e densidade nas medianas ---,
-a severidade esperada é \bBourbonPct\% para a Bourbon contra \bIcatuPct\% para a Icatu,
-uma diferença de \bDifPP{} pontos percentuais. Sob condições favoráveis à doença essa
-diferença sobe a \bPPfavoravel{} pontos; sob condições desfavoráveis, cai a
-\bPPdesfavoravel{}.
+A escolha de cultivar vale, portanto, entre \bPPdesfavoravel{} e \bPPfavoravel{} pontos
+percentuais de severidade, conforme o microclima do talhão. O ganho é maior justamente
+onde a pressão de doença é maior --- o que orienta a priorização: substituir cultivar
+compensa mais em baixadas úmidas e plantios adensados.
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.85\textwidth]{B5_meionormal_envelope.png}
-    \caption{Gráfico meio-normal com envelope simulado por 99 reajustes do próprio
-             modelo. A proporção de pontos fora da banda é compatível com o esperado
-             para um envelope de 95\%, sem fugas sistemáticas nas caudas.}
-    \label{fig:envelope}
-\end{figure}
+\subsection{Diagnóstico de resíduos}
+
+Os cinco itens exigidos foram verificados sobre o modelo final. Os \emph{resíduos
+quantílicos aleatorizados} \cite{dunn1996} contra o preditor linear não exibem padrão
+sistemático, e a \emph{linearidade} das covariáveis contínuas nessa escala se sustenta.
+A \emph{verificação de dispersão} é a própria Seção anterior: $\phi$ constante, com os
+testes de homogeneidade não rejeitando.
+
+Quanto aos \emph{pontos influentes}, a maior distância de Cook é \bCookMax{} contra uma
+média de \bCookMedia{}; \bCookAcimaTres{} talhões superam três vezes a média, mas
+\bCookAcimaUm{} ultrapassam o limiar absoluto de 1, de modo que nenhuma observação
+exerce alavancagem que justifique exclusão. Os mais salientes são os talhões
+\bCookIds{}.
+
+O \emph{envelope simulado} por 99 reajustes do próprio modelo deixa \bEnvFora{} dos
+\bEnvTotal{} pontos fora da banda de 95\%, ou \bEnvForaPct\%. É mais que os 5\% esperados,
+e coerente com o teste de Shapiro-Wilk sobre os resíduos quantílicos, que rejeita a
+normalidade estrita ($W = \bShapiroW$, $p = \bShapiroP$). A assimetria residual é real e
+concentra-se nos talhões de maior severidade, onde a beta subestima ligeiramente a
+variância. O desvio não invalida a inferência sobre a cultivar --- cujos intervalos são
+amplos o bastante para absorvê-lo --- mas deve ser registrado como limitação, e sugere
+que uma extensão com dispersão variável por faixa de média, ainda que rejeitada pelos
+testes formais, mereça investigação em trabalhos futuros.
 
 \section{Desafio C --- padrão de exportação}
 \label{sec:desafioC}
