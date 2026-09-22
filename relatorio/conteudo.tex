@@ -389,76 +389,139 @@ diferença sobe a \bPPfavoravel{} pontos; sob condições desfavoráveis, cai a
 \section{Desafio C --- padrão de exportação}
 \label{sec:desafioC}
 
-\pendente{Seção preliminar. O modelo logístico final ainda não foi ajustado; ver o plano
-de implementação. Os números abaixo são descritivos e de mediação, já extraídos da base.}
+\subsection{A resposta, a família e a ligação}
 
-\subsection{A resposta}
+Dos \baseN{} talhões, \cExporta{} atingem o padrão de exportação e \cNaoExporta{} não ---
+prevalência de \cPrevalencia\%. Cada talhão traz um único resultado $0/1$: uma observação
+de Bernoulli, e não uma contagem de sucessos com denominador conhecido. A variância
+$\mathrm{Var}[y] = \pi(1-\pi)$ é determinada pela média, de modo que não há parâmetro de
+dispersão livre e a superdispersão é inidentificável. Adotou-se a ligação \texttt{logit},
+canônica da binomial e a única cujos coeficientes exponenciados são razões de chances: as
+\cLigacoesEquiv{} ligações disponíveis ficam dentro de $\Delta$AIC~$< 2$, e a escolha
+apoia-se na interpretação, não no ajuste. Com \cEPV{} parâmetros admissíveis pela regra
+de dez eventos por variável \cite{peduzzi1996} contra \cNparFull{} do amplo, selecionar
+é necessidade, não preferência estética.
 
-Dos \baseN{} talhões, \cExporta{} atingem o padrão de exportação e \cNaoExporta{} não,
-o que corresponde a uma prevalência de \cPrevalencia\%. A resposta é, portanto,
-\textbf{balanceada} --- fato que importa para a Seção~\ref{sec:corte}, porque desloca a
-discussão do ponto de corte do desbalanceamento para o custo assimétrico dos erros.
+\subsection{Seleção de variáveis}
 
-A classe minoritária com \cExporta{} casos admite, pela regra de dez eventos por
-variável \cite{peduzzi1996}, cerca de \cEPV{} parâmetros. O modelo amplo com a severidade
-excede esse limite, o que torna a seleção de variáveis uma necessidade, e não uma
-preferência estética.
+Ficam fora por construção \var{n\_armadilhas} e \var{dias\_exposicao}, que descrevem o
+processo de medição; \var{n\_brocas\_capturadas}, desfecho do Desafio~A; e
+\var{severidade\_ferrugem}, desfecho do Desafio~B, reservada à Seção~\ref{sec:mediacao}.
+O maior VIF generalizado ajustado é \cVIFmax{} (\cVIFmaxTermo). A eliminação
+\textit{backward} por razão de verossimilhanças a 5\% retirou \cRetirados{} termos, de
+\cPrimeiroRetirado{} a \cUltimoRetirado{}, levando o AIC de \cAICfull{} a \cAIC{} e o BIC
+de \cBICfull{} a \cBIC{}. Entre o modelo final, com \cNpar{} parâmetros, e o amplo
+\textbf{não se detectou perda de ajuste estatisticamente significativa}
+($\mathrm{LR} = \cLRTfinalAmplo$, $p = \cPfinalAmplo$), o que não demonstra equivalência:
+apenas que esta amostra não distingue os dois ajustes. A \var{cultivar} foi retida
+\textbf{por desenho}: é o que o produtor escolhe e a exposição da
+Seção~\ref{sec:mediacao}.
 
-\subsection{Efeito total e efeito direto da cultivar}
+Três covariáveis --- \cIrrelevantes{} --- reúnem $p > 0{,}5$ no amplo e saída nos
+primeiros passos, assim como a taxa de captura de broca oferecida ao modelo final
+($p = \cBrocaP$). A leitura é restrita: \textbf{nesta amostra e sob estes critérios}, não
+se encontrou evidência de contribuição depois de consideradas as demais covariáveis ---
+o que não demonstra irrelevância agronômica, já que efeito pequeno, faixa de variação
+estreita nesta base ou colinearidade com termos mantidos produziriam o mesmo resultado.
+
+\subsection{Cultivar e ferrugem: duas leituras do coeficiente}
 \label{sec:mediacao}
 
-A \var{severidade\_ferrugem} é ela própria um desfecho, influenciada pela cultivar.
-Incluí-la como preditor da exportação muda o que o coeficiente da cultivar significa
-\cite{pearl2009,vanderweele2016}.
+A \var{severidade\_ferrugem} é ela própria um desfecho, influenciada pela cultivar:
+escolhida a cultivar no plantio, a ferrugem se instala ao longo da safra e a
+classificação vem por último. Sob essa ordenação, adotada como \textbf{hipótese causal de
+trabalho}, a severidade ocuparia a posição de mediadora \cite{pearl2009,vanderweele2016}.
+A configuração observada é instrutiva: a Icatu tem \emph{a menor} severidade média
+(\cSevMediaIcatu{} contra \cSevMediaBourbon{} da Bourbon) e, simultaneamente, \emph{a
+menor} chance estimada de exportação. Comparam-se dois modelos: sem a severidade, o
+coeficiente da Icatu é \cTotalIcatu{}; com ela, \cDiretoIcatu{} --- padrão que se repete
+em Catuaí (\cTotalCatuai{} para \cDiretoCatuai{}) e Mundo Novo (\cTotalMundoNovo{} para
+\cDiretoMundoNovo{}). A própria severidade tem coeficiente \cSevCoef{} ($p = \cSevP$):
+cada 0,10 a mais de área foliar lesionada multiplica a chance por \cSevORdez{}
+([\cSevORdezLo;\ \cSevORdezHi]).
 
-Os dados revelam uma configuração instrutiva: a cultivar Icatu apresenta \emph{a menor}
-severidade média e, simultaneamente, \emph{a menor} taxa de exportação. Os dois caminhos
-causais operam em direções opostas.
+Os rótulos \textbf{efeito total} e \textbf{efeito direto} são interpretações válidas
+\emph{sob} o diagrama adotado, e não efeitos causais estabelecidos pela regressão, que
+estima associações condicionais. Nesses termos, o modelo sem a severidade corresponde ao
+que o produtor herda ao escolher a cultivar antes do plantio --- por isso é o adotado
+como final ---, e o modelo com ela, à pergunta de quem planeja o controle da doença. Duas
+ressalvas limitam a leitura: a interpretação causal pressupõe ausência de confundidor não
+medido entre ferrugem e exportação, hipótese não testável com estes dados; e \textbf{o
+deslocamento dos coeficientes não demonstra mediação}, pois a razão de chances não é
+colapsável \cite{greenland1999} --- acrescentar uma covariável associada ao desfecho
+altera os demais coeficientes mesmo sem qualquer caminho mediado.
+
+\subsection{Efeitos, capacidade preditiva e diagnóstico}
+\label{sec:corte}
 
 \begin{table}[H]
     \centering
-    \caption{Coeficientes da cultivar na predição da exportação, com e sem a severidade
-             no modelo. Referência: Bourbon.}
-    \label{tab:mediacao}
-    \begin{tabular}{lrr}
+    \caption{Razões de chances do modelo final, com intervalos de verossimilhança
+             perfilada. Referências: Bourbon (cultivar) e convencional (manejo).}
+    \label{tab:orC}
+    \begin{tabular}{lrl}
         \toprule
-        Cultivar & Efeito total & Efeito direto \\
-                 & (sem severidade) & (com severidade) \\
+        Termo & Razão de chances & IC 95\% \\
         \midrule
-        Catuaí     & \cTotalCatuai     & \cDiretoCatuai \\
-        Icatu      & \cTotalIcatu      & \cDiretoIcatu \\
-        Mundo Novo & \cTotalMundoNovo  & \cDiretoMundoNovo \\
+        Cultivar Catuaí               & \cORCatuai      & [\cORloCatuai;\ \cORhiCatuai] \\
+        Cultivar Icatu                & \cORIcatu       & [\cORloIcatu;\ \cORhiIcatu] \\
+        Cultivar Mundo Novo           & \cORMundoNovo   & [\cORloMundoNovo;\ \cORhiMundoNovo] \\
+        Manejo integrado              & \cORIntegrado   & [\cORloIntegrado;\ \cORhiIntegrado] \\
+        Manejo orgânico               & \cOROrganico    & [\cORloOrganico;\ \cORhiOrganico] \\
+        Altitude (por 100~m)          & \cORAltitudeCem & [\cORloAltitudeCem;\ \cORhiAltitudeCem] \\
+        Idade da lavoura (por 5~anos) & \cORIdadeCinco  & [\cORloIdadeCinco;\ \cORhiIdadeCinco] \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-No modelo que inclui a severidade, o coeficiente desta é \cSevCoef{} ($p = \cSevP$): a
-ferrugem de fato reduz a chance de exportação. A Icatu adoece menos, o que a beneficia
-por esse caminho; mas seu coeficiente direto é \cDiretoIcatu{}, contra \cTotalIcatu{} no
-efeito total. A penalidade direta é parcialmente compensada pelo ganho via menor doença.
+Apenas manejo e contínuas têm intervalos que excluem~1; os da cultivar delimitam a faixa
+plausível, o que não equivale a ausência de efeito. Razão de chances tampouco é risco
+relativo: a tradução em pontos percentuais depende do ponto de partida
+(Seção~\ref{sec:decisao}).
 
-\textbf{Qual deles responde à pergunta do produtor?} O produtor escolhe a cultivar
-\emph{antes do plantio} e herda os dois caminhos --- o direto e o mediado pela ferrugem.
-O \textbf{efeito total} é, portanto, o que responde à sua pergunta. O efeito direto
-responde a outra, também legítima: quanto restaria da cultivar se a ferrugem fosse
-controlada por outro meio.
+A área sob a curva ROC (Figura~\ref{fig:rocC}) é \cAUC{} (IC 95\% de DeLong
+\cite{delong1988}: [\cAUClo;\ \cAUChi]) na própria amostra de ajuste, e cai a \cAUCcv{}
+sob validação cruzada em \cFolds{} partes. O alcance desse segundo número precisa ser
+declarado: a \emph{fórmula} do modelo final foi selecionada previamente com a base
+completa, e apenas os \emph{coeficientes} são reajustados em cada parte. A estimativa
+corrige o otimismo do ajuste dos coeficientes, mas \textbf{não valida de forma
+independente o processo de seleção}, que teria de ser repetido dentro de cada parte.
 
-Cabe a ressalva: a leitura causal dessa decomposição pressupõe ausência de confundidor
-não medido entre ferrugem e exportação --- hipótese que \textbf{não é testável} com estes
-dados.
+O corte é decisão de custo, e não propriedade do modelo:
+$p^{*} = C_{FP}/(C_{FP}+C_{FN})$ vale 0,5 apenas com erros de mesmo custo. Sob
+$C_{FP} = \cRazaoCusto\,C_{FN}$ --- razão \textbf{suposta neste trabalho}, não estimada
+dos dados, admitindo que um lote rejeitado na exportação custe mais que um prêmio perdido
+---, ele sobe a \cCorteCusto{}, com especificidade \cEspecCusto\% e sensibilidade
+\cSensCusto\%. Nesse corte o custo médio \emph{observado nesta amostra} é \cCusto{} por
+lote contra \cCustoNunca{} da regra trivial de nunca apontar lote algum: diferença
+pequena, medida nos mesmos talhões que ajustaram o modelo e que, por isso, não se pode
+apresentar como benefício assegurado em novos talhões. O modelo presta-se a
+\emph{priorizar} talhões, não a substituir a classificação oficial.
 
-\subsection{Capacidade preditiva e ponto de corte}
-\label{sec:corte}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.46\textwidth]{C8_roc.png}
+    \caption{Curva ROC do modelo final. Os pontos marcam o corte de 0,5 e o de Youden
+             (\cCorteYouden); a diagonal corresponde à classificação ao acaso.}
+    \label{fig:rocC}
+\end{figure}
 
-\pendente{Matriz de confusão, curva ROC, AUC com intervalo de DeLong \cite{delong1988},
-validação cruzada com seleção dentro do \textit{fold}, calibração e escolha do ponto de
-corte por custo assimétrico.}
+O diagnóstico usou resíduos quantílicos aleatorizados \cite{dunn1996}, compatíveis com
+$N(0,1)$ ($p = \cShapiroP$), e envelope simulado por 99 reajustes, em que \cEnvFora{} dos
+\cEnvTotal{} pontos ficaram fora da banda --- resultado que indica \textbf{ausência de
+incompatibilidade detectada por este diagnóstico}, e não prova de que o modelo esteja
+correto. A razão de Pearson sobre os graus de liberdade é \cPearsonRazao{}, ainda que não
+identifique superdispersão em dados binários; o ajuste global veio da calibração por
+decis ($\chi^2 = \cHLqui$, $p = \cHLp$) \cite{hosmer2013}. Os \cInfluentesN{} talhões
+acima da régua de $4/n$ (Cook máximo \cCookMax{}; \cInfluentesIds{} entre eles) não
+alteram o sinal de nenhum coeficiente quando removidos, e nem $\hat\eta^2$ como
+covariável extra ($p = \cEtaQuadradoP$) nem o termo $x\log x$ ($p = \cBTAltitude$ e
+$p = \cBTIdade$) acusaram inadequação da ligação ou da escala adotadas.
 
 \section{Decisão e recomendação de manejo}
+\label{sec:decisao}
 
-\pendente{Consolidar após o fechamento dos Desafios A e C. A recomendação deve quantificar
-os efeitos na escala original: brocas por unidade de esforço, pontos percentuais de
-severidade e probabilidade de exportação.}
+\pendente{Falta consolidar a recomendação do Desafio A --- brocas por unidade de esforço.}
 
 A escolha da cultivar é o fator de maior impacto sobre a ferrugem: \bDifPP{} pontos
 percentuais de severidade separam a Bourbon da Icatu num talhão típico. Essa vantagem,
@@ -466,6 +529,26 @@ contudo, não se traduz automaticamente em exportação --- a Seção~\ref{sec:m
 mostra que a Icatu carrega uma penalidade direta que compensa parte do ganho
 fitossanitário. A recomendação de cultivar, portanto, não pode ser derivada apenas do
 Desafio B.
+
+Na escala que interessa ao produtor, num talhão típico --- altitude de
+\cAltitudeMediana~m e lavoura de \cIdadeMediana{} anos ---, a probabilidade de atingir o
+padrão de exportação vai de \cPmin\% (\cCenarioMin) a \cPmax\% (\cCenarioMax). Entre as
+decisões que estão ao alcance do cooperado, a de maior retorno é o \textbf{sistema de
+manejo}: a passagem do convencional ao orgânico acrescenta de \cGanhoManejoMin{} a
+\cGanhoManejoMax{} pontos percentuais de probabilidade, conforme a cultivar. A
+\textbf{renovação das lavouras mais velhas} vem em seguida: entre o primeiro e o terceiro
+quartil de idade a probabilidade varia \cIdadePP{} pontos percentuais. A altitude não se
+escolhe, mas orienta \emph{onde} concentrar o esforço --- \cAltitudePP{} pontos
+percentuais separam os quartis ---, indicando os talhões altos como candidatos naturais
+aos contratos de exportação e os baixos como os que mais dependem do manejo para
+compensar.
+
+Duas ressalvas delimitam o alcance dessas recomendações. A capacidade preditiva é
+moderada (AUC \cAUCcv{} sob validação cruzada), o que indica que parte relevante do que
+decide o padrão de exportação não está nas características de talhão desta base ---
+colheita, pós-colheita e beneficiamento não foram medidos. E as associações são
+observacionais: o modelo não substitui um experimento em que cultivar e manejo sejam
+atribuídos aos talhões.
 
 \section{Considerações finais}
 

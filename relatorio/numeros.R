@@ -131,8 +131,18 @@ FORM_A <- n_brocas_capturadas ~ adubacao_n_kg_ha + altitude_m + densidade_planti
 FORM_B <- severidade_ferrugem ~ cultivar + irrigacao + umidade_relativa_pct +
     densidade_plantio + altitude_m + idade_lavoura_anos + adubacao_n_kg_ha
 
-# --- DESAFIO C: logistica. Ainda nao definido; ver 'Plano de Implementacao - Desafio C' --
-FORM_C <- NULL
+# --- DESAFIO C: logistica, ligacao logit (espelha modelo_final do challenge_c.R) --------
+# Resultado da selecao backward por LRT a 5%, com cultivar retida por desenho.
+FORM_C <- padrao_exportacao ~ cultivar + manejo + altitude_m + idade_lavoura_anos
+
+# Candidatas do modelo amplo do Desafio C. Ficam de fora: os identificadores e o
+# esforco amostral (processo de medicao, nao caracteristica do talhao), a contagem
+# de brocas (desfecho do Desafio A) e a severidade da ferrugem (desfecho do
+# Desafio B, tratada como possivel mediadora na Tarefa 2).
+CAND_C <- c("cultivar", "manejo", "irrigacao", "regiao_produtora", "altitude_m",
+            "declividade_pct", "idade_lavoura_anos", "densidade_plantio",
+            "adubacao_n_kg_ha", "precipitacao_safra_mm", "umidade_relativa_pct",
+            "ph_solo", "materia_organica_pct")
 
 # =======================================================================================
 # DESAFIO A - contagens
@@ -334,14 +344,105 @@ cat("  cenarios: desfavoravel ", round(cenario_pp(0.1), 1),
 # =======================================================================================
 cat("\n--- Desafio C ---\n")
 
+p_load(statmod, hnp)
+
+# --- a resposta ------------------------------------------------------------------------
 num("cExporta",    sum(caf$padrao_exportacao == 1), 0)
 num("cNaoExporta", sum(caf$padrao_exportacao == 0), 0)
 num("cPrevalencia", 100 * mean(caf$padrao_exportacao), 2)
 num("cEPV",        floor(min(table(caf$padrao_exportacao)) / 10), 0)
 
-# Efeito total x efeito direto - o item autoral da Tarefa 2
-cTot <- glm(padrao_exportacao ~ cultivar, data = caf, family = binomial)
-cDir <- glm(padrao_exportacao ~ cultivar + severidade_ferrugem, data = caf, family = binomial)
+# --- modelo amplo e selecao backward por LRT -------------------------------------------
+# A selecao e refeita aqui, e nao copiada: se o criterio mudar, o numero muda junto.
+f_amplo_c <- as.formula(paste("padrao_exportacao ~", paste(CAND_C, collapse = " + ")))
+mC_nulo  <- glm(padrao_exportacao ~ 1, data = caf, family = binomial)
+mC_amplo <- glm(f_amplo_c, data = caf, family = binomial, na.action = na.fail)
+stopifnot(mC_amplo$converged)
+
+num("cNparFull", length(coef(mC_amplo)), 0)
+num("cAICfull",  AIC(mC_amplo), 2)
+num("cBICfull",  BIC(mC_amplo), 2)
+
+# O modelo amplo explica algo alem da proporcao geral?
+an_glob <- anova(mC_nulo, mC_amplo, test = "Chisq")
+num("cLRTglobal", an_glob$Deviance[2], 2)
+num("cGLglobal",  an_glob$Df[2], 0)
+pval("cPglobal",  an_glob[["Pr(>Chi)"]][2])
+
+# Multicolinearidade: GVIF ajustado, comparavel entre fatores e numericas
+vif_c <- car::vif(mC_amplo)
+gvif_aj <- if (is.matrix(vif_c)) vif_c[, 3] else sqrt(vif_c)
+num("cVIFmax", max(gvif_aj), 2)
+txt("cVIFmaxTermo", gsub("_", "\\\\_", names(which.max(gvif_aj))))
+
+# Backward por LRT a 5%, mantendo cultivar por desenho (e a exposicao da Tarefa 2)
+ALFA_C <- 0.05
+m_at <- mC_amplo; retirados <- character(0)
+repeat {
+    d <- drop1(m_at, test = "Chisq")[-1, ]
+    d <- d[!rownames(d) %in% "cultivar", ]
+    if (!nrow(d) || max(d[["Pr(>Chi)"]]) < ALFA_C) break
+    r_out <- rownames(d)[which.max(d[["Pr(>Chi)"]])]
+    retirados <- c(retirados, r_out)
+    m_at <- update(m_at, as.formula(paste(". ~ . -", r_out)))
+}
+# Conferencia: o backward tem de reproduzir a FORM_C declarada em MODELOS FINAIS
+if (!setequal(attr(terms(m_at), "term.labels"), attr(terms(FORM_C), "term.labels")))
+    stop("O backward nao reproduz FORM_C. Atualize o bloco MODELOS FINAIS.", call. = FALSE)
+
+mC <- glm(FORM_C, data = caf, family = binomial, na.action = na.fail)
+stopifnot(mC$converged)
+num("cNpar",      length(coef(mC)), 0)
+num("cAIC",       AIC(mC), 2)
+num("cBIC",       BIC(mC), 2)
+num("cRetirados", length(retirados), 0)
+txt("cPrimeiroRetirado", gsub("_", "\\\\_", retirados[1]))
+txt("cUltimoRetirado",   gsub("_", "\\\\_", retirados[length(retirados)]))
+
+# A simplificacao custou ajuste?
+an_fa <- anova(mC, mC_amplo, test = "Chisq")
+num("cLRTfinalAmplo", an_fa$Deviance[2], 2)
+num("cGLfinalAmplo",  an_fa$Df[2], 0)
+pval("cPfinalAmplo",  an_fa[["Pr(>Chi)"]][2])
+
+# Irrelevantes por construcao: p alto no modelo amplo, e saida cedo no backward
+d_amplo <- drop1(mC_amplo, test = "Chisq")[-1, ]
+irrel <- rownames(d_amplo)[d_amplo[["Pr(>Chi)"]] > 0.5]
+num("cIrrelevantesN", length(irrel), 0)
+txt("cIrrelevantes", paste(gsub("_", "\\\\_", irrel), collapse = ", "))
+
+# Sensibilidade: a contagem de brocas acrescentaria algo ao modelo final?
+caf$log_taxa_broca <- log((caf$n_brocas_capturadas + 0.5) / caf$esforco_amostral)
+pval("cBrocaP", anova(mC, update(mC, . ~ . + log_taxa_broca), test = "Chisq")[["Pr(>Chi)"]][2])
+
+# --- ligacao: os dados distinguem logit de probit, cloglog e cauchit? ------------------
+aic_lig <- sapply(c("logit", "probit", "cloglog", "cauchit"),
+                  function(L) AIC(glm(FORM_C, data = caf, family = binomial(link = L))))
+daic_lig <- aic_lig - min(aic_lig)
+num("cLigacoesEquiv", sum(daic_lig < 2), 0)
+num("cDaicLogit",     daic_lig[["logit"]], 2)
+txt("cMelhorLigacao", names(which.min(aic_lig)))
+
+# --- Tarefa 4: razoes de chances com IC de verossimilhanca perfilada -------------------
+ic_c <- suppressMessages(confint(mC))
+orc <- function(termo, tag, escala = 1) {
+    num(paste0("cOR",   tag), exp(escala * coef(mC)[[termo]]), 3)
+    num(paste0("cORlo", tag), exp(escala * ic_c[termo, 1]), 3)
+    num(paste0("cORhi", tag), exp(escala * ic_c[termo, 2]), 3)
+}
+for (lv in c("Catuai", "Icatu", "Mundo Novo"))
+    orc(paste0("cultivar", lv), gsub(" ", "", lv))
+for (lv in c("Integrado", "Organico"))
+    orc(paste0("manejo", lv), lv)
+orc("altitude_m",         "AltitudeCem", 100)   # por 100 m
+orc("idade_lavoura_anos", "IdadeCinco",    5)   # por 5 anos
+
+# --- Tarefa 2: efeito total x efeito direto, agora no modelo final --------------------
+# Antes esta comparacao usava um modelo so com a cultivar; agora vem do modelo final,
+# de modo que os coeficientes sao os mesmos reportados na Tarefa 4.
+cTot <- mC
+cDir <- update(mC, . ~ . + severidade_ferrugem)
+stopifnot(cDir$converged)
 for (lv in c("Catuai", "Icatu", "Mundo Novo")) {
     k <- paste0("cultivar", lv); tag <- gsub(" ", "", lv)
     num(paste0("cTotal", tag),  coef(cTot)[[k]], 4)
@@ -349,19 +450,148 @@ for (lv in c("Catuai", "Icatu", "Mundo Novo")) {
 }
 num("cSevCoef", coef(cDir)[["severidade_ferrugem"]], 4)
 pval("cSevP",   summary(cDir)$coefficients["severidade_ferrugem", 4])
+# Razao de chances por 0,10 de severidade: "uma unidade" nao existe nesta base
+ic_sev <- suppressMessages(confint(cDir))["severidade_ferrugem", ]
+num("cSevORdez",   exp(0.10 * coef(cDir)[["severidade_ferrugem"]]), 3)
+num("cSevORdezLo", exp(0.10 * ic_sev[1]), 3)
+num("cSevORdezHi", exp(0.10 * ic_sev[2]), 3)
+sev_media <- tapply(caf$severidade_ferrugem, caf$cultivar, mean)
+num("cSevMediaBourbon", sev_media[["Bourbon"]], 3)
+num("cSevMediaIcatu",   sev_media[["Icatu"]], 3)
 
-if (is.null(FORM_C)) {
-    cat("  MODELO FINAL AINDA NAO DEFINIDO - so os numeros descritivos e de mediacao\n")
-    txt("cStatus", "preliminar")
-} else {
-    mC <- glm(FORM_C, data = caf, family = binomial)
-    stopifnot(mC$converged)
-    r <- pROC::roc(caf$padrao_exportacao, fitted(mC), quiet = TRUE)
-    num("cAUC",    as.numeric(pROC::auc(r)), 4)
-    ci <- as.numeric(pROC::ci.auc(r))
-    num("cAUClo",  ci[1], 4); num("cAUChi", ci[3], 4)
-    txt("cStatus", "final")
+# --- Tarefa 3: capacidade preditiva e ponto de corte ----------------------------------
+p_hat <- fitted(mC)
+roc_c <- pROC::roc(caf$padrao_exportacao, p_hat, levels = c(0, 1), direction = "<", quiet = TRUE)
+num("cAUC", as.numeric(pROC::auc(roc_c)), 3)
+ci_auc <- as.numeric(pROC::ci.auc(roc_c))
+num("cAUClo", ci_auc[1], 3); num("cAUChi", ci_auc[3], 3)
+
+# Validacao cruzada em 10 partes: o acerto medido fora da amostra de ajuste
+set.seed(20260920)
+K <- 10; fold <- sample(rep(1:K, length.out = nrow(caf))); p_cv <- numeric(nrow(caf))
+for (k in 1:K) {
+    mk <- glm(FORM_C, data = caf[fold != k, ], family = binomial)
+    p_cv[fold == k] <- predict(mk, newdata = caf[fold == k, ], type = "response")
 }
+auc_cv <- as.numeric(pROC::auc(pROC::roc(caf$padrao_exportacao, p_cv,
+                                         levels = c(0, 1), direction = "<", quiet = TRUE)))
+num("cAUCcv", auc_cv, 3)
+num("cFolds", K, 0)
+
+metr <- function(corte) {
+    pr <- as.integer(p_hat >= corte); ob <- caf$padrao_exportacao
+    VP <- sum(pr == 1 & ob == 1); FP <- sum(pr == 1 & ob == 0)
+    FN <- sum(pr == 0 & ob == 1); VN <- sum(pr == 0 & ob == 0)
+    c(VP = VP, FP = FP, FN = FN, VN = VN,
+      sens = VP / (VP + FN), espec = VN / (VN + FP), acur = (VP + VN) / length(ob))
+}
+m05 <- metr(0.5)
+for (k in c("VP", "FP", "FN", "VN")) num(paste0("c", k), m05[[k]], 0)
+num("cSens",     100 * m05[["sens"]], 1)
+num("cEspec",    100 * m05[["espec"]], 1)
+num("cAcuracia", 100 * m05[["acur"]], 1)
+num("cAcuraciaTrivial",
+    100 * max(mean(caf$padrao_exportacao), 1 - mean(caf$padrao_exportacao)), 1)
+
+# Corte por custo assimetrico: p > C_FP / (C_FP + C_FN). A razao adotada e uma
+# suposicao declarada da equipe, nao um resultado dos dados.
+CUSTO_FP <- 2; CUSTO_FN <- 1
+corte_c <- CUSTO_FP / (CUSTO_FP + CUSTO_FN)
+mCC <- metr(corte_c)
+num("cRazaoCusto", CUSTO_FP / CUSTO_FN, 0)
+num("cCorteCusto", corte_c, 3)   # 3 casas: o corte e 2/3, e 0,67 arredondaria o registro
+num("cSensCusto",  100 * mCC[["sens"]], 1)
+num("cEspecCusto", 100 * mCC[["espec"]], 1)
+num("cCusto",      (mCC[["FP"]] * CUSTO_FP + mCC[["FN"]] * CUSTO_FN) / nrow(caf), 3)
+num("cCustoNunca", sum(caf$padrao_exportacao == 1) * CUSTO_FN / nrow(caf), 3)
+num("cCorteYouden", as.numeric(pROC::coords(roc_c, "best", best.method = "youden",
+                                            ret = "threshold")[1, 1]), 2)
+
+# --- requisito (c): diagnostico do modelo final ---------------------------------------
+set.seed(20260920)
+rq <- statmod::qresiduals(mC)
+pval("cShapiroP", shapiro.test(rq)$p.value)
+env <- hnp::hnp(mC, resid.type = "deviance", sim = 99, conf = 0.95,
+                how.many.out = TRUE, print.on = FALSE, plot.sim = FALSE)
+num("cEnvFora",  env$out, 0)
+num("cEnvTotal", env$total, 0)
+num("cPearsonRazao", sum(residuals(mC, type = "pearson")^2) / df.residual(mC), 2)
+
+# Calibracao por decis (Hosmer-Lemeshow): o teste recomendado para dados binarios,
+# no lugar da deviance residual
+G <- 10
+dec <- cut(p_hat, quantile(p_hat, seq(0, 1, length.out = G + 1)), include.lowest = TRUE)
+obs <- tapply(caf$padrao_exportacao, dec, sum); nn <- as.vector(table(dec))
+pm  <- tapply(p_hat, dec, mean); esp <- nn * pm
+hl  <- sum((obs - esp)^2 / (esp * (1 - pm)))
+num("cHLqui", hl, 2)
+num("cHLgl", G - 2, 0)
+pval("cHLp", pchisq(hl, G - 2, lower.tail = FALSE))
+
+# Influencia: identificada pelo id_talhao, como pede o enunciado
+cook <- cooks.distance(mC)
+num("cCookMax", max(cook), 4)
+num("cInfluentesN", sum(cook > 4 / nrow(caf)), 0)
+txt("cInfluentesIds", paste(caf$id_talhao[order(-cook)][1:3], collapse = ", "))
+
+# Ligacao (eta^2 como covariavel extra) e escala das continuas (variavel construida)
+caf$eta_c <- predict(mC)
+pval("cEtaQuadradoP", anova(mC, update(mC, . ~ . + I(eta_c^2)), test = "Chisq")[["Pr(>Chi)"]][2])
+for (v in c("altitude_m", "idade_lavoura_anos")) {
+    mbt <- update(mC, as.formula(sprintf(". ~ . + I(%s * log(%s))", v, v)))
+    tag <- if (v == "altitude_m") "Altitude" else "Idade"
+    pval(paste0("cBT", tag), anova(mC, mbt, test = "Chisq")[["Pr(>Chi)"]][2])
+}
+
+# --- requisito (d): cenarios na escala da probabilidade -------------------------------
+cenario <- function(cv, mj, alt = median(caf$altitude_m), idade = median(caf$idade_lavoura_anos)) {
+    nd <- data.frame(cultivar = factor(cv, levels = levels(caf$cultivar)),
+                     manejo   = factor(mj, levels = levels(caf$manejo)),
+                     altitude_m = alt, idade_lavoura_anos = idade)
+    pr <- predict(mC, newdata = nd, type = "link", se.fit = TRUE)
+    # unname(): predict() devolve vetor nomeado, e o nome contaminaria o c(p=, lo=, hi=)
+    c(p  = unname(plogis(pr$fit)),
+      lo = unname(plogis(pr$fit - 1.96 * pr$se.fit)),
+      hi = unname(plogis(pr$fit + 1.96 * pr$se.fit)))
+}
+grade <- expand.grid(cv = levels(caf$cultivar), mj = levels(caf$manejo),
+                     stringsAsFactors = FALSE)
+grade$p <- mapply(function(cv, mj) cenario(cv, mj)[["p"]], grade$cv, grade$mj)
+i_max <- which.max(grade$p); i_min <- which.min(grade$p)
+num("cPmax", 100 * grade$p[i_max], 1)
+num("cPmin", 100 * grade$p[i_min], 1)
+# Os niveis vem do CSV sem acentuacao; o relatorio e em portugues corrente
+acentuar <- function(x) {
+    mapa <- c(Catuai = "Catuaí", Organico = "orgânico",
+              Convencional = "convencional", Integrado = "integrado")
+    unname(ifelse(x %in% names(mapa), mapa[x], x))
+}
+txt("cCenarioMax", sprintf("%s com manejo %s", acentuar(grade$cv[i_max]), acentuar(grade$mj[i_max])))
+txt("cCenarioMin", sprintf("%s com manejo %s", acentuar(grade$cv[i_min]), acentuar(grade$mj[i_min])))
+num("cAltitudeMediana", median(caf$altitude_m), 0)
+num("cIdadeMediana",    median(caf$idade_lavoura_anos), 1)
+
+# Ganho do manejo organico sobre o convencional, por cultivar, em pontos percentuais
+ganho <- sapply(levels(caf$cultivar), function(cv)
+    100 * (cenario(cv, "Organico")[["p"]] - cenario(cv, "Convencional")[["p"]]))
+num("cGanhoManejoMin", min(ganho), 1)
+num("cGanhoManejoMax", max(ganho), 1)
+
+# Efeito dos quartis de altitude e de idade, em pontos percentuais
+q_alt <- quantile(caf$altitude_m, c(.25, .75))
+q_ida <- quantile(caf$idade_lavoura_anos, c(.25, .75))
+num("cAltitudePP", 100 * (cenario("Bourbon", "Convencional", alt = q_alt[2])[["p"]] -
+                          cenario("Bourbon", "Convencional", alt = q_alt[1])[["p"]]), 1)
+num("cIdadePP",    100 * (cenario("Bourbon", "Convencional", idade = q_ida[2])[["p"]] -
+                          cenario("Bourbon", "Convencional", idade = q_ida[1])[["p"]]), 1)
+txt("cStatus", "final")
+
+cat(sprintf("  selecao: %d -> %d parametros | LRT final x amplo p = %.3f\n",
+            length(coef(mC_amplo)), length(coef(mC)), an_fa[["Pr(>Chi)"]][2]))
+cat(sprintf("  AUC = %.3f (amostra) | %.3f (validacao cruzada)\n",
+            as.numeric(pROC::auc(roc_c)), auc_cv))
+cat(sprintf("  envelope: %d de %d fora | Hosmer-Lemeshow p = %.3f\n",
+            env$out, env$total, pchisq(hl, G - 2, lower.tail = FALSE)))
 
 # =======================================================================================
 # ESCRITA DO numeros.tex
