@@ -186,7 +186,7 @@ secao("TAREFA 3 - AUC, CALIBRACAO E LIMIARES (10-FOLD CV)")
 
 set.seed(123)
 k <- 10
-folds <- createFolds(caf$padrao_exportacao, k=k)
+folds <- caret::createFolds(caf$padrao_exportacao, k=k)
 oof_preds <- numeric(nrow(caf))
 
 cat("   CV 10-Fold blindado (Backward Step mantendo 'cultivar' no fold)...\n")
@@ -207,9 +207,9 @@ for(i in 1:k) {
 close(pb)
 cat("\n\n")
 
-roc_obj <- roc(caf$padrao_exportacao, oof_preds, quiet=TRUE)
-auc_val <- as.numeric(auc(roc_obj))
-ci_auc <- suppressWarnings(ci.auc(roc_obj))
+roc_obj <- pROC::roc(caf$padrao_exportacao, oof_preds, quiet=TRUE)
+auc_val <- as.numeric(pROC::auc(roc_obj))
+ci_auc <- suppressWarnings(pROC::ci.auc(roc_obj))
 
 # --- CV repetida -----------------------------------------------------------------
 # Uma unica particao em folds e uma realizacao aleatoria. Verificou-se que a
@@ -219,7 +219,7 @@ ci_auc <- suppressWarnings(ci.auc(roc_obj))
 SEMENTES <- c(123, 1, 42, 2026, 7, 999)
 rep_cv <- t(sapply(SEMENTES, function(s) {
     set.seed(s)
-    fs <- createFolds(caf$padrao_exportacao, k = k)
+    fs <- caret::createFolds(caf$padrao_exportacao, k = k)
     op <- numeric(nrow(caf))
     for (i in 1:k) {
         iv <- fs[[i]]
@@ -228,17 +228,17 @@ rep_cv <- t(sapply(SEMENTES, function(s) {
                                     scope = list(lower = as.formula("~ cultivar")), trace = 0))
         op[iv] <- predict(ms, newdata = caf[iv, ], type = "response")
     }
-    r <- roc(caf$padrao_exportacao, op, quiet = TRUE)
-    ci <- suppressWarnings(as.numeric(ci.auc(r)))
-    c(auc = as.numeric(auc(r)), lo = ci[1], max_pred = max(op, na.rm = TRUE))
+    r <- pROC::roc(caf$padrao_exportacao, op, quiet = TRUE)
+    ci <- suppressWarnings(as.numeric(pROC::ci.auc(r)))
+    c(auc = as.numeric(pROC::auc(r)), lo = ci[1], max_pred = max(op, na.rm = TRUE))
 }))
 n_exclui <- sum(rep_cv[, "lo"] > 0.5)
 
-hl <- hoslem.test(caf$padrao_exportacao, oof_preds, g=10)
+hl <- ResourceSelection::hoslem.test(caf$padrao_exportacao, oof_preds, g=10)
 cat(sprintf("   AUC Out-of-Fold  : %.3f  IC95%% [%.3f, %.3f]\n", auc_val, ci_auc[1], ci_auc[3]))
 cat(sprintf("   Hosmer-Lemeshow  : X-squared = %.2f, p = %.4f\n\n", hl$statistic, hl$p.value))
 
-gg_roc <- ggroc(roc_obj, color="blue", linewidth=1) +
+gg_roc <- pROC::ggroc(roc_obj, color="blue", linewidth=1) +
     geom_abline(intercept=1, slope=1, linetype="dashed", color="gray") +
     theme_minimal() + labs(title="Curva ROC OOF", subtitle=sprintf("AUC = %.3f", auc_val))
 salvar(gg_roc, "C3_curva_roc.png")
@@ -354,10 +354,10 @@ gg_forest <- ggplot(df_or, aes(x=OR, y=reorder(Termo, OR))) +
     labs(title="Razao de Chances (Modelo Total)", x="Odds Ratio (Log10)", y="")
 salvar(gg_forest, "C4_forest_plot_or.png", w=8, h=4)
 
-rg <- ref_grid(m_total, at=list(altitude_m = mean(caf$altitude_m), 
+rg <- emmeans::ref_grid(m_total, at=list(altitude_m = mean(caf$altitude_m), 
                                 idade_lavoura_anos = mean(caf$idade_lavoura_anos),
                                 cultivar = "Bourbon"))
-emm <- emmeans(rg, ~ manejo, type="response")
+emm <- emmeans::emmeans(rg, ~ manejo, type="response")
 df_emm <- as.data.frame(emm)
 
 cat("\n   EFEITOS MARGINAIS (Prob Padrao Exportacao p/ Bourbon, numericas na media):\n")
@@ -401,7 +401,7 @@ cat("      Em Bernoulli (n=1), variancia e media sao redundantes [p(1-p)]. Testa
 cat("      overdispersion aqui e um equivoco sem validade matematica.\n\n")
 
 cat("   2. Residuos quantilicos simulados (DHARMa):\n")
-suppressWarnings(res_sim <- simulateResiduals(m_total, n = 250))
+suppressWarnings(res_sim <- DHARMa::simulateResiduals(m_total, n = 250))
 plot(res_sim)   # na tela
 png(file.path(FIGPATH, "C5_dharma_diagnosticos.png"), width = 1600, height = 800, res = 150)
 plot(res_sim)   # e no arquivo
@@ -409,9 +409,9 @@ invisible(dev.off())
 
 # Os p-valores sao impressos tambem aqui, e nao so dentro do PNG: e este texto
 # que vai para o relatorio, e afirmacao sem numero ao lado nao se sustenta.
-p_ks   <- suppressWarnings(testUniformity(res_sim, plot = FALSE)$p.value)
-p_disp <- suppressWarnings(testDispersion(res_sim, plot = FALSE)$p.value)
-p_out  <- suppressWarnings(testOutliers(res_sim, plot = FALSE)$p.value)
+p_ks   <- suppressWarnings(DHARMa::testUniformity(res_sim, plot = FALSE)$p.value)
+p_disp <- suppressWarnings(DHARMa::testDispersion(res_sim, plot = FALSE)$p.value)
+p_out  <- suppressWarnings(DHARMa::testOutliers(res_sim, plot = FALSE)$p.value)
 cat(sprintf("      uniformidade (KS) : p = %.4f\n", p_ks))
 cat(sprintf("      dispersao         : p = %.4f\n", p_disp))
 cat(sprintf("      outliers          : p = %.4f\n", p_out))
@@ -426,7 +426,7 @@ cat("   -> Figura salva: C5_dharma_diagnosticos.png\n\n")
 # meio-normal e construido com o pacote hnp, o mesmo usado no Desafio A.
 cat("   3. Envelope meio-normal simulado:\n")
 set.seed(20260922)
-env <- hnp(m_total, plot.sim = FALSE, sim = 99, conf = 0.95, how.many.out = TRUE,
+env <- hnp::hnp(m_total, plot.sim = FALSE, sim = 99, conf = 0.95, how.many.out = TRUE,
            paint.out = FALSE, print.on = FALSE)
 cat(sprintf("      pontos fora da banda: %d de %d (%.1f%%)\n",
             env$out, env$total, 100 * env$out / env$total))

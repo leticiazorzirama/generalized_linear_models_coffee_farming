@@ -91,7 +91,12 @@ diagnóstico de resíduos e a recomendação de manejo decorrente.
  
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.45\textwidth]{declividade.png}
+    \begin{subfigure}{0.45\textwidth}
+        \includegraphics[width=\linewidth]{declividade.png}
+    \end{subfigure}
+    \begin{subfigure}{0.235\textwidth}
+        \includegraphics[width=\linewidth]{declividade_leg.png}
+    \end{subfigure}
     \caption{Distribuição da declividade (\%). Predomínio de terrenos forte-ondulados.}
     \label{fig:declividade}
 \end{figure}
@@ -145,7 +150,12 @@ diagnóstico de resíduos e a recomendação de manejo decorrente.
  
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.45\textwidth]{ph_solo.png}
+    \begin{subfigure}{0.45\textwidth}
+        \includegraphics[width=\linewidth]{ph_solo.png}
+    \end{subfigure}
+    \begin{subfigure}{0.235\textwidth}
+        \includegraphics[width=\linewidth]{ph_solo_leg.png}
+    \end{subfigure}
     \caption{Distribuição do pH do solo, por classe.}
     \label{fig:ph}
 \end{figure}
@@ -154,7 +164,12 @@ diagnóstico de resíduos e a recomendação de manejo decorrente.
  
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.45\textwidth]{materia_organica.png}
+    \begin{subfigure}{0.45\textwidth}
+        \includegraphics[width=\linewidth]{materia_organica.png}
+    \end{subfigure}
+    \begin{subfigure}{0.235\textwidth}
+        \includegraphics[width=\linewidth]{materia_organica_leg.png}
+    \end{subfigure}
     \caption{Distribuição da matéria orgânica (\%), por classe.}
     \label{fig:materia}
 \end{figure}
@@ -222,14 +237,50 @@ fixada. Três procedimentos são comuns aos três desafios:
 \section{Desafio A --- infestação pela broca}
 \label{sec:desafioA}
 
-\pendente{Seção em consolidação: o modelo final da equipe ainda está sendo revisado.
-Os números abaixo já vêm das macros e se atualizam sozinhos.}
+A análise teve como objetivo identificar quais condições de talhão favorecem a
+infestação pela broca-do-café e quantificar o efeito de cada uma dessas condições
+sobre a pressão de praga, medida pelo número de brocas capturadas
+(\textit{n\_brocas\_capturadas}). Inicialmente, foi realizada uma análise
+exploratória multivariada, avaliando as associações da variável resposta com as
+nove variáveis candidatas por meio dos coeficientes de correlação de Pearson,
+Kendall e Spearman, complementados por uma matriz de correlação global com teste
+de significância (Figura~\ref{fig:matriz_correlacao}). 
+Essa etapa exploratória indicou uma associação moderada e positiva entre o número de 
+brocas capturadas e a umidade relativa (0.36), além de associações fracas, mas significativas, 
+com as demais variáveis, exceto declividade, idade da lavoura e ph do solo, orientando a 
+construção de uma sequência de modelos: partindo de um modelo nulo (mod00), avançando 
+para modelos completos com todas as covariáveis (mod01 a mod04), testando-se a incorporação
+do esforço amostral, e culminando em modelos de seleção de variáveis via critério de 
+informação de Akaike (AICc) e em modelos finais mais parcimoniosos, tanto sob a distribuição
+Poisson (mod05 e mod06) quanto, posteriormente, sob a distribuição binomial negativa 
+(mod07 a mod10), em razão da superdispersão identificada nos dados.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.55\textwidth]{matriz_correlacao.png}
+    \caption{Matriz de correlação global com teste de significância entre a variável resposta (\textit{n\_brocas\_capturadas}) e as variáveis candidatas.}
+    \label{fig:matriz_correlacao}
+\end{figure}
 
 \subsection{O esforço amostral e o \textit{offset}}
 
 A contagem de brocas depende de quantas armadilhas foram instaladas e por quantos dias.
 Um talhão com esforço seis vezes maior tende a capturar mais insetos sem que a
-infestação seja maior. A quantidade de interesse é a \emph{taxa} de captura por unidade
+infestação seja maior. Como o número de brocas capturadas depende também do esforço de 
+amostragem empregado em cada talhão, essa medida foi incorporada aos modelos de duas formas
+alternativas: como termo de \textit{offset} (coeficiente fixado em 1, na escala
+logarítmica) e como preditor livre (com coeficiente estimado livremente). O
+modelo nulo com o esforço amostral como \textit{offset} (mod02) e o modelo completo
+correspondente (mod03) reduziram a deviância nula em 36,22\%, contra uma redução
+de 29,84\% observada no modelo completo sem essa medida (mod01), evidenciando um
+ganho de 6,38 pontos percentuais na capacidade explicativa ao se considerar o
+esforço amostral. Em seguida, ajustou-se um modelo com o esforço amostral como
+preditor livre (mod04), cujo coeficiente estimado (0,901) mostrou-se muito
+próximo de 1 , sustentando a adequação de se fixar esse coeficiente em 1 por meio de um 
+termo de \textit{offset}. Essa adequação caracteriza um modelo de taxa em que a contagem de brocas 
+continua sendo modelada como variável resposta de um modelo Poisson, sem a necessidade 
+de estimar um parâmetro adicional para o esforço amostral \cite{faraway2006extending}. 
+Portanto, com um modelo de taxa, a quantidade de interesse é a taxa de captura por unidade 
 de esforço, $\mu/E$, e não a contagem:
 
 \begin{equation}
@@ -241,39 +292,172 @@ de esforço, $\mu/E$, e não a contagem:
 
 \noindent com $E_i = \var{n\_armadilhas}_i \times \var{dias\_exposicao}_i$. O termo
 $\log(E_i)$ entra com coeficiente fixado em~1 --- é um \textit{offset}, não um preditor,
-e por isso não consome grau de liberdade.
+e por isso não consome graus de liberdade.
 
-Essa fixação é uma hipótese testável. Deixando o coeficiente livre, obtém-se
-$\hat\gamma = \aGamaEst$, com intervalo de confiança de 95\%
-$[\aGamaIcLo;\ \aGamaIcHi]$, que \aGamaContemUm{} o valor~1.
-
-\pendente{O intervalo não contém 1 sob a especificação apenas com covariáveis numéricas.
-Com os fatores categóricos no modelo, passa a conter. A equipe precisa decidir qual
-especificação reportar e justificar a fixação do \textit{offset} à luz disso --- ou
-assumir explicitamente a proporcionalidade como hipótese de trabalho.}
+A partir do modelo completo com o esforço amostral como offset (mod03), foram
+ajustados iterativamente todos os subconjuntos possíveis de covariáveis
+(\textit{dredge}), e o modelo de menor AICc (mod05) coincidiu com o próprio
+modelo completo (mod03), mantendo as nove covariáveis. Como declividade e pH do
+solo não apresentaram efeito estatisticamente significativo em mod05, ajustou-se
+um modelo final apenas com as seis variáveis de efeito significativo — adubação,
+altitude, densidade de plantio, idade da lavoura, matéria orgânica e umidade
+relativa —, denominado mod06. Embora a redução da deviância nula de mod06
+(35,96\%) tenha sido ligeiramente inferior à de mod05 (36,22\%), o modelo mod06
+apresentou AICc menor (2261,2 contra 2263,1), sendo por isso preferido como
+modelo Poisson mais parcimonioso. 
 
 \subsection{Da Poisson à binomial negativa}
 
-A Poisson impõe $\mathrm{Var}[y] = \mathbb{E}[y]$. A razão entre a estatística de Pearson
-e os graus de liberdade foi \aPearsonRazao{}, muito acima de~1, e o teste de
-\textcite{cameron1990} rejeita a equidispersão ($p = \aDispersaoP$). A variância excede
-a média, e ignorar isso subestima os erros-padrão.
+A Poisson impõe $\mathrm{Var}[y] = \mathbb{E}[y]$ enquanto que a binomial negativa admite 
+$\mathrm{Var}[y] = \mu + \mu^2/\theta$ \cite{faraway2006extending}. O diagnóstico de equidispersão 
+revelou que a razão entre variância e média das contagens brutas foi de 3,51. 
+Os testes formais (\textit{dispersiontest}) confirmaram superdispersão tanto sob a hipótese 
+de variância linear ($\alpha = 2,08$; $p < 0{,}001$) quanto quadrática ($\alpha = 0{,}20$; $p < 0{,}001$), 
+e o parâmetro de dispersão de Pearson estimado para mod06 (3,17) foi superior a 1. 
 
-Adotou-se então a binomial negativa \cite{hilbe2011}, que acrescenta um parâmetro de
-forma $\theta$ e admite $\mathrm{Var}[y] = \mu + \mu^2/\theta$. O ajuste resultou em
-$\hat\theta = \aTheta$ (erro-padrão \aThetaSE{}), e a razão de Pearson caiu para
-\aPearsonRazaoNB{} --- compatível com~1. O AIC passou de \aAICpois{} na Poisson para
-\aAIC{} na binomial negativa.
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.48\textwidth}
+        \includegraphics[width=\linewidth]{poisson_freq.png}
+        \caption{Frequências observadas vs. esperadas -- Poisson}
+    \end{subfigure}
+    \begin{subfigure}{0.48\textwidth}
+        \includegraphics[width=\linewidth]{poisson_resid.png}
+        \caption{Resíduos -- Poisson}
+    \end{subfigure}
+    \begin{subfigure}{0.48\textwidth}
+        \includegraphics[width=\linewidth]{binomneg_freq.png}
+        \caption{Frequências observadas vs. esperadas -- Binomial Negativa}
+    \end{subfigure}
+    \begin{subfigure}{0.48\textwidth}
+        \includegraphics[width=\linewidth]{binomneg_resid.png}
+        \caption{Resíduos -- Binomial Negativa}
+    \end{subfigure}
+    \caption{Comparação entre as frequências relativas observadas e esperadas do número de brocas capturadas, e respectivos resíduos, sob os modelos Poisson e Binomial Negativa.}
+    \label{fig:comparacao_pois_binomneg}
+\end{figure}
 
-\subsection{Efeitos estimados}
+Diante dessas evidências, e também da inspeção visual do desencaixe entre as frequências 
+observadas e esperadas, bem como aumento de resíduos sob Poisson quando comparado à binomial
+negativa (Figura~\ref{fig:comparacao_pois_binomneg}), optou-se por abandonar o primeiro e adotar 
+o segundo para a modelagem da contagem de brocas capturadas.
 
-Com ligação logarítmica e \textit{offset}, $\exp(\beta_j)$ lê-se como \textbf{razão de
-taxas} de captura por unidade de esforço. As estimativas do modelo final com \aNpar{}
-parâmetros indicam que a umidade relativa (razão de taxas \aIRRUmidaderelativa{} por
-ponto percentual) e a matéria orgânica do solo (\aIRRMateriaorganica{}) elevam a
-infestação, enquanto a altitude a reduz (\aIRRAltitude{}).
+\subsection{Definição do modelo binomial negativo final (mod10) e análise de resíduos}
+ 
+Repetindo a mesma lógica de seleção de variáveis, o modelo binomial negativo
+completo com esforço amostral como offset (mod08) foi submetido ao procedimento
+de \textit{dredge}, resultando em um modelo de AICc mínimo (mod09) com as mesmas
+nove covariáveis originais. Como declividade, pH do solo e precipitação da
+safra não apresentaram efeito estatisticamente significativo em mod09, ajustou-se
+um modelo final com adubação, altitude, densidade de plantio, idade da lavoura, 
+matéria orgânica e umidade relativa —, denominado mod10. A Figura~\ref{fig:efeitos_mod09_mod10} 
+ilustra os efeitos das variáveis nos modelos mod09 e mod10, respectivamente. 
 
-\pendente{Diagnóstico de resíduos e figura do envelope simulado do Desafio A.}
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.48\textwidth}
+        \includegraphics[width=\linewidth]{mod09_effects.png}
+        \caption{mod09}
+    \end{subfigure}
+    \begin{subfigure}{0.48\textwidth}
+        \includegraphics[width=\linewidth]{mod10_effects.png}
+        \caption{mod10}
+    \end{subfigure}
+    \caption{Efeitos das variáveis preditoras nos modelos mod09 e mod10.}
+    \label{fig:efeitos_mod09_mod10}
+\end{figure}
+
+Esse modelo apresentou AICc ligeiramente menor (1950,1) do que mod09
+(1956,0), sendo então adotado como modelo final, com um teste de razão de
+verossimilhanças frente ao modelo nulo (mod07) altamente significativo
+(LR = 133,39; 6 g.l.; $p < 0{,}001$). O diagnóstico de resíduos de mod10
+indicou, pelo gráfico meia-normal dos resíduos \textit{rstudent}, a presença de
+valores atípicos na variável resposta, principalmente nas observações 213 e 287;
+pelo gráfico meia-normal dos valores de alavancagem (\textit{leverage}), foram 
+identificadas como atípicas, quanto à combinação de valores das variáveis preditoras (leverage), 
+as observações 85 e 148, considerando o ponto de corte de alavancagem de 0,0353; 
+e, pela distância de Cook, as observações 84 e 272 destacaram-se muito acima das demais, indicando
+influência global relevante dessas observações sobre o ajuste do modelo. A Figura~\ref{fig:halfnorm_mod10} 
+ilustra os diagnósticos de resíduos.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.30\textwidth}
+        \includegraphics[width=\linewidth]{halfnorm_rstudent_mod10.png}
+        \caption{Resíduos \textit{rstudent}}
+    \end{subfigure}
+    \begin{subfigure}{0.30\textwidth}
+        \includegraphics[width=\linewidth]{halfnorm_leverage_mod10.png}
+        \caption{Alavancagem (\textit{leverage})}
+    \end{subfigure}
+    \begin{subfigure}{0.30\textwidth}
+        \includegraphics[width=\linewidth]{halfnorm_cook_mod10.png}
+        \caption{Distância de Cook}
+    \end{subfigure}
+    \caption{Gráficos meia-normal de diagnóstico de resíduos para o modelo binomial negativa final (mod10).}
+    \label{fig:halfnorm_mod10}
+\end{figure}
+ 
+\subsection{Parecer}
+
+As razões de taxa (\textit{rate ratios}) apresentadas a seguir foram obtidas pela
+exponenciação dos coeficientes estimados do modelo binomial negativa final
+(mod10),
+
+\begin{equation}
+    \text{RT}_j = e^{\hat{\beta}_j},
+    \label{eq:rate_ratio}
+\end{equation}
+
+de modo que cada razão de taxa expressa o fator multiplicativo pelo qual a taxa
+esperada de captura de brocas se altera a cada aumento de uma unidade na
+respectiva variável preditora $j$, mantendo as demais covariáveis e o esforço
+amostral constantes. Valores de $\text{RT}_j$ acima de 1 indicam aumento
+percentual na pressão de praga, enquanto valores abaixo de 1 indicam redução,
+sendo a magnitude desse efeito percentual calculada como
+
+\begin{equation}
+    \Delta\%_j = \left(\text{RT}_j - 1\right) \times 100\%.
+    \label{eq:rate_ratio_pct}
+\end{equation}
+ 
+Portanto, as condições de talhão que favorecem a infestação pela broca e o quanto se 
+ganha ou se perde em pressão de praga ao alterar cada uma delas, mantendo as demais variáveis 
+e o esforço amostral constantes, são:
+ 
+\begin{itemize}
+  \item \textbf{Adubação nitrogenada}: cada aumento de 1 kg/ha reduz a pressão de praga em
+    aproximadamente 0,08\% (razão de taxa = 0,9992). Ou seja, a adubação nitrogenada
+    atua como fator de proteção, e não de risco.
+ 
+  \item \textbf{Altitude}: cada aumento de 1 metro reduz a taxa de captura em aproximadamente 0,11\%
+    (razão de taxa = 0,9989). Talhões em altitudes maiores tendem a apresentar menor
+    pressão de praga.
+ 
+  \item \textbf{Densidade de plantio}: cada planta adicional por hectare aumenta a pressão de praga
+    em aproximadamente 0,02\% (razão de taxa = 1,0002). O efeito é estatisticamente
+    significativo, porém de magnitude muito pequena por unidade.
+ 
+  \item \textbf{Idade da lavoura}: cada ano adicional de idade aumenta a pressão de praga em
+    aproximadamente 1,73\% (razão de taxa = 1,0173).
+ 
+  \item \textbf{Matéria orgânica do solo}: cada aumento de 1 ponto percentual de matéria orgânica
+    aumenta a pressão de praga em aproximadamente 14,04\% (razão de taxa = 1,1403). Este
+    é um dos efeitos de maior magnitude entre os preditores significativos.
+ 
+  \item \textbf{Umidade relativa}: cada aumento de 1 ponto percentual de umidade aumenta a pressão de
+    praga em aproximadamente 5,00\% (razão de taxa = 1,0497), consistente com a
+    associação moderada e positiva identificada na análise exploratória.
+ 
+  \item \textbf{Declividade, pH do solo e precipitação da safra} não apresentaram efeito
+    estatisticamente significativo sobre a taxa de captura (intervalos de confiança
+    de 95\% contendo o valor 1).
+\end{itemize}
+ 
+Em síntese, matéria orgânica e umidade relativa são as condições de talhão que mais
+favorecem a infestação pela broca, enquanto adubação nitrogenada e altitude atuam
+como fatores de proteção. Densidade de plantio e idade da lavoura apresentam efeitos
+positivos, porém de magnitude reduzida.
 
 \section{Desafio B --- severidade da ferrugem}
 \label{sec:desafioB}
