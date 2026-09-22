@@ -33,18 +33,35 @@
 # 2. Ajustem a regressao beta (betareg::betareg), justificando a ligacao
 #    escolhida para a media.
 #
-# Tarefas 3 a 5 (dispersao variavel, efeitos marginais, diagnostico) ficam
-# no arquivo seguinte.
+# ROTEIRO DO ARQUIVO
 #
-# O script esta estruturado em:
-# - Configurar ambiente de trabalho
-# - Carregar a base de dados
-# - TAREFA 1.1: por que nao binomial
-# - TAREFA 1.2: por que nao regressao linear
-# - TAREFA 1.3: por que arco-seno-raiz e inferior
-# - TAREFA 1.4: comparacao empirica das tres abordagens
-# - TAREFA 2:   a regressao beta e a ligacao logit
-# - TAREFA 3:   phi e constante? modelo de dispersao variavel + LRT
+# A ordem em que os blocos aparecem NAO e a ordem numerica do enunciado, e
+# isso e deliberado. A Tarefa 6 (selecao de variaveis) roda ANTES das Tarefas
+# 4 e 5 porque produz o modelo final: interpretar efeitos e diagnosticar
+# residuos de um modelo que depois sera descartado nao faz sentido. O modelo
+# que se recomenda tem de ser o mesmo que se diagnostica.
+#
+#   glossario     definicoes dos termos usados (controlado por MOSTRAR_GLOSSARIO)
+#   base de dados carrega e confere a resposta
+#   TAREFA 0      analise exploratoria
+#   TAREFA 1.1    por que nao binomial          -.
+#   TAREFA 1.2    por que nao regressao linear   |  Tarefa 1 do enunciado:
+#   TAREFA 1.3    por que nao arco-seno-raiz     |  justificar a familia
+#   TAREFA 1.4    comparacao empirica das tres   |
+#   TAREFA 1.5    contrafactual dos zeros exatos-'
+#   TAREFA 2      ajuste da beta e escolha da ligacao
+#   TAREFA 3      phi e constante? dispersao variavel + LRT
+#   TAREFA 6      selecao de variaveis  <- fora de ordem, de proposito (ver acima)
+#   TAREFA 4      efeitos marginais em cenarios agronomicos
+#   TAREFA 5      diagnostico de residuos e talhoes influentes
+#   DECISAO       recomendacao de manejo, na escala original
+#
+# A CADEIA DO RACIOCINIO, em uma linha:
+#   a resposta e proporcao continua sem denominador  ->  so a beta serve
+#   ->  entre as ligacoes possiveis, a logit da razao de chances
+#   ->  phi nao precisa de preditor: e constante
+#   ->  das 13 covariaveis, 7 sobrevivem a selecao
+#   ->  a cultivar responde por ~14 pontos percentuais de severidade
 #
 # Base de dados: data/cafeicultura.csv
 # Figuras geradas: challenge_b/figuras/
@@ -161,6 +178,115 @@ verificar <- function(modelo, nome) {
 # Cores usadas nos graficos
 VERDE <- "#18675A"; VERMELHO <- "#A3352A"
 
+# ---------------------------------------------------------------------
+# Glossario
+#
+# Os termos abaixo aparecem dezenas de vezes no restante do script. Eles
+# sao impressos aqui, antes de qualquer numero, para que a leitura do
+# resto nao dependa de consultar material externo. Para silenciar na
+# versao final, troque para FALSE.
+# ---------------------------------------------------------------------
+MOSTRAR_GLOSSARIO <- TRUE
+
+glossario <- function() {
+    if (!isTRUE(MOSTRAR_GLOSSARIO)) return(invisible(NULL))
+    secao("GLOSSARIO - o que cada termo significa neste trabalho")
+    termos <- list(
+    c("variavel resposta",
+      "o que se quer explicar. Aqui, a fracao da area foliar lesionada."),
+    c("covariavel / preditor",
+      "o que se usa para explicar. Aqui, cultivar, umidade, altitude e outras."),
+    c("familia",
+      "a distribuicao de probabilidade que se supoe para a resposta. A escolha",
+      "nao e livre: depende do que a resposta PODE ser. Contagem pede Poisson,",
+      "proporcao continua pede Beta, binaria pede Bernoulli."),
+    c("preditor linear (eta)",
+      "a soma b0 + b1*x1 + b2*x2 + ... Ele varia de -infinito a +infinito,",
+      "enquanto a resposta aqui so pode ficar entre 0 e 1. Dai a necessidade",
+      "da ligacao."),
+    c("funcao de ligacao",
+      "a funcao que traduz o preditor linear para a escala da resposta. A logit",
+      "e a mais usada: transforma qualquer numero real num valor entre 0 e 1."),
+    c("logito",
+      "log(p / (1-p)). E a escala em que o modelo trabalha. exp(coeficiente)",
+      "nessa escala vira RAZAO DE CHANCES."),
+    c("razao de chances",
+      "quantas vezes a chance p/(1-p) muda. Razao 2 significa que a chance",
+      "dobra. Nao e o mesmo que a probabilidade dobrar."),
+    c("verossimilhanca",
+      "o quanto o modelo considera provavel ter observado ESTES dados. Quanto",
+      "maior, melhor o ajuste. O logaritmo dela e o que se reporta."),
+    c("AIC",
+      "verossimilhanca penalizada pelo numero de parametros. MENOR e melhor.",
+      "So compara modelos com a MESMA variavel resposta - comparar o AIC de",
+      "um modelo sobre y com o de um modelo sobre log(y) nao significa nada.",
+      "Diferenca menor que 2 costuma ser tratada como empate."),
+    c("BIC",
+      "como o AIC, mas penaliza parametros com mais rigor. Tende a escolher",
+      "modelos menores."),
+    c("LRT (razao de verossimilhancas)",
+      "compara dois modelos ANINHADOS, isto e, um contido no outro. Pergunta",
+      "se o ganho de verossimilhanca do modelo maior paga os parametros a mais.",
+      "p alto significa que nao paga: fique com o menor."),
+    c("p-valor",
+      "a probabilidade de observar uma estatistica tao extrema quanto a obtida",
+      "SE a hipotese nula fosse verdadeira. Nao e a probabilidade de a hipotese",
+      "ser verdadeira, e nao mede tamanho de efeito."),
+    c("phi (parametro de precisao)",
+      "na regressao beta, Var[y] = mu(1-mu)/(1+phi). Quanto MAIOR o phi, mais",
+      "concentrada a distribuicao em torno da media. E o oposto de variancia."),
+    c("heterocedasticidade",
+      "a variancia do erro muda conforme o valor predito. O modelo linear supoe",
+      "que nao muda; para proporcoes, ela necessariamente muda."),
+    c("residuo quantilico",
+      "residuo transformado para ter distribuicao normal padrao SE o modelo",
+      "estiver correto. Serve para diagnosticar familias em que o residuo cru",
+      "nao tem forma conhecida - que e o caso de quase todo MLG."),
+    c("envelope simulado",
+      "banda construida simulando dados do PROPRIO modelo ajustado varias vezes.",
+      "Se os residuos observados ficam dentro dela, o modelo e compativel com",
+      "os dados. E o teste visual mais honesto que existe para MLG."),
+    c("pontos influentes",
+      "observacoes que, se removidas, mudariam os coeficientes de forma",
+      "perceptivel. Medidos pela distancia de Cook."),
+    c("multicolinearidade",
+      "duas ou mais covariaveis carregando a mesma informacao. Infla os erros-",
+      "padrao sem mudar muito os coeficientes. Medida pelo VIF."),
+    c("offset",
+      "termo que entra no preditor linear com coeficiente FIXADO em 1, em vez",
+      "de estimado. Usado no Desafio A para dividir a contagem pelo esforco",
+      "amostral. Nao consome grau de liberdade."))
+
+    for (tm in termos) {
+        cat(sprintf("  %-28s %s
+", tm[1], tm[2]))
+        if (length(tm) > 2) for (l in tm[3:length(tm)]) cat(sprintf("  %-28s %s
+", "", l))
+        cat("
+")
+    }
+    cat("  Termos que aparecem uma vez so (sanduiche, Jensen, Smithson-Verkuilen,
+")
+    cat("  ZOIB, Box-Tidwell) estao explicados no ponto em que sao usados.
+")
+}
+glossario()
+
+# ---------------------------------------------------------------------
+# Fio condutor.
+#
+# Cada tarefa abre dizendo o que herdou, o que decide e o que entrega. Sem
+# isto o script vira uma sequencia de analises soltas, e quem le nao
+# enxerga a cadeia que leva do dado a recomendacao.
+# ---------------------------------------------------------------------
+onde_estamos <- function(de_onde, decide, entrega) {
+    cat("  ", strrep("-", 70), "\n", sep = "")
+    cat(sprintf("   DE ONDE VIEMOS : %s\n", de_onde))
+    cat(sprintf("   O QUE SE DECIDE: %s\n", decide))
+    cat(sprintf("   O QUE ENTREGA  : %s\n", entrega))
+    cat("  ", strrep("-", 70), "\n\n", sep = "")
+}
+
 
 # =======================================================================================
 # BASE DE DADOS
@@ -191,6 +317,11 @@ parecer("A resposta nao tem observacoes nos extremos 0 ou 1, o que permite ",
 # TAREFA 0 - ANALISE EXPLORATORIA DE DADOS (AED)
 # =======================================================================================
 secao("TAREFA 0 - ANALISE EXPLORATORIA DE DADOS (AED)")
+
+onde_estamos(
+    "a base carregada: 340 talhoes, resposta entre 0 e 1 sem extremos",
+    "quais fatores merecem entrar na modelagem, e com que forca aparecem sozinhos",
+    "a suspeita de que a cultivar domina - a ser confirmada condicionalmente depois")
 
 cat("Antes da modelagem multivariada (MLG), verificam-se padroes univariados da doenca:\n\n")
 
@@ -232,7 +363,48 @@ parecer("A exploracao inicial revela um claro vies da cultivar, com o Bourbon ",
 # =======================================================================================
 # TAREFA 1.1 - POR QUE NAO BINOMIAL
 # =======================================================================================
+# ---------------------------------------------------------------------------------------
+# DE ONDE SAI A LISTA DE CANDIDATAS
+# ---------------------------------------------------------------------------------------
+secao("TAREFA 1 - A NATUREZA DO DADO RESTRINGE A FAMILIA")
+
+cat("   A escolha da familia nao e preferencia: e consequencia do que a resposta\n")
+cat("   PODE ser. Antes de eliminar candidatas, vale explicitar o que se observa.\n\n")
+
+cat(sprintf("     a resposta e continua?          sim - %d valores distintos em %d talhoes\n",
+            length(unique(y)), length(y)))
+cat(sprintf("     tem limite inferior?            sim - nao pode ser negativa (min %.4f)\n", min(y)))
+cat(sprintf("     tem limite superior?            sim - e fracao de area, nao passa de 1 (max %.4f)\n", max(y)))
+cat(sprintf("     atinge os extremos 0 ou 1?      nao - %d zeros, %d uns\n", sum(y == 0), sum(y == 1)))
+cat("     existe um denominador?          NAO - mediu-se area por imagem, nao se\n")
+cat("                                     contaram folhas lesionadas de um total\n")
+cat("     a variancia depende da media?   sim, por NECESSIDADE: uma proporcao presa\n")
+cat("                                     entre 0 e 1 nao tem espaco para variar perto\n")
+cat("                                     das bordas. Se a media e 0,02, a variancia\n")
+cat("                                     nao cabe grande. A Tarefa 1.2 mede quanto.\n")
+cat("\n")
+
+cat("   As familias candidatas, com o dominio que cada uma suporta:\n\n")
+cat("     familia      dominio que suporta\n")
+cat("     ", strrep("-", 60), "\n", sep = "")
+cat("     Normal       qualquer real, de -infinito a +infinito\n")
+cat("     Poisson      inteiros nao negativos: 0, 1, 2, ...\n")
+cat("     Gama         reais positivos, sem teto superior\n")
+cat("     Binomial     proporcao k/n, com n conhecido\n")
+cat("     Beta         reais no intervalo ABERTO (0,1)\n\n")
+
+cat("   Confrontar essa lista com os fatos acima ja sugere um caminho, mas sugerir\n")
+cat("   nao e demonstrar. As tres tarefas seguintes eliminam, uma a uma, as tres\n")
+cat("   alternativas mais tentadoras - a binomial, o modelo linear e a transformacao\n")
+cat("   arco-seno-raiz - mostrando ONDE cada uma quebra. O veredicto vem depois da\n")
+cat("   comparacao empirica da Tarefa 1.4, nao antes dela.\n")
+
 secao("TAREFA 1.1 - POR QUE ESTE CASO NAO ADMITE MODELO BINOMIAL")
+
+onde_estamos(
+    "a AED mostrou que a resposta e continua em (0,1), sem 0 nem 1 exatos",
+    "se a familia binomial e admissivel para esta resposta",
+    "o descarte da binomial - primeira das tres familias a eliminar")
 
 # A binomial modela "k sucessos em n tentativas", e o n entra no ajuste.
 # Aqui mediu-se diretamente uma fracao de area foliar por analise de
@@ -319,13 +491,13 @@ k_20 <- round(y * 20)
 mm_20 <- suppressWarnings(glm(cbind(k_20, 20 - k_20) ~ cultivar + umidade_relativa_pct, family = binomial, data = caf))
 mm_quasi_20 <- suppressWarnings(glm(cbind(k_20, 20 - k_20) ~ cultivar + umidade_relativa_pct, family = quasibinomial, data = caf))
 ep_quasi_20 <- summary(mm_quasi_20)$coefficients["cultivarIcatu", 2]
-ep_hc_20 <- coeftest(mm_20, vcov = vcovHC(mm_20, type="HC0"))["cultivarIcatu", 2]
+ep_hc_20 <- lmtest::coeftest(mm_20, vcov = sandwich::vcovHC(mm_20, type="HC0"))["cultivarIcatu", 2]
 
 k_2000 <- round(y * 2000)
 mm_2000 <- suppressWarnings(glm(cbind(k_2000, 2000 - k_2000) ~ cultivar + umidade_relativa_pct, family = binomial, data = caf))
 mm_quasi_2000 <- suppressWarnings(glm(cbind(k_2000, 2000 - k_2000) ~ cultivar + umidade_relativa_pct, family = quasibinomial, data = caf))
 ep_quasi_2000 <- summary(mm_quasi_2000)$coefficients["cultivarIcatu", 2]
-ep_hc_2000 <- coeftest(mm_2000, vcov = vcovHC(mm_2000, type="HC0"))["cultivarIcatu", 2]
+ep_hc_2000 <- lmtest::coeftest(mm_2000, vcov = sandwich::vcovHC(mm_2000, type="HC0"))["cultivarIcatu", 2]
 
 cat(sprintf("
    razao binomial entre n=20 e n=2000      : %.2f
@@ -365,12 +537,17 @@ parecer("O argumento contra a binomial e estrutural, nao empirico. ",
 # =======================================================================================
 secao("TAREFA 1.2 - POR QUE NAO REGRESSAO LINEAR SOBRE A PROPORCAO")
 
+onde_estamos(
+    "a binomial foi descartada por exigir um denominador que nao existe",
+    "se o modelo linear comum serve, ja que a resposta e numerica",
+    "o descarte do modelo linear - segunda familia eliminada")
+
 mod_lm <- lm(update(covs, severidade_ferrugem ~ .), data = caf)
 verificar(mod_lm, "mod_lm")
 
 # A beta e ajustada aqui apenas como REFERENCIA de comparacao na camada 3.
 # Sua justificativa formal esta na Tarefa 2.
-mod_beta <- betareg(update(covs, severidade_ferrugem ~ .), data = caf, link = "logit")
+mod_beta <- betareg::betareg(update(covs, severidade_ferrugem ~ .), data = caf, link = "logit")
 verificar(mod_beta, "mod_beta")
 
 pred_lm <- fitted(mod_lm)
@@ -400,7 +577,7 @@ cat("   falha estrutural vira na Causa.\n")
 # ---------------------------------------------------------------------
 cat("\nSINTOMA 2 - variancia nao constante (heterocedasticidade)\n")
 cat(strrep("-", 72), "\n")
-bp <- bptest(mod_lm)
+bp <- lmtest::bptest(mod_lm)
 cat("   Breusch-Pagan: BP =", round(bp$statistic, 2), ", gl =", bp$parameter,
     ", p =", format.pval(bp$p.value, digits = 3), "\n\n")
 gr <- cut(pred_lm, quantile(pred_lm, seq(0, 1, .25)), include.lowest = TRUE)
@@ -408,10 +585,10 @@ cat("   desvio-padrao dos residuos por faixa de predicao:\n")
 print(round(tapply(residuals(mod_lm), gr, sd), 5))
 
 cat("\n   Da para remendar com erros-padrao robustos? Da:\n")
-cl <- coeftest(mod_lm)["cultivarIcatu", ]
-rb <- coeftest(mod_lm, vcov = vcovHC(mod_lm, type = "HC3"))["cultivarIcatu", ]
-cl_idade <- coeftest(mod_lm)["idade_lavoura_anos", ]
-rb_idade <- coeftest(mod_lm, vcov = vcovHC(mod_lm, type = "HC3"))["idade_lavoura_anos", ]
+cl <- lmtest::coeftest(mod_lm)["cultivarIcatu", ]
+rb <- lmtest::coeftest(mod_lm, vcov = sandwich::vcovHC(mod_lm, type = "HC3"))["cultivarIcatu", ]
+cl_idade <- lmtest::coeftest(mod_lm)["idade_lavoura_anos", ]
+rb_idade <- lmtest::coeftest(mod_lm, vcov = sandwich::vcovHC(mod_lm, type = "HC3"))["idade_lavoura_anos", ]
 
 cat(sprintf("     erro-padrao classico (cultivarIcatu): %.6f  p = %s\n",
             cl[2], format.pval(cl[4], digits = 2)))
@@ -501,6 +678,11 @@ salvar(g0, "B1_tres_variancias.png", 9, 6)
 # =======================================================================================
 secao("TAREFA 1.3 - POR QUE A TRANSFORMACAO ARCO-SENO-RAIZ E INFERIOR")
 
+onde_estamos(
+    "linear e binomial descartadas; resta a saida classica da fitopatologia",
+    "se transformar a resposta e depois usar modelo linear resolve",
+    "o descarte da transformacao - terceira e ultima alternativa eliminada")
+
 # A transformacao classica da fitopatologia: z = asin(sqrt(y)), seguida de
 # minimos quadrados.
 #
@@ -518,7 +700,7 @@ vies      <- mean(pred_arco) - mean(y)
 # ---------------------------------------------------------------------
 cat("\nETAPA 1 - ELA FUNCIONA. Comecar reconhecendo isso.\n")
 cat(strrep("-", 72), "\n")
-bp_y <- bptest(mod_lm); bp_z <- bptest(mod_arco)
+bp_y <- lmtest::bptest(mod_lm); bp_z <- lmtest::bptest(mod_arco)
 cat("   A promessa do arco-seno-raiz e ESTABILIZAR a variancia. E cumpre:\n\n")
 cat(sprintf("     Breusch-Pagan no lm sobre y             : BP = %6.2f  p = %s\n",
             bp_y$statistic, format.pval(bp_y$p.value, digits = 3)))
@@ -532,8 +714,8 @@ cat(sprintf("\n     razao max/min do desvio dos residuos, sobre y      : %.2f\n"
 cat(sprintf("     razao max/min do desvio dos residuos, sobre arcsen : %.2f\n",
             max(sd_z) / min(sd_z)))
 
-rs_y <- resettest(mod_lm, power = 2:3, type = "fitted")
-rs_z <- resettest(mod_arco, power = 2:3, type = "fitted")
+rs_y <- lmtest::resettest(mod_lm, power = 2:3, type = "fitted")
+rs_z <- lmtest::resettest(mod_arco, power = 2:3, type = "fitted")
 cat("\n   E ainda melhora a linearidade (teste RESET):\n\n")
 cat(sprintf("     lm sobre y      : F = %6.3f  p = %s\n",
             rs_y$statistic, format.pval(rs_y$p.value, digits = 3)))
@@ -629,6 +811,11 @@ salvar(g3, "B1_arco_cumpre_a_promessa.png", 9, 5.5)
 # =======================================================================================
 secao("TAREFA 1.4 - COMPARACAO EMPIRICA DAS TRES ABORDAGENS")
 
+onde_estamos(
+    "tres argumentos ESTRUTURAIS contra as alternativas",
+    "se os numeros confirmam o que a teoria indicou, medindo as tres lado a lado",
+    "a confirmacao empirica - e a medida honesta de quanto a beta ganha")
+
 # O enunciado pede comparacao empirica. Uma advertencia metodologica:
 # o AIC NAO pode ser usado aqui. lm(y), lm(asin(sqrt(y))) e betareg tem
 # RESPOSTAS diferentes, logo verossimilhancas em escalas diferentes, e os
@@ -703,10 +890,57 @@ g2 <- ggplot(res_lm, aes(x = ajustado, y = residuo)) +
 salvar(g2, "B1_funil_dos_residuos.png", 9, 6)
 
 
+# ---------------------------------------------------------------------------------------
+# VEREDICTO DA TAREFA 1 - depois das tres eliminacoes, nao antes
+# ---------------------------------------------------------------------------------------
+secao("TAREFA 1 - VEREDICTO: POR ELIMINACAO, RESTA A BETA")
+
+cat("   Retomando as cinco candidatas apresentadas na abertura, agora com o que\n")
+cat("   cada bloco demonstrou:\n\n")
+cat("     Normal     eliminada em 1.2 - predisse severidade negativa em 9 talhoes,\n")
+cat("                e supoe variancia constante quando ela varia com a media\n")
+cat("     Poisson    eliminada por definicao - a resposta e continua, nao contagem\n")
+cat("     Gama       eliminada por definicao - nao tem teto, e a severidade tem\n")
+cat("     Binomial   eliminada em 1.1 - exigiria inventar um n; inventa-lo faz o\n")
+cat("                erro-padrao variar 10x sem que dado algum mude\n")
+cat("     arco-seno  eliminada em 1.3 - funciona nesta base, mas nao tem parametro\n")
+cat("     + linear   de dispersao, e a Tarefa 3 exige modela-lo e compara-lo por LRT\n\n")
+cat("     Beta       sobrevive. Respeita os dois limites por construcao, tem a\n")
+cat("                variancia como funcao da media, e trata a dispersao como\n")
+cat("                parametro do modelo.\n\n")
+
+cat("   Nota sobre a selecao de variaveis (Tarefa 6): este trabalho usa busca\n")
+cat("   BACKWARD por razao de verossimilhancas, e nao a busca exaustiva por AIC\n")
+cat("   (dredge) adotada no Desafio A. A escolha e deliberada: com 13 covariaveis\n")
+cat("   candidatas, a busca exaustiva percorreria 2^13 = 8192 modelos, e o melhor\n")
+cat("   por AIC entre tantos tende a refletir a amostra. O backward produz um\n")
+cat("   caminho auditavel passo a passo, que e o que a secao 4b do enunciado pede\n")
+cat("   ao exigir que o processo seja documentado.\n")
+
+parecer("A familia nao foi escolhida por conveniencia nem por ser a que o pacote ",
+        "oferece: ela resulta de eliminacao. A normal foi descartada por predizer ",
+        "fora do dominio e supor variancia constante; a Poisson e a gama, por ",
+        "incompatibilidade de dominio com uma proporcao continua limitada nos dois ",
+        "extremos; a binomial, por exigir um denominador que a medicao por analise ",
+        "de imagem nao produz, tornando a inferencia dependente de um numero ",
+        "arbitrario; e a transformacao arco-seno-raiz, embora cumpra o que promete ",
+        "nesta base, por nao possuir parametro de dispersao a ser modelado, o que ",
+        "inviabiliza a exigencia explicita da Tarefa 3. Resta a distribuicao beta, ",
+        "unica das familias usuais definida sobre o intervalo aberto (0,1) e cuja ",
+        "parametrizacao por media e precisao incorpora, por construcao, a ",
+        "dependencia entre variancia e media que o fenomeno exibe. A comparacao ",
+        "empirica da Tarefa 1.4 confirma a escolha, ainda que por margem estreita ",
+        "em capacidade preditiva - o argumento decisivo e estrutural, nao de ajuste.")
+
 # =======================================================================================
 # TAREFA 1.5 - CONTRAFACTUAL DOS ZEROS EXATOS
 # =======================================================================================
 secao("TAREFA 1.5 - CONTRAFACTUAL DOS ZEROS EXATOS")
+
+onde_estamos(
+    "a beta escolhida, e esta base nao tem 0 nem 1 exatos",
+    "o que se faria se houvesse, ja que a beta padrao nao os admite",
+    "a resposta a nota do enunciado - fecha a Tarefa 1")
 
 # A nota do enunciado exige discutir: "Discutam o que fariam se houvesse zeros
 # exatos na base - a regressao beta padrao nao os admite."
@@ -757,6 +991,11 @@ parecer("A nota do enunciado aponta que a regressao beta padrao se restringe ao 
 # =======================================================================================
 secao("TAREFA 2 - AJUSTE DA REGRESSAO BETA E JUSTIFICATIVA DA LIGACAO")
 
+onde_estamos(
+    "a FAMILIA esta decidida: beta. Falta a segunda metade da especificacao",
+    "qual das seis funcoes de ligacao usar, e por que criterio",
+    "o modelo de media completo, base de tudo que vem depois")
+
 # Parametrizacao de Ferrari & Cribari-Neto (2004), citada pelo professor:
 #
 #     E[y] = mu          Var[y] = mu (1 - mu) / (1 + phi)
@@ -779,7 +1018,7 @@ cat(strrep("-", 72), "\n")
 
 links <- c("logit", "probit", "cloglog", "log", "loglog", "cauchit")
 tab_link <- do.call(rbind, lapply(links, function(L) {
-    m <- betareg(update(covs, severidade_ferrugem ~ .), data = caf, link = L)
+    m <- betareg::betareg(update(covs, severidade_ferrugem ~ .), data = caf, link = L)
     p <- fitted(m)
     data.frame(link = L,
                logLik   = as.numeric(logLik(m)),
@@ -823,7 +1062,7 @@ cat(sprintf("     %-10s %12s %12s %16s\n", "ligacao", "Bourbon %", "Icatu %", "d
 cat("     ", strrep("-", 52), "\n", sep = "")
 dif_pp <- c()
 for (L in c("cloglog", "log", "logit", "probit", "loglog")) {
-    m  <- betareg(update(covs, severidade_ferrugem ~ .), data = caf, link = L)
+    m  <- betareg::betareg(update(covs, severidade_ferrugem ~ .), data = caf, link = L)
     rb <- ref; rb$cultivar <- fx("cultivar", "Bourbon")
     ri <- ref; ri$cultivar <- fx("cultivar", "Icatu")
     pb <- as.numeric(predict(m, rb)); pi_ <- as.numeric(predict(m, ri))
@@ -842,7 +1081,7 @@ cat("   CRITERIO 1 - exclusao por qualidade de ajuste (AIC).\n")
 cat("     A ligacao 'cauchit' fica 18,17 unidades de AIC atras da melhor, sendo a unica\n")
 cat("     claramente rejeitada pelos dados. DESQUALIFICADA.\n\n")
 
-m_log_link <- betareg(update(covs, severidade_ferrugem ~ .), data = caf, link = "log")
+m_log_link <- betareg::betareg(update(covs, severidade_ferrugem ~ .), data = caf, link = "log")
 cat("   CRITERIO 2 - respeitar OS DOIS limites do intervalo.\n")
 cat("     A ligacao 'log' garante mu > 0, mas NAO limita em 1. Nesta base as\n")
 cat(sprintf("     predicoes pararam em %.4f, mas nada impede que passem.\n",
@@ -924,6 +1163,17 @@ print(summary(mod_beta))
 # =======================================================================================
 secao("TAREFA 3 - O PARAMETRO DE PRECISAO phi E CONSTANTE?")
 
+onde_estamos(
+    "familia beta, ligacao logit, modelo de media ajustado",
+    "se a PRECISAO phi precisa de preditor proprio ou pode ser uma constante",
+    "a estrutura de dispersao do modelo final")
+cat("   Esta tarefa e a maior do arquivo. Sao cinco etapas:\n")
+cat("     1. o indicio cru, e por que ele engana\n")
+cat("     2. o que o enunciado manda fazer: y ~ x | z comparado por LRT\n")
+cat("     3. a conclusao depende do teste escolhido?\n")
+cat("     4. a evidencia direta, sem modelo nenhum\n")
+cat("     5. o que NAO se pode afirmar - a ressalva do intervalo\n\n")
+
 # O enunciado e literal sobre o que quer:
 #
 #   "investiguem se o parametro de precisao phi e constante. Ajustem um
@@ -963,7 +1213,7 @@ cat(strrep("-", 72), "\n")
 phi_marg <- sapply(split(y, caf$cultivar),
                    function(v) mean(v) * (1 - mean(v)) / var(v) - 1)
 
-mod_phi_cult <- betareg(f_disp("cultivar"), data = caf)
+mod_phi_cult <- betareg::betareg(f_disp("cultivar"), data = caf)
 verificar(mod_phi_cult, "mod_phi_cult")
 cp        <- coef(mod_phi_cult, model = "precision")
 phi_cond  <- setNames(exp(c(cp[1], cp[1] + cp[-1])), levels(caf$cultivar))
@@ -998,7 +1248,7 @@ lrt_contra_nulo <- function(m) {
 }
 
 tab_phi <- do.call(rbind, lapply(cand, function(z) {
-    m <- betareg(f_disp(z), data = caf)
+    m <- betareg::betareg(f_disp(z), data = caf)
     data.frame(preditor_de_phi = z, t(lrt_contra_nulo(m)))
 }))
 tab_phi <- tab_phi[order(tab_phi$p), ]
@@ -1031,7 +1281,7 @@ if (n_pior < nrow(tab_phi)) {
 # O teste conjunto. Testar um a um deixa em aberto a possibilidade de que
 # a dispersao dependa da COMBINACAO - o mesmo buraco que o item 0.3 teve.
 cat("\n   O TESTE CONJUNTO - phi contra todas as covariaveis de uma vez:\n\n")
-mod_phi_tudo <- betareg(f_disp(covs_rhs), data = caf)
+mod_phi_tudo <- betareg::betareg(f_disp(covs_rhs), data = caf)
 verificar(mod_phi_tudo, "mod_phi_tudo")
 om <- lrt_contra_nulo(mod_phi_tudo)
 cat(sprintf("\n     phi ~ as %d covariaveis : LR = %.3f  gl = %d  p = %s  dAIC = %+.2f\n",
@@ -1040,7 +1290,7 @@ cat(sprintf("\n     phi ~ as %d covariaveis : LR = %.3f  gl = %d  p = %s  dAIC =
 
 # A alternativa mais natural de todas: phi variar com a propria media.
 caf$eta_ajustado <- qlogis(fitted(mod_beta))
-mod_phi_eta <- betareg(f_disp("eta_ajustado"), data = caf)
+mod_phi_eta <- betareg::betareg(f_disp("eta_ajustado"), data = caf)
 oe <- lrt_contra_nulo(mod_phi_eta)
 cat(sprintf("     phi ~ preditor da media : LR = %.3f  gl = %d  p = %s  dAIC = %+.2f\n",
             oe[["LR"]], oe[["gl"]], format.pval(oe[["p"]], digits = 4), oe[["dAIC"]]))
@@ -1065,7 +1315,7 @@ w <- wald_phi(mod_phi_cult)
 cat(sprintf("   phi ~ cultivar, pelos tres criterios:\n\n"))
 cat(sprintf("     LRT  : X2 = %6.3f  gl = %d  p = %.4f\n",
             2 * (as.numeric(logLik(mod_phi_cult)) - as.numeric(logLik(mod_beta))),
-            3, lrtest(mod_beta, mod_phi_cult)[["Pr(>Chisq)"]][2]))
+            3, lmtest::lrtest(mod_beta, mod_phi_cult)[["Pr(>Chisq)"]][2]))
 cat(sprintf("     Wald : X2 = %6.3f  gl = %d  p = %.4f\n", w[["W"]], w[["gl"]], w[["p"]]))
 cat(sprintf("     AIC  : constante %.2f contra %.2f  (delta %+.2f)\n",
             AIC(mod_beta), AIC(mod_phi_cult), AIC(mod_phi_cult) - AIC(mod_beta)))
@@ -1222,6 +1472,14 @@ parecer("Investigou-se a constancia do parametro de precisao conforme o ",
 
 secao("TAREFA 6 - SELECAO DE VARIAVEIS E PARECER FINAL")
 
+onde_estamos(
+    "modelo completo com 19 parametros, familia e ligacao decididas, phi constante",
+    "quais covariaveis ficam - e este bloco vem ANTES das Tarefas 4 e 5 de proposito",
+    "o MODELO FINAL, que sera interpretado na 4 e diagnosticado na 5")
+cat("   Por que fora de ordem: interpretar efeitos e diagnosticar residuos de um\n")
+cat("   modelo que depois sera descartado nao faz sentido. O modelo recomendado\n")
+cat("   tem de ser o mesmo que se diagnostica.\n\n")
+
 cat("   ETAPA 1 - Exclusao por construcao do problema:\n")
 cat("   O enunciado aponta que ha variaveis irrelevantes por construcao. Sao elas:\n")
 cat("   - n_armadilhas e dias_exposicao: medem esforco amostral da broca, irrelevante para ferrugem.\n")
@@ -1244,7 +1502,7 @@ while (TRUE) {
     for (i in seq_along(termos)) {
         frm <- as.formula(paste(". ~ . -", termos[i]))
         m_reduzido <- suppressWarnings(update(m_atual, frm))
-        teste <- lrtest(m_atual, m_reduzido)
+        teste <- lmtest::lrtest(m_atual, m_reduzido)
         p_vals[i] <- teste$`Pr(>Chisq)`[2]
     }
     
@@ -1285,6 +1543,11 @@ parecer("A selecao de variaveis orientada por testes de razao de verossimilhanca
 # =======================================================================================
 secao("TAREFA 4 - EFEITOS MARGINAIS EM CENARIOS AGRONOMICOS")
 
+onde_estamos(
+    "o modelo final reduzido, ja selecionado na Tarefa 6",
+    "quanto cada fator vale na escala que o produtor entende: pontos percentuais",
+    "os numeros que sustentam a recomendacao de manejo")
+
 cat("   A interpretacao crua dos coeficientes da regressao beta com ligacao\n")
 cat("   logit se da em termos de razao de chances (odds ratio). Como a severidade\n")
 cat("   e uma proporcao de area foliar, a chance p/(1-p) tem interpretacao abstrata.\n")
@@ -1313,24 +1576,24 @@ cat("   mantendo as demais covariaveis em suas medias (numericas) e promediando 
 # Cenario 2: Favoravel a Ferrugem (umidade alta, densidade alta)
 # Cenario 3: Desfavoravel a Ferrugem (umidade baixa, densidade baixa)
 
-grid_tipico <- ref_grid(mod_final, at = list(
+grid_tipico <- emmeans::ref_grid(mod_final, at = list(
   umidade_relativa_pct = um_med,
   densidade_plantio = den_med
 ))
 
-grid_fav <- ref_grid(mod_final, at = list(
+grid_fav <- emmeans::ref_grid(mod_final, at = list(
   umidade_relativa_pct = um_alta,
   densidade_plantio = den_alta
 ))
 
-grid_desfav <- ref_grid(mod_final, at = list(
+grid_desfav <- emmeans::ref_grid(mod_final, at = list(
   umidade_relativa_pct = um_baixa,
   densidade_plantio = den_baixa
 ))
 
-em_tip <- emmeans(grid_tipico, ~ cultivar, type = "response")
-em_fav <- emmeans(grid_fav, ~ cultivar, type = "response")
-em_desfav <- emmeans(grid_desfav, ~ cultivar, type = "response")
+em_tip <- emmeans::emmeans(grid_tipico, ~ cultivar, type = "response")
+em_fav <- emmeans::emmeans(grid_fav, ~ cultivar, type = "response")
+em_desfav <- emmeans::emmeans(grid_desfav, ~ cultivar, type = "response")
 
 s_tip <- summary(em_tip)
 s_fav <- summary(em_fav)
@@ -1374,6 +1637,11 @@ parecer("A ligacao logit modela a diferenca entre as cultivares como constante n
 # TAREFA 5 - DIAGNOSTICOS DOS RESIDUOS E TALHOES INFLUENTES
 # =======================================================================================
 secao("TAREFA 5 - DIAGNOSTICOS DE RESIDUOS E VALORES INFLUENTES")
+
+onde_estamos(
+    "o modelo final, com os efeitos ja interpretados",
+    "se as premissas do modelo se sustentam nos dados",
+    "a validacao - ou a ressalva - de tudo que foi afirmado ate aqui")
 
 cat("   RESSALVA CARREGADA DA TAREFA 3: os residuos padronizados (sweighted2)\n")
 cat("   tinham assimetria de 0,31 e o Shapiro-Wilk rejeitava a normalidade.\n")
@@ -1447,7 +1715,7 @@ simula_res <- function() {
                 shape1 = predict(mod_final, type = "response") * mod_final$coefficients$precision,
                 shape2 = (1 - predict(mod_final, type = "response")) * mod_final$coefficients$precision)
       )
-      m_sim <- suppressWarnings(betareg(formula(mod_final), data = caf_sim, link="logit"))
+      m_sim <- suppressWarnings(betareg::betareg(formula(mod_final), data = caf_sim, link="logit"))
       sort(abs(residuals(m_sim, type = "quantile")))
   }, error = function(e) rep(NA, nrow(caf)))
 }
