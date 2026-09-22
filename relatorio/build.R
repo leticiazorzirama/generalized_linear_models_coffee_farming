@@ -59,7 +59,8 @@ dir.create(FIGS, showWarnings = FALSE, recursive = TRUE)
 
 # Toda figura que o relatorio cita entra aqui. Se uma figura nao existir, o
 # build avisa e segue - o LaTeX e que vai reclamar, com o nome do arquivo.
-origens <- c(file.path(RAIZ, "challenge_a", "figuras"),
+origens <- c(file.path(RAIZ, "exploratory_analysis", "figuras"),
+             file.path(RAIZ, "challenge_a", "figuras"),
              file.path(RAIZ, "challenge_b", "figuras"),
              file.path(RAIZ, "challenge_c", "figuras"),
              file.path(RAIZ, "mneis", "figuras_c"))

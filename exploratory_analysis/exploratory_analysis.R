@@ -22,8 +22,6 @@
 # - Configurar ambiente de trabalho
 # - Carregamento e inspecao inicial da base de dados
 # - Analise univariada por ordem das colunas da base de dados
-# - TO DO Analises multivariadas
-# - TO DO Analises globais
 #
 # Base de dados: cafeicultura.csv
 # =====================================================================
@@ -38,13 +36,6 @@
 # getwd()
 
 # Pacotes
-# library(spdep) 
-# library(energy) 
-# library(boot) 
-# library(DescTools) 
-# library(psych)
-# library(car) 
-# library(moments)
 library(dplyr) 
 library(tidyr) 
 library(ggplot2)
@@ -538,7 +529,7 @@ secao("Análise univariada - variável: densidade_plantio")
 # Resumo estatistico
 summary(caf$densidade_plantio)
 
-# Densidade de plantio seguindo a classificacao de Malta et al. (2008)
+# Densidade de plantio segundo a classificacao de Malta et al. (2008)
 caf2 <- caf %>%
   mutate(
     densidade_plantio_classes = cut(
@@ -636,7 +627,7 @@ cat("3º quartil:", adubacao_q3)
 cat("Desvio padrão:", round(adubacao_sd, 2))
 
 # Parecer
-cat("\n.")
+cat("A adubação apresenta uma distribuição normal bimodal, com 50% dos talhões recebendo de 257 a 384 kg de nitrogênio por hectare.")
 
 # VARIAVEL precipitacao_safra_mm
 secao("Análise univariada - variável: precipitacao_safra_mm")
@@ -685,9 +676,6 @@ cat("Mediana:", precipitacao_mediana)
 cat("Média:", round(precipitacao_media, 2))
 cat("3º quartil:", precipitacao_q3)
 cat("Desvio padrão:", round(precipitacao_sd, 2))
-
-# Parecer
-cat("\n.")
 
 # VARIAVEL umidade_relativa_pct
 secao("Análise univariada - variável: umidade_relativa_pct")
@@ -738,10 +726,31 @@ cat("3º quartil:", umidade_q3)
 cat("Desvio padrão:", round(umidade_sd, 2))
 
 # Parecer
-cat("\n.")
+cat("A umidade mais frequente é de 74.02%.")
 
-# VARIAVEL ph_solo
+# VARIAVEL 'ph_solo'
 secao("Análise univariada - variável: ph_solo")
+
+# Classificacao agronomica do pH do solo segundo a Emater-MG (2016)
+# https://www.emater.mg.gov.br/download.do?id=17572
+# Muito baixa: ph < 4.5
+# Baixa: 4.5 < ph < 5.4
+# Boa: 5.5 < ph < 6.0
+# Alta: 6.1 < ph < 7.0
+# Muito alta: ph > 7.0
+
+caf$classe_ph_solo <- cut(
+  caf$ph_solo,
+  breaks = c(-Inf, 4.5, 5.4, 6.0, 7.0, Inf),
+  labels = c(
+    "Muito baixa (< 4.5)",
+    "Baixa (4.5–5.4)",
+    "Boa (5.5–6.0)",
+    "Alta (6.1–7.0)",
+    "Muito alta (> 7.0)"
+  ),
+  right = TRUE
+)
 
 # Resumo estatistico
 summary(caf$ph_solo)
@@ -756,23 +765,40 @@ ph_solo_q1 <- quantile(caf$ph_solo, 0.25)
 ph_solo_q3 <- quantile(caf$ph_solo, 0.75)
 
 # Histograma
-ph_solo_plot <- ggplot(caf, aes(x = ph_solo)) +
+ph_solo_plot <- ggplot(
+  caf,
+  aes(x = ph_solo, fill = classe_ph_solo)
+) +
   geom_histogram(binwidth = 0.25) +
   geom_vline(
-  xintercept = ph_solo_media,
-  linetype = "dashed"
-) +
-annotate(
-  "text",
-  x = ph_solo_media,
-  y = Inf,
-  label = paste0("Média = ", round(ph_solo_media, 2)),
-  vjust = 1.5,
-  hjust = -0.05
-) +
+    xintercept = ph_solo_media,
+    linetype = "dashed"
+  ) +
+  annotate(
+    "text",
+    x = ph_solo_media,
+    y = Inf,
+    label = paste0(
+      "Média = ",
+      round(ph_solo_media, 2)
+    ),
+    vjust = 1.5,
+    hjust = -0.05
+  ) +
   labs(
     x = "pH do solo",
-    y = "Frequência absoluta"
+    y = "Frequência absoluta",
+    fill = "Classe de pH"
+  ) +
+scale_fill_manual(
+  values = c(
+    "Muito baixa (< 4.5)" = "#dfdfdf",
+    "Baixa (4.5–5.4)" = "#BDBDBD",
+    "Boa (5.5–6.0)" = "#969696",
+    "Alta (6.1–7.0)" = "#636363",
+    "Muito alta (> 7.0)" = "#252525"
+  ),
+    drop = TRUE
   ) +
   my_theme()
 
@@ -789,10 +815,34 @@ cat("3º quartil:", ph_solo_q3)
 cat("Desvio padrão:", round(ph_solo_sd, 2))
 
 # Parecer
-cat("\n.")
+cat("Há predominância de um pH de 5.43 nos solos dos talhões o que configura em uma acidez média conforme a classificação química (Emater MG, 2016). 
+    Para uma classificação agronômica, solos com pH de 5.43 se enquadram numa condição no limite máximo da baixa (Emater MG, 2016). 
+    A condição boa apresenta um pH entre 5.5 e 6.0.")
 
-# VARIAVEL materia_organica_pct
+# VARIAVEL 'materia_organica_pct'
 secao("Análise univariada - variável: materia_organica_pct")
+
+# Classes de interpretação de fertilidade do solo para a matéria orgânica
+# segundo a Emater-MG (2016)
+# https://www.emater.mg.gov.br/download.do?id=17572
+# Muito baixa: m.o. <= 0.7
+# Baixa: 0.71 < m.o. < 2.00
+# Média: 2.01 < m.o. < 4.00
+# Bom: 4.01 < m.o. < 7.00
+# Muito bom: m.o. > 7.00
+
+caf$classe_materia_organica <- cut(
+  caf$materia_organica_pct,
+  breaks = c(-Inf, 0.7, 2.0, 4.0, 7.0, Inf),
+  labels = c(
+    "Muito baixa (≤ 0.7%)",
+    "Baixa (0.7–2.0%)",
+    "Média (2.0–4.0%)",
+    "Bom (4.0–7.0%)",
+    "Muito bom (> 7.0%)"
+  ),
+  right = TRUE
+)
 
 # Resumo estatistico
 summary(caf$materia_organica_pct)
@@ -807,40 +857,61 @@ materia_organica_q1 <- quantile(caf$materia_organica_pct, 0.25)
 materia_organica_q3 <- quantile(caf$materia_organica_pct, 0.75)
 
 # Histograma
-materia_organica_plot <- ggplot(caf, aes(x = materia_organica_pct)) +
+materia_organica_plot <- ggplot(
+  caf,
+  aes(
+    x = materia_organica_pct,
+    fill = classe_materia_organica
+  )
+) +
   geom_histogram(binwidth = 0.5) +
   geom_vline(
-  xintercept = materia_organica_media,
-  linetype = "dashed"
-) +
-annotate(
-  "text",
-  x = materia_organica_media,
-  y = Inf,
-  label = paste0("Média = ", round(materia_organica_media, 2), "%"),
-  vjust = 1.5,
-  hjust = -0.05
-) +
+    xintercept = materia_organica_media,
+    linetype = "dashed"
+  ) +
+  annotate(
+    "text",
+    x = materia_organica_media,
+    y = Inf,
+    label = paste0(
+      "Média = ",
+      round(materia_organica_media, 2),
+      "%"
+    ),
+    vjust = 1.5,
+    hjust = -0.05
+  ) +
   labs(
     x = "Matéria orgânica (%)",
-    y = "Frequência absoluta"
+    y = "Frequência absoluta",
+    fill = "Classe de matéria orgânica"
+  ) +
+  scale_fill_manual(
+    values = c(
+      "Muito baixa (≤ 0.7%)" = "#dfdfdf",
+      "Baixa (0.7–2.0%)" = "#BDBDBD",
+      "Média (2.0–4.0%)" = "#969696",
+      "Bom (4.0–7.0%)" = "#636363",
+      "Muito bom (> 7.0%)" = "#252525"
+    ),
+    drop = TRUE
   ) +
   my_theme()
 
 print(materia_organica_plot)
 
 # Resultados
-# Exibir resultados
 cat("\nMatéria orgânica mínima:", materia_organica_min)
-cat("Matéria orgânica máxima:", materia_organica_max)
-cat("1º quartil:", materia_organica_q1)
-cat("Mediana:", materia_organica_mediana)
-cat("Média:", round(materia_organica_media, 2))
-cat("3º quartil:", materia_organica_q3)
-cat("Desvio padrão:", round(materia_organica_sd, 2))
+cat("\nMatéria orgânica máxima:", materia_organica_max)
+cat("\n1º quartil:", materia_organica_q1)
+cat("\nMediana:", materia_organica_mediana)
+cat("\nMédia:", round(materia_organica_media, 2))
+cat("\n3º quartil:", materia_organica_q3)
+cat("\nDesvio padrão:", round(materia_organica_sd, 2))
 
 # Parecer
-cat("\n.")
+cat("O valor mais frequente de 2.75% de matéria orgânica indica a predominância de solos de média qualidade no critério matéria orgância,
+    conforme a classificação da Emater-MR (2016).")
 
 # VARIAVEL 'n_armadilhas'
 secao("Análise univariada - variável: n_armadilhas")
@@ -886,9 +957,6 @@ cat("\nMediana da quantidade de armadilhas:", armadilhas_mediana)
 # Ranking
 cat("\nO ranking da quantidade de armadilhas é:")
 print(armadilhas_rank)
-
-# Parecer
-cat("\n.")
 
 # VARIAVEL 'dias_exposicao'
 secao("Análise univariada - variável: dias_exposicao")
@@ -937,12 +1005,11 @@ cat("\nMediana de dias de exposição:", exposicao_mediana)
 cat("\nO ranking dos dias de exposição é:")
 print(dias_exposicao_rank)
 
-# Parecer
-cat("\n.")
-
 # VARIAVEL 'n_brocas_capturadas'
 secao("Análise univariada - variável: n_brocas_capturadas")
 table(caf$n_brocas_capturadas)
+
+# A broca do café é a principal praga do cafeeiro (Queiroz e Fantom, 2021)
 
 # Moda
 brocas_moda <- names(which.max(table(caf$n_brocas_capturadas)))
@@ -992,62 +1059,6 @@ cat("\nMediana do número de brocas capturadas:", brocas_mediana)
 # Ranking
 cat("\nO ranking do número de brocas capturadas é:")
 print(n_brocas_capturadas_rank)
-
-# =====================================================================
-# ANALISES MULTIVARIADAS
-# =====================================================================
-
-# TO DO
-
-# =====================================================================
-# ANALISES GLOBAIS
-# =====================================================================
-
-# TO DO
-
-# Variaveis numericas
-# num_caf <- caf %>%
-#   select(where(is.numeric))
-# num_caf <- names(num_caf)
- 
-# secao("Forma das distibuições - Cafeicultura")
-
-# diagnostico_forma <- data.frame(
-# variavel = num_caf,
-# media = sapply(caf[num_caf], mean),
-# mediana = sapply(caf[num_caf], median),
-# assimetria = sapply(caf[num_caf], skewness),
-# curtose = sapply(caf[num_caf], kurtosis),
-# shapiro_p = sapply(caf[num_caf],
-# function(x) shapiro.test(x)$p.value))
-# print(diagnostico_forma, row.names = FALSE)
-
-# # Matriz de dispersao
-
-# p_pares <- ggpairs(
-# caf[, num_caf],
-# lower = list(
-# continuous = wrap("points", alpha = 0.5, size = 1)
-# ),
-# upper = list(
-# continuous = wrap("cor", method = "pearson", size = 4)
-# ),
-# diag = list(
-# continuous = wrap("densityDiag", alpha = 0.5)
-# ),
-# title = "Matriz de dispersão - Pearson - Cafeicultura"
-# )
-
-# p_pares
-
-# ggsave(
-# "matriz_dispersao_pearson_cafeicultura.png",
-# p_pares,
-# width = 22,
-# height = 22,
-# units = "in",
-# dpi = 300
-# )
 
 # =====================================================================
 #                  Creative Commons License 4.0

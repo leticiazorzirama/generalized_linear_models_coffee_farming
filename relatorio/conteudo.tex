@@ -10,22 +10,180 @@
 %   \pendente{...}  destaca em amarelo no PDF o que ainda falta
 % =====================================================================
 
-\section{Introdução}
+Uma cooperativa de cafeicultores de Minas Gerais enfrenta três problemas simultâneos que
+consomem seu orçamento técnico e definem sua margem:
 
-A cooperativa precisa decidir onde concentrar o esforço de manejo na próxima safra e
+\begin{itemize}
+    \item a \textbf{broca-do-café} (\emph{Hypothenemus hampei}), monitorada por armadilhas instaladas em cada talhão;
+    \item a \textbf{ferrugem alaranjada} (\emph{Hemileia vastatrix}), avaliada pela severidade — a fração da área foliar lesionada;
+    \item a \textbf{classificação do lote} para o mercado de exportação, que define o preço recebido.
+\end{itemize}
+
+O corpo técnico precisa decidir onde concentrar o esforço de manejo na próxima safra e
 que recomendações fazer aos cooperados quanto a cultivar, densidade de plantio,
 adubação e irrigação. O conjunto de dados reúne \baseN{} talhões de café descritos por
-\baseVars{} variáveis agronômicas, climáticas e fitossanitárias.
+\baseVars{} variáveis agronômicas, climáticas e fitossanitárias. O talhão refere-se a determinada 
+área da lavoura cafeeira que pode ser considerada homogênea, por ter a mesma variedade de 
+café plantada na mesma data, em um solo de características físicas, químicas e topográficas 
+semelhantes, além de receber o mesmo manejo agronômico e o mesmo tratamento administrativo \cite{santos2009analise}.
 
-As três perguntas do corpo técnico têm naturezas estatísticas distintas e exigem, cada
-uma, uma família diferente de modelo linear generalizado \cite{nelder1972,mccullagh1989}:
-a infestação pela broca é uma \textbf{contagem} sob esforço amostral variável; a
-severidade da ferrugem é uma \textbf{proporção contínua} sem denominador; e o padrão de
-exportação é uma resposta \textbf{binária}. Tratar as três com a mesma ferramenta seria
-ignorar o que a natureza de cada dado impõe.
+Três perguntas foram formuladas com base nos problemas:
+\begin{itemize}
+  \item Quais condições de talhão favorecem a infestação pela broca, e quanto se ganha em pressão de praga ao alterar cada uma delas?
+  \item Que fatores agronômicos determinam a severidade da ferrugem, e existe uma cultivar comprovadamente mais resistente?
+  \item O que determina a chance de um lote atingir o padrão de exportação?
+\end{itemize}
 
-Este relatório apresenta os três modelos, o processo de seleção de variáveis, o
+Tais perguntas têm naturezas estatísticas distintas e exigem, cada uma, uma família diferente de modelo linear 
+generalizado \cite{nelder1972,mccullagh1989}: a infestação pela broca é uma \textbf{contagem} sob esforço amostral variável; 
+a severidade da ferrugem é uma \textbf{proporção contínua} sem denominador; 
+e o padrão de exportação é uma resposta \textbf{binária}. 
+Tratar as três com a mesma ferramenta seria ignorar o que a natureza de cada dado impõe. Portanto, cada pergunta se transformou
+em um desafio particular a ser tratado conforme suas especificidades.
+
+Após a análise exploratória univariada\footnote{Acesse a análise exploratória completa no repositório do github do projeto.}, este relatório apresenta os três modelos, o processo de seleção de variáveis, o
 diagnóstico de resíduos e a recomendação de manejo decorrente.
+
+\subsection{Variáveis categóricas de manejo e produção}
+ 
+\textbf{\var{regiao\_produtora}:} 99 talhões em Sul de Minas (moda), 92 em Cerrado Mineiro, 82 em Mogiana e 67 em Matas de Minas (Figura~\ref{fig:categoricas}a).
+ 
+\textbf{\var{cultivar}:} 118 talhões com Mundo Novo (moda), 106 com Catuaí, 62 com Icatu e 54 com Bourbon (Figura~\ref{fig:categoricas}b).
+ 
+\textbf{\var{manejo}:} 166 talhões em manejo convencional (moda), 122 em integrado e 52 em orgânico (Figura~\ref{fig:categoricas}c).
+ 
+\textbf{\var{irrigacao}:} predominam 202 talhões sem irrigação (moda) frente a 138 irrigados (Figura~\ref{fig:categoricas}d).
+ 
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.235\textwidth}
+        \includegraphics[width=\linewidth]{regiao_produtora.png}
+        \caption{Regiões produtoras}
+    \end{subfigure}
+    \begin{subfigure}{0.235\textwidth}
+        \includegraphics[width=\linewidth]{cultivar.png}
+        \caption{Cultivares}
+    \end{subfigure}
+    \begin{subfigure}{0.235\textwidth}
+        \includegraphics[width=\linewidth]{manejo.png}
+        \caption{Manejos}
+    \end{subfigure}
+    \begin{subfigure}{0.235\textwidth}
+        \includegraphics[width=\linewidth]{irrigacao.png}
+        \caption{Irrigação}
+    \end{subfigure}
+    \caption{Frequência absoluta das variáveis categóricas.}
+    \label{fig:categoricas}
+\end{figure}
+ 
+\subsection{Variáveis quantitativas de solo, clima e manejo}
+ 
+\textbf{\var{altitude\_m}:} variou de 496 a 1343 m ($\bar{x}$ = 937,1 m e $s$ = 156,5 m), com maior concentração entre 830 e 1046 m -- faixa compatível com os 500--1200 m descritos para o parque cafeeiro de Minas Gerais \cite{bernardes2012diagnostico} (Figura~\ref{fig:altitude}).
+ 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.45\textwidth]{altitude.png}
+    \caption{Distribuição da altitude (m).}
+    \label{fig:altitude}
+\end{figure}
+ 
+\textbf{\var{declividade\_pct}:} variou de 1\% a 51,4\% ($\bar{x}$ = 19,9\% e $s$ = 8.43\%), com predomínio de terrenos forte-ondulados {inpe2023declividade}; esse resultado diverge da faixa de 5\% a 15\% \cite{bernardes2012diagnostico} para a região (Figura~\ref{fig:declividade}).
+ 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.45\textwidth]{declividade.png}
+    \caption{Distribuição da declividade (\%). Predomínio de terrenos forte-ondulados.}
+    \label{fig:declividade}
+\end{figure}
+ 
+\textbf{\var{idade\_lavoura\_anos}:} variou de 1 a 31,1 anos ($\bar{x}$ = 9,25 anos e $s$ = 4.95 anos), com predomínio de lavoura adulta a partir de dois anos \cite{nascimento2019tolerancia}, embora a maioria dos talhões seja mais jovem que os 10 a 30 anos de permanência típicos \cite{silva2000cafe} (Figura~\ref{fig:idade}).
+ 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.45\textwidth]{idade_lavoura.png}
+    \caption{Distribuição da idade da lavoura (anos).}
+    \label{fig:idade}
+\end{figure}
+ 
+\textbf{\var{densidade\_plantio}:} predomínio do sistema semi-adensado (302 talhões), seguido de tradicional (26) e adensado (12), conforme os limiares de classificação \cite{malta2005caracterizacao} (Figura~\ref{fig:densidade}).
+ 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.45\textwidth]{densidade_plantio.png}
+    \caption{Talhões por classe de densidade de plantio. Predomínio semi-adensado.}
+    \label{fig:densidade}
+\end{figure}
+ 
+\textbf{\var{adubacao\_n\_kg\_ha}:} variou de 40 a 532 kg/ha ($\bar{x}$ = 315,8 kg/ha e $s$ = 89.39 kg/ha), com distribuição aproximadamente bimodal; 50\% dos talhões receberam entre 257 e 384 kg/ha (Figura~\ref{fig:adubacao}).
+ 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.45\textwidth]{adubacao.png}
+    \caption{Distribuição da adubação nitrogenada (kg/ha).}
+    \label{fig:adubacao}
+\end{figure}
+ 
+\textbf{\var{precipitacao\_safra\_mm}:} variou de 833 a 2208 mm, com $\bar{x}$ de 1450 mm e $s$ de 246,3 mm (Figura~\ref{fig:precipitacao}).
+ 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.45\textwidth]{precipitacao.png}
+    \caption{Distribuição da precipitação na safra (mm).}
+    \label{fig:precipitacao}
+\end{figure}
+ 
+\textbf{\var{umidade\_relativa\_pct}:} variou de 49,4\% a 92,2\%, com $\bar{x}$ de 74,0\% e $s$ de 6.65\% (Figura~\ref{fig:umidade}).
+ 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.45\textwidth]{umidade.png}
+    \caption{Distribuição da umidade relativa (\%). Média = 74,0\%.}
+    \label{fig:umidade}
+\end{figure}
+ 
+\textbf{\var{ph\_solo}:} variou de 4,28 a 6,66 ($\bar{x}$ = 5,43 e $s$ = 0.44), caracterizando acidez média e posicionando os solos no limite superior da classe de qualidade baixa segundo os critérios agronômicos \cite{mesquita2016manual} (Figura~\ref{fig:ph}).
+ 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.45\textwidth]{ph_solo.png}
+    \caption{Distribuição do pH do solo, por classe.}
+    \label{fig:ph}
+\end{figure}
+ 
+\textbf{\var{materia\_organica\_pct}:} variou de 0,80\% a 5,04\% ($\bar{x}$ = 2,75\% e $s$ = 0.78\%), enquadrando-se na classe de fertilidade média \cite{mesquita2016manual} (Figura~\ref{fig:materia}).
+ 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.45\textwidth]{materia_organica.png}
+    \caption{Distribuição da matéria orgânica (\%), por classe.}
+    \label{fig:materia}
+\end{figure}
+ 
+\subsection{Variáveis de monitoramento da broca-do-café}
+ 
+\textbf{\var{n\_armadilhas}:} variou de 4 a 12 armadilhas por talhão; moda e mediana iguais a 8 (Figura~\ref{fig:pragas}a).
+ 
+\textbf{\var{dias\_exposicao}:} concentrou-se em três valores -- 15, 20 e 30 dias --, sendo 15 dias o mais frequente (140 talhões) (Figura~\ref{fig:pragas}b).
+ 
+\textbf{\var{n\_brocas\_capturadas}:} variou de 0 a 62 brocas; moda de 4 e mediana de 6, com distribuição assimétrica à direita (Figura~\ref{fig:pragas}c).
+ 
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.30\textwidth}
+        \includegraphics[width=\linewidth]{n_armadilhas.png}
+        \caption{Armadilhas}
+    \end{subfigure}
+    \begin{subfigure}{0.30\textwidth}
+        \includegraphics[width=\linewidth]{dias_exposicao.png}
+        \caption{Exposição em dias}
+    \end{subfigure}
+    \begin{subfigure}{0.30\textwidth}
+        \includegraphics[width=\linewidth]{n_brocas_capturadas.png}
+        \caption{Brocas capturadas}
+    \end{subfigure}
+    \caption{Frequência absoluta -- monitoramento da broca-do-café.}
+    \label{fig:pragas}
+\end{figure}
 
 \section{Materiais e métodos}
 
