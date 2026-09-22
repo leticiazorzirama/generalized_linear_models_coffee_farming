@@ -247,6 +247,22 @@ verificar <- function(modelo, nome) {
     invisible(modelo)
 }
 
+# Tabela de razoes de chances com intervalo de confianca (usada nos
+# Steps 6 e 7). O intervalo e o de verossimilhanca perfilada, que e o
+# que confint() devolve para um glm; e mais confiavel do que o de Wald
+# em amostras moderadas e fica assimetrico na escala da razao de chances.
+tabela_or <- function(modelo, nivel = 0.95) {
+    ic <- suppressMessages(confint(modelo, level = nivel))
+    b  <- coef(modelo)
+    ep <- summary(modelo)$coefficients[, "Std. Error"]
+    data.frame(termo  = names(b),
+               beta   = unname(b),
+               ep     = unname(ep),
+               OR     = unname(exp(b)),
+               IC_inf = unname(exp(ic[, 1])),
+               IC_sup = unname(exp(ic[, 2])))
+}
+
 # Cores usadas nos graficos (mesmas do Desafio B)
 VERDE <- "#18675A"; VERMELHO <- "#A3352A"; CINZA <- "grey55"
 
@@ -2492,6 +2508,1059 @@ parecer("RESIDUOS. Os residuos quantilicos aleatorizados do modelo final tem med
         "O QUE FICA PARA OS PROXIMOS STEPS: a comparacao com e sem a severidade da ",
         "ferrugem (Step 6), as razoes de chances com intervalos (Step 7), a capacidade ",
         "preditiva (Step 8) e a recomendacao (Step 9).")
+
+
+# =====================================================================
+# ---- STEP 6 ---- EFEITO TOTAL E EFEITO DIRETO: A FERRUGEM NO CAMINHO?
+# =====================================================================
+secao("STEP 6 - EFEITO TOTAL x EFEITO DIRETO (TAREFA 2)")
+
+# Pergunta do step: a ferrugem - que tambem e um desfecho deste projeto -
+# esta no caminho entre a cultivar e a exportacao? Se sim, qual dos dois
+# modelos responde a pergunta de quem ainda vai escolher a cultivar?
+#
+# A ordem dos acontecimentos, em linguagem simples: a cultivar e
+# escolhida no plantio; a ferrugem aparece depois, ao longo da safra, e
+# o Desafio B mostrou que sua severidade depende da cultivar; a
+# classificacao do lote vem por ultimo. A severidade da ferrugem esta,
+# portanto, NO MEIO do caminho entre a cultivar e a exportacao. Uma
+# variavel nessa posicao e chamada de mediadora (ou desfecho
+# intermediario). Aqui isso e uma hipotese a investigar, nao um fato.
+#
+# Efeito total e efeito direto (enunciado, Tarefa 2):
+# - efeito TOTAL da cultivar: tudo o que trocar de cultivar faz a chance
+#   de exportar, INCLUINDO o que faz por meio da ferrugem. E o que estima
+#   o modelo SEM a severidade.
+# - efeito DIRETO da cultivar: o que a cultivar faz "por outras vias",
+#   mantendo a ferrugem fixa. E o que estima o modelo COM a severidade -
+#   sob hipoteses, discutidas abaixo.
+#
+# Diagrama causal (DAG) adotado como hipotese:
+#
+#   irrigacao, densidade, umidade (Desafio B)
+#                    |
+#                    v
+#   cultivar ---> severidade_ferrugem ---> padrao_exportacao
+#       |                                        ^
+#       +----------------------------------------+
+#   manejo, altitude, idade da lavoura -----------+
+#
+#   (fator nao medido?) --> severidade  e  --> exportacao   [hipotese]
+#
+# As setas dizem o que se supoe, nao o que se provou. A ultima linha
+# marca o risco: se existir um fator nao medido que afete a ferrugem E a
+# qualidade do lote, "segurar a ferrugem fixa" mistura talhoes diferentes
+# e o efeito direto fica viesado (vies de colisor; Pearl, 2009;
+# VanderWeele, 2015). Esse fator nao pode ser verificado com estes dados.
+#
+# [APROFUNDAMENTO] Nao colapsabilidade da razao de chances.
+# Na escala do logit, adicionar uma covariavel forte muda os coeficientes
+# das outras MESMO que nao haja mediacao nem confusao (Greenland, Robins
+# e Pearl, 1999). Logo, "o coeficiente da cultivar mudou" nao prova, por
+# si so, que a ferrugem e mediadora. A leitura precisa do diagrama e da
+# relacao cultivar -> severidade demonstrada no Desafio B.
+#
+# [APROFUNDAMENTO] "Table 2 fallacy" (Westreich e Greenland, 2013): no
+# modelo com a mediadora, o coeficiente da cultivar e o da severidade
+# respondem a perguntas diferentes; nao se le a tabela inteira com a
+# mesma lente.
+
+# Verificacao da mediadora antes de usa-la
+severidade <- dados_cafe$severidade_ferrugem
+if (any(is.na(severidade)) || any(severidade <= 0 | severidade >= 1))
+    stop("severidade_ferrugem precisa estar em (0, 1) sem NA.", call. = FALSE)
+cat(sprintf("severidade_ferrugem: %.3f a %.3f, sem NA  [ok]\n", min(severidade), max(severidade)))
+
+# ---------------------------------------------------------------------
+# Figura C6: o diagrama causal
+# ---------------------------------------------------------------------
+# Pergunta que responde: qual e a hipotese causal adotada?
+# Como ler: setas cheias = caminhos supostos; setas tracejadas = o fator
+# nao medido que, se existir, vicia o efeito direto. E uma hipotese,
+# nao um resultado.
+nos <- data.frame(
+    nome = c("cultivar", "severidade da\nferrugem", "padrao de\nexportacao",
+             "manejo, altitude,\nidade da lavoura", "irrigacao, densidade,\numidade (Desafio B)",
+             "fator nao\nmedido?"),
+    x = c(1, 3, 5, 1, 3, 5.2), y = c(2, 3.3, 2, 0.6, 4.7, 4.4),
+    tipo = c("var", "var", "var", "var", "var", "hip"))
+setas <- data.frame(
+    x    = c(1.55, 1.55, 3.7, 1.75, 3.0, 4.75, 5.2),
+    y    = c(2.25, 2.0,  3.1, 0.75, 4.35, 4.25, 4.05),
+    xend = c(2.35, 4.35, 4.5, 4.35, 3.0,  3.65, 5.0),
+    yend = c(3.05, 2.0,  2.25, 1.8, 3.65, 3.5,  2.35),
+    tipo = c("solid", "solid", "solid", "solid", "solid", "dashed", "dashed"))
+g_dag <- ggplot() +
+    geom_segment(data = setas, aes(x = x, y = y, xend = xend, yend = yend, linetype = tipo),
+                 arrow = arrow(length = unit(.22, "cm"), type = "closed"), colour = "black") +
+    geom_label(data = nos, aes(x = x, y = y, label = nome, fill = tipo), size = 3.6,
+               label.padding = unit(.35, "lines"), colour = "black") +
+    scale_fill_manual(values = c(var = "white", hip = "#F3E1DF"), guide = "none") +
+    scale_linetype_identity() +
+    coord_cartesian(xlim = c(0.2, 6), ylim = c(0, 5.4)) +
+    labs(title = "Hipotese causal: a severidade da ferrugem esta no caminho entre cultivar e exportacao",
+         subtitle = "setas cheias: caminhos supostos; tracejadas: fator nao medido que viciaria o efeito direto",
+         caption = "diagrama de hipoteses; nenhuma seta e provada por estes dados") +
+    theme_void(base_size = 12) +
+    theme(plot.title = element_text(face = "bold"), plot.margin = margin(8, 8, 8, 8))
+salvar(g_dag, "C6_dag.png", 10, 6)
+
+# ---------------------------------------------------------------------
+# Os dois modelos
+# ---------------------------------------------------------------------
+# OBJETIVO: estimar o efeito total (sem a severidade) e o efeito direto
+#   (com a severidade) da cultivar.
+# O QUE O CODIGO FAZ: modelo_total e o modelo final do Step 4;
+#   modelo_direto acrescenta severidade_ferrugem; verificar() confere
+#   convergencia; um envelope rapido confere que o modelo direto tambem
+#   e compativel com os dados; anova() testa se a severidade acrescenta
+#   ajuste.
+# COMO INTERPRETAR: se a severidade tem coeficiente negativo e
+#   significativo, mais ferrugem = menor chance de exportar, ajustado
+#   pelas demais caracteristicas. O sinal do coeficiente sera usado para
+#   conferir a coerencia da decomposicao a seguir.
+modelo_total  <- modelo_final
+modelo_direto <- update(modelo_final, . ~ . + severidade_ferrugem)
+verificar(modelo_direto, "modelo_direto")
+envelope_direto <- hnp(modelo_direto, resid.type = "deviance", sim = 99, conf = 0.95,
+                       how.many.out = TRUE, print.on = FALSE, plot.sim = FALSE)
+cat(sprintf("   envelope do modelo direto: %d de %d pontos fora\n", envelope_direto$out, envelope_direto$total))
+lrt_sev <- anova(modelo_total, modelo_direto, test = "Chisq")
+beta_sev <- coef(modelo_direto)[["severidade_ferrugem"]]
+cat(sprintf("   severidade_ferrugem no modelo direto: beta = %.3f | LRT = %.2f com 1 gl, p = %s\n",
+            beta_sev, lrt_sev$Deviance[2], format.pval(lrt_sev[["Pr(>Chi)"]][2], digits = 3)))
+
+# ---------------------------------------------------------------------
+# Comparacao dos coeficientes de cultivar
+# ---------------------------------------------------------------------
+# OBJETIVO: ver como o coeficiente de cada cultivar muda ao incluir a
+#   severidade, e se a mudanca e coerente com a hipotese de mediacao.
+# O QUE O CODIGO FAZ: extrai os coeficientes e razoes de chances de
+#   cultivar nos dois modelos; calcula a diferenca (total - direto), que
+#   sob a hipotese do diagrama e a parte do efeito que passa pela
+#   ferrugem; calcula a severidade media de cada cultivar e a diferenca
+#   em relacao a Bourbon.
+# COMO INTERPRETAR: coerencia esperada sob mediacao - uma cultivar com
+#   MENOS ferrugem que Bourbon (diferenca negativa), combinada com um
+#   coeficiente NEGATIVO da severidade, deve ter parte indireta POSITIVA
+#   (a menor ferrugem ajuda a exportar). Nesse caso, o efeito total fica
+#   MENOS negativo que o direto. A coluna "coerente" confere isso.
+#   Coerencia nao e prova: a nao colapsabilidade tambem move o
+#   coeficiente na mesma direcao.
+or_total  <- tabela_or(modelo_total)
+or_direto <- tabela_or(modelo_direto)
+linhas_cultivar <- grep("^cultivar", or_total$termo)
+niveis_cultivar <- sub("^cultivar", "", or_total$termo[linhas_cultivar])
+referencia_cultivar <- levels(dados_cafe$cultivar)[1]
+
+sev_media <- tapply(severidade, dados_cafe$cultivar, mean)
+tab_total_direto <- data.frame(
+    cultivar     = niveis_cultivar,
+    beta_total   = or_total$beta[linhas_cultivar],
+    beta_direto  = or_direto$beta[match(or_total$termo[linhas_cultivar], or_direto$termo)],
+    OR_total     = or_total$OR[linhas_cultivar],
+    OR_direto    = or_direto$OR[match(or_total$termo[linhas_cultivar], or_direto$termo)],
+    sev_media    = as.vector(sev_media[niveis_cultivar]),
+    sev_dif_ref  = as.vector(sev_media[niveis_cultivar]) - sev_media[[referencia_cultivar]])
+tab_total_direto$indireto  <- tab_total_direto$beta_total - tab_total_direto$beta_direto
+tab_total_direto$coerente  <- sign(tab_total_direto$indireto) == sign(beta_sev * tab_total_direto$sev_dif_ref)
+
+cat(sprintf("\ncoeficientes de cultivar (referencia: %s; severidade media da referencia: %.3f):\n",
+            referencia_cultivar, sev_media[[referencia_cultivar]]))
+print(data.frame(cultivar    = tab_total_direto$cultivar,
+                 beta_total  = round(tab_total_direto$beta_total, 3),
+                 beta_direto = round(tab_total_direto$beta_direto, 3),
+                 indireto    = round(tab_total_direto$indireto, 3),
+                 OR_total    = round(tab_total_direto$OR_total, 3),
+                 OR_direto   = round(tab_total_direto$OR_direto, 3),
+                 sev_media   = round(tab_total_direto$sev_media, 3),
+                 sev_vs_ref  = round(tab_total_direto$sev_dif_ref, 3),
+                 coerente    = ifelse(tab_total_direto$coerente, "sim", "NAO")),
+      row.names = FALSE)
+cat("   indireto = beta_total - beta_direto (parte que passaria pela ferrugem, sob a hipotese do diagrama)\n")
+
+# A mesma comparacao no modelo amplo: o fenomeno nao e artefato da selecao
+modelo_amplo_direto <- update(modelo_amplo, . ~ . + severidade_ferrugem)
+b_amplo_total  <- coef(modelo_amplo)[or_total$termo[linhas_cultivar]]
+b_amplo_direto <- coef(modelo_amplo_direto)[or_total$termo[linhas_cultivar]]
+cat("\n   no modelo amplo (13 candidatas), a mesma comparacao:\n")
+print(data.frame(cultivar = niveis_cultivar,
+                 beta_total_amplo  = round(unname(b_amplo_total), 3),
+                 beta_direto_amplo = round(unname(b_amplo_direto), 3),
+                 indireto_amplo    = round(unname(b_amplo_total - b_amplo_direto), 3)),
+      row.names = FALSE)
+
+# Razao de chances da propria severidade, por 0,10 de severidade.
+# A severidade varia de 0,001 a 0,61; "uma unidade" (0 -> 1) nao existe
+# na base. Um incremento de 0,10 (10 pontos percentuais de area foliar
+# lesionada) e uma variacao concreta: exp(0,10 * beta).
+ic_sev <- suppressMessages(confint(modelo_direto))["severidade_ferrugem", ]
+or_sev_010 <- exp(0.10 * c(beta_sev, ic_sev))
+cat(sprintf("\n   razao de chances por +0,10 de severidade: %.3f [IC95%%: %.3f; %.3f]\n",
+            or_sev_010[1], or_sev_010[2], or_sev_010[3]))
+
+# ---------------------------------------------------------------------
+# Figura C6: razoes de chances de cultivar nos dois modelos
+# ---------------------------------------------------------------------
+# Pergunta que responde: como a razao de chances de cada cultivar muda
+# ao incluir a mediadora?
+# Como ler: eixo x em escala log; linha em 1 = igual a Bourbon; para
+# cada cultivar, o ponto do modelo total (sem severidade) e o do direto
+# (com severidade), com IC de perfil. O deslocamento entre os dois e o
+# efeito de incluir a mediadora.
+# Limitacao: deslocamento nao prova mediacao (nao colapsabilidade).
+df_or_cult <- rbind(
+    cbind(or_total[linhas_cultivar, ],  modelo = "total (sem severidade)"),
+    cbind(or_direto[match(or_total$termo[linhas_cultivar], or_direto$termo), ], modelo = "direto (com severidade)"))
+df_or_cult$cultivar <- sub("^cultivar", "", df_or_cult$termo)
+df_or_cult$modelo   <- factor(df_or_cult$modelo, levels = c("total (sem severidade)", "direto (com severidade)"))
+g_total_direto <- ggplot(df_or_cult, aes(x = OR, y = cultivar, colour = modelo)) +
+    geom_vline(xintercept = 1, linetype = "dashed", colour = CINZA) +
+    geom_errorbar(aes(xmin = IC_inf, xmax = IC_sup), width = .25,
+                  position = position_dodge(width = .6)) +
+    geom_point(size = 3, position = position_dodge(width = .6)) +
+    scale_x_log10() +
+    scale_colour_manual(values = c(`total (sem severidade)` = VERDE, `direto (com severidade)` = VERMELHO), name = NULL) +
+    labs(x = sprintf("razao de chances em relacao a %s (escala log)", referencia_cultivar), y = NULL,
+         title = "Cultivar: efeito total e efeito direto na chance de exportar",
+         subtitle = "o efeito direto mantem a severidade da ferrugem fixa; o total nao",
+         caption = "IC de verossimilhanca perfilada (95%); o deslocamento entre os pontos nao prova mediacao") +
+    theme_bw(base_size = 12) +
+    theme(legend.position = "bottom")
+salvar(g_total_direto, "C6_total_vs_direto.png", 9, 5)
+
+# ---------------------------------------------------------------------
+# Parecer do Step 6
+# ---------------------------------------------------------------------
+# CONCLUSAO LITERAL:
+# O que muda no coeficiente da cultivar e o que a ferrugem faz.
+#
+# CONCLUSAO ESTATISTICA:
+# Total x direto, coerencia com a hipotese, e o que nao esta provado.
+#
+# RESPOSTA A TAREFA 2:
+# Qual modelo serve a quem escolhe a cultivar antes do plantio.
+#
+# LIMITACOES:
+# Hipoteses do diagrama; nao colapsabilidade; fator nao medido.
+cultivar_menor_sev <- names(which.min(sev_media))
+cultivar_menor_or  <- tab_total_direto$cultivar[which.min(tab_total_direto$OR_total)]
+n_coerentes <- sum(tab_total_direto$coerente)
+
+parecer("CONCLUSAO LITERAL. Mais ferrugem, menor chance de exportar: cada 0,10 a mais ",
+        "de severidade multiplica a chance por ", sprintf("%.2f", or_sev_010[1]),
+        " (IC95% ", sprintf("%.2f a %.2f", or_sev_010[2], or_sev_010[3]),
+        "), ajustado pelas demais caracteristicas. Ao incluir a severidade no modelo, ",
+        "os coeficientes de cultivar mudam: ",
+        paste(sprintf("%s de %.2f para %.2f", tab_total_direto$cultivar,
+                      tab_total_direto$beta_total, tab_total_direto$beta_direto), collapse = "; "),
+        " (escala do logit, em relacao a ", referencia_cultivar, "). A cultivar com menor ",
+        "severidade media e ", cultivar_menor_sev, " (", sprintf("%.3f", sev_media[[cultivar_menor_sev]]),
+        " contra ", sprintf("%.3f", sev_media[[referencia_cultivar]]), " de ", referencia_cultivar,
+        "), e a com menor razao de chances total de exportar e ", cultivar_menor_or, ". ",
+        "CONCLUSAO ESTATISTICA. O modelo sem a severidade estima o efeito total da ",
+        "cultivar; o modelo com a severidade estima o efeito direto, sob as hipoteses ",
+        "do diagrama. Em ", n_coerentes, " das ", nrow(tab_total_direto),
+        " cultivares, o sinal da diferenca total - direto e coerente com a mediacao ",
+        "(cultivares com menos ferrugem que ", referencia_cultivar, " tem parte indireta ",
+        "positiva, o que torna o efeito total menos negativo que o direto). O mesmo ",
+        "padrao aparece no modelo amplo, logo nao e artefato da selecao. A coerencia, ",
+        "porem, nao prova mediacao: a razao de chances nao e colapsavel, e parte do ",
+        "deslocamento ocorreria mesmo sem mediacao. A evidencia de mediacao apoia-se ",
+        "no diagrama e na relacao cultivar -> severidade demonstrada no Desafio B. ",
+        "RESPOSTA A TAREFA 2. O produtor que escolhe a cultivar antes do plantio ",
+        "recebe a ferrugem junto com a cultivar: ele nao consegue 'segurar a ferrugem ",
+        "fixa'. A pergunta dele e respondida pelo efeito TOTAL, isto e, pelo modelo SEM ",
+        "a severidade. O efeito direto responde a outra pergunta - 'e se a ferrugem ",
+        "fosse controlada ao mesmo nivel em todas as cultivares?' -, util para quem ",
+        "planeja o programa de controle da doenca, nao para quem escolhe o que plantar. ",
+        "LIMITACOES. O efeito direto so e interpretavel se nao houver fator nao medido ",
+        "que afete a ferrugem e a qualidade do lote ao mesmo tempo; com estes dados ",
+        "isso e uma hipotese, nao uma verificacao. ",
+        "O QUE FICA PARA OS PROXIMOS STEPS: as magnitudes com intervalos (Step 7) e a ",
+        "reconciliacao com o Desafio B na recomendacao (Step 9).")
+
+
+# =====================================================================
+# ---- STEP 7 ---- RAZOES DE CHANCES COM INTERVALOS DE CONFIANCA
+# =====================================================================
+secao("STEP 7 - RAZOES DE CHANCES (TAREFA 4)")
+
+# Pergunta do step: em quanto cada caracteristica multiplica a chance de
+# um lote ser exportavel - e com que incerteza?
+#
+# Chance e probabilidade, de novo (Step 0): probabilidade e "de cada 100
+# lotes, quantos exportam"; chance e "quantos exportam para cada um que
+# nao exporta", p / (1 - p).
+#
+# Razao de chances (slides, secao 9.1.2), em linguagem simples: por
+# quanto a chance e multiplicada ao trocar de nivel (fatores) ou ao
+# subir uma unidade (numericas), mantendo o resto igual. Formula:
+# OR = exp(beta). E constante em toda a escala: o mesmo multiplicador
+# vale para um talhao que parte de chance 0,5 ou de chance 2.
+#
+# Aviso dos slides: RAZAO DE CHANCES NAO E RISCO RELATIVO. OR = 2 nao
+# significa "o dobro da probabilidade". A aproximacao OR ~ RR so vale
+# para desfechos raros (p < 0,10); aqui o desfecho e frequente (cerca de
+# metade dos lotes), e a diferenca e grande. O bloco final deste step
+# mostra isso com numeros.
+#
+# Intervalo de confianca (apostila, secao 2.11): faixa de valores
+# compativeis com os dados. Se contem 1, os dados nao excluem "sem
+# efeito". Dois jeitos de calcula-lo: Wald (beta +- 1,96 EP, simetrico
+# no logit) e perfil de verossimilhanca (confint() no glm; assimetrico
+# na escala da razao de chances e mais confiavel em amostras moderadas).
+#
+# OBJETIVO: interpretar o modelo final na escala das razoes de chances.
+# O QUE O CODIGO FAZ: tabela_or() extrai beta, erro-padrao, OR e IC de
+#   perfil; um segundo bloco reescala as numericas para unidades
+#   agronomicas (100 m de altitude; 5 anos de lavoura) por exp(c * beta);
+#   um terceiro compara Wald e perfil no termo mais incerto.
+# COMO INTERPRETAR: OR > 1 = chance maior que a referencia (ou que
+#   subir uma unidade aumenta a chance); OR < 1 = menor. IC que cruza 1 =
+#   sem evidencia clara. A magnitude em probabilidade depende do ponto
+#   de partida (Step 9).
+tab_or_final <- tabela_or(modelo_final)
+tab_or_final$p_Wald <- summary(modelo_final)$coefficients[, "Pr(>|z|)"]
+
+cat(sprintf("razoes de chances do modelo final (referencias: %s; %s):\n",
+            paste(sapply(fatores_final, function(f) sprintf("%s = %s", f, levels(dados_cafe[[f]])[1])), collapse = "; "),
+            "IC de verossimilhanca perfilada, 95%"))
+print(data.frame(termo  = tab_or_final$termo,
+                 beta   = round(tab_or_final$beta, 4),
+                 OR     = round(tab_or_final$OR, 3),
+                 IC_inf = round(tab_or_final$IC_inf, 3),
+                 IC_sup = round(tab_or_final$IC_sup, 3),
+                 p_Wald = round(tab_or_final$p_Wald, 4),
+                 cruza_1 = ifelse(tab_or_final$IC_inf < 1 & tab_or_final$IC_sup > 1, "sim", "")),
+      row.names = FALSE)
+
+# ---------------------------------------------------------------------
+# Reescalar as numericas para unidades com sentido agronomico
+# ---------------------------------------------------------------------
+# OR por 1 metro de altitude e um numero perto de 1 e dificil de ler.
+# OR por 100 m = exp(100 * beta) - e NAO 100 * exp(beta). O mesmo vale
+# para o IC: exp(100 * limite do IC de beta). Escalas adotadas:
+ESCALAS <- c(altitude_m = 100, idade_lavoura_anos = 5)
+tab_or_reescalada <- bind_rows(lapply(numericas_final, function(v) {
+    c_esc <- if (v %in% names(ESCALAS)) ESCALAS[[v]] else 1
+    linha <- tab_or_final[tab_or_final$termo == v, ]
+    ic_b  <- suppressMessages(confint(modelo_final))[v, ]
+    data.frame(termo = v, unidade = c_esc,
+               OR_por_unidade = exp(c_esc * linha$beta),
+               IC_inf = exp(c_esc * ic_b[1]), IC_sup = exp(c_esc * ic_b[2]))
+}))
+cat("\nnumericas reescaladas (OR por c unidades = exp(c * beta)):\n")
+print(data.frame(termo   = tab_or_reescalada$termo,
+                 por     = tab_or_reescalada$unidade,
+                 OR      = round(tab_or_reescalada$OR_por_unidade, 3),
+                 IC_inf  = round(tab_or_reescalada$IC_inf, 3),
+                 IC_sup  = round(tab_or_reescalada$IC_sup, 3)),
+      row.names = FALSE)
+
+# ---------------------------------------------------------------------
+# Wald e perfil: a diferenca no termo mais incerto
+# ---------------------------------------------------------------------
+# [APROFUNDAMENTO] O IC de Wald supoe que a log-verossimilhanca e uma
+# parabola em torno da estimativa; o de perfil percorre a
+# log-verossimilhanca de verdade. Quando o erro-padrao e grande, a
+# parabola e uma aproximacao pior e os dois intervalos se afastam. Na
+# escala da razao de chances, o de Wald e simetrico em torno de beta
+# (assimetrico em torno de OR) e o de perfil nao tem essa restricao.
+termo_mais_incerto <- tab_or_final$termo[-1][which.max(tab_or_final$ep[-1])]
+linha_inc <- tab_or_final[tab_or_final$termo == termo_mais_incerto, ]
+ic_wald   <- exp(linha_inc$beta + c(-1, 1) * qnorm(0.975) * linha_inc$ep)
+cat(sprintf("\ntermo com maior erro-padrao: %s (EP = %.3f)\n", termo_mais_incerto, linha_inc$ep))
+cat(sprintf("   IC95%% de Wald   : [%.3f; %.3f]\n", ic_wald[1], ic_wald[2]))
+cat(sprintf("   IC95%% de perfil : [%.3f; %.3f]\n", linha_inc$IC_inf, linha_inc$IC_sup))
+
+# ---------------------------------------------------------------------
+# Figura C7: forest plot das razoes de chances
+# ---------------------------------------------------------------------
+# Pergunta que responde: quanto cada caracteristica multiplica a chance?
+# Como ler: eixo x em escala log (distancias iguais = mesmo fator
+# multiplicativo); linha em 1 = sem efeito; ponto = OR; barra = IC de
+# perfil 95%. Fatores sao lidos em relacao a categoria de referencia,
+# escrita no rotulo. Numericas aparecem na unidade reescalada.
+# Limitacao: OR nao e risco relativo; a leitura em probabilidade vem
+# no Step 9.
+rotulo_termo <- function(t) {
+    for (f in fatores_final) if (startsWith(t, f))
+        return(sprintf("%s: %s (ref.: %s)", f, sub(f, "", t), levels(dados_cafe[[f]])[1]))
+    if (t %in% tab_or_reescalada$termo)
+        return(sprintf("%s (por %g)", t, tab_or_reescalada$unidade[tab_or_reescalada$termo == t]))
+    t
+}
+df_forest <- tab_or_final[tab_or_final$termo != "(Intercept)", c("termo", "OR", "IC_inf", "IC_sup")]
+for (v in tab_or_reescalada$termo) {
+    i <- df_forest$termo == v
+    df_forest$OR[i]     <- tab_or_reescalada$OR_por_unidade[tab_or_reescalada$termo == v]
+    df_forest$IC_inf[i] <- tab_or_reescalada$IC_inf[tab_or_reescalada$termo == v]
+    df_forest$IC_sup[i] <- tab_or_reescalada$IC_sup[tab_or_reescalada$termo == v]
+}
+df_forest$rotulo <- sapply(df_forest$termo, rotulo_termo)
+df_forest$rotulo <- factor(df_forest$rotulo, levels = rev(df_forest$rotulo))
+df_forest$evidencia <- ifelse(df_forest$IC_inf > 1 | df_forest$IC_sup < 1, "IC exclui 1", "IC cruza 1")
+g_forest <- ggplot(df_forest, aes(x = OR, y = rotulo, colour = evidencia)) +
+    geom_vline(xintercept = 1, linetype = "dashed", colour = CINZA) +
+    geom_errorbar(aes(xmin = IC_inf, xmax = IC_sup), width = .25) +
+    geom_point(size = 3) +
+    geom_text(aes(label = sprintf("%.2f [%.2f; %.2f]", OR, IC_inf, IC_sup)),
+              vjust = -.9, size = 3, colour = "black") +
+    scale_x_log10() +
+    scale_colour_manual(values = c(`IC exclui 1` = VERDE, `IC cruza 1` = CINZA), name = NULL) +
+    labs(x = "razao de chances (escala log)", y = NULL,
+         title = "Razoes de chances do modelo final, com IC de perfil 95%",
+         subtitle = "linha tracejada: OR = 1 (sem efeito); numericas em unidades reescaladas",
+         caption = "razao de chances nao e risco relativo: a leitura em probabilidade depende do ponto de partida") +
+    theme_bw(base_size = 12) +
+    theme(legend.position = "bottom")
+salvar(g_forest, "C7_forest_or.png", 10, 6)
+
+# ---------------------------------------------------------------------
+# Razao de chances nao e risco relativo: um exemplo com numeros
+# ---------------------------------------------------------------------
+# OBJETIVO: mostrar quanto a mesma razao de chances vale em pontos
+#   percentuais, partindo de probabilidades diferentes.
+# O QUE O CODIGO FAZ: toma a razao de chances do manejo com maior OR e
+#   aplica-a a tres probabilidades de partida: a de um talhao de
+#   referencia previsto pelo modelo, e duas hipoteticas (0,10 e 0,50).
+#   chance1 = OR * chance0; p1 = chance1 / (1 + chance1).
+# COMO INTERPRETAR: a coluna "risco relativo" (p1/p0) muda com o ponto de
+#   partida, enquanto a OR e a mesma; a diferenca em pontos percentuais
+#   e maior perto de p = 0,5.
+termo_manejo_max <- df_forest$termo[startsWith(df_forest$termo, "manejo")][
+    which.max(df_forest$OR[startsWith(df_forest$termo, "manejo")])]
+or_exemplo <- tab_or_final$OR[tab_or_final$termo == termo_manejo_max]
+talhao_base <- dados_cafe[1, termos_final]
+for (v in numericas_final) talhao_base[[v]] <- median(dados_cafe[[v]])
+for (f in fatores_final) talhao_base[[f]] <- factor(levels(dados_cafe[[f]])[1], levels = levels(dados_cafe[[f]]))
+p_base <- predict(modelo_final, newdata = talhao_base, type = "response")
+p0 <- c(referencia = unname(p_base), hipotetico_010 = 0.10, hipotetico_080 = 0.80)
+chance0 <- p0 / (1 - p0)
+p1 <- (or_exemplo * chance0) / (1 + or_exemplo * chance0)
+tab_or_rr <- data.frame(ponto_de_partida = names(p0), p0 = round(p0, 3), p1 = round(p1, 3),
+                        diferenca_pp = round(100 * (p1 - p0), 1),
+                        risco_relativo = round(p1 / p0, 2), razao_de_chances = round(or_exemplo, 2))
+cat(sprintf("\na mesma razao de chances (%s, OR = %.2f) em probabilidades diferentes:\n",
+            sub("manejo", "manejo ", termo_manejo_max), or_exemplo))
+print(tab_or_rr, row.names = FALSE)
+
+# ---------------------------------------------------------------------
+# Parecer do Step 7
+# ---------------------------------------------------------------------
+# CONCLUSAO LITERAL: cada caracteristica em "multiplica a chance por".
+# CONCLUSAO ESTATISTICA: OR com IC de perfil; onde o IC cruza 1.
+# RESPOSTA A TAREFA 4: interpretacao em razoes de chances com IC.
+# O QUE FICA: a leitura em probabilidade (Step 9).
+frase_or <- function(i) {
+    r <- df_forest[i, ]
+    sprintf("%s: OR %.2f [%.2f; %.2f]", as.character(r$rotulo), r$OR, r$IC_inf, r$IC_sup)
+}
+com_evidencia <- which(df_forest$evidencia == "IC exclui 1")
+sem_evidencia <- which(df_forest$evidencia == "IC cruza 1")
+
+parecer("CONCLUSAO LITERAL. Mantidas as demais caracteristicas, ",
+        paste(sapply(seq_len(nrow(df_forest)), frase_or), collapse = "; "),
+        ". Lendo em linguagem comum: uma razao de chances de 2 significa que, para cada ",
+        "lote que nao exporta, o grupo tem o dobro de lotes exportando em relacao a ",
+        "referencia - nao 'o dobro da probabilidade'. O exemplo numerico mostra que a ",
+        "mesma OR de ", sprintf("%.2f", or_exemplo), " vale ",
+        sprintf("%.1f", tab_or_rr$diferenca_pp[1]), " pontos percentuais partindo de ",
+        sprintf("%.2f", tab_or_rr$p0[1]), ", mas ", sprintf("%.1f", tab_or_rr$diferenca_pp[2]),
+        " partindo de 0,10. ",
+        "CONCLUSAO ESTATISTICA. Os intervalos sao de verossimilhanca perfilada; no termo ",
+        "mais incerto (", termo_mais_incerto, ") ele vai de ",
+        sprintf("%.2f a %.2f", linha_inc$IC_inf, linha_inc$IC_sup), " contra ",
+        sprintf("%.2f a %.2f", ic_wald[1], ic_wald[2]), " pelo metodo de Wald. ",
+        "Os termos cujo IC exclui 1 sao: ",
+        if (length(com_evidencia) > 0) paste(as.character(df_forest$rotulo[com_evidencia]), collapse = "; ") else "nenhum",
+        ". Os termos cujo IC cruza 1 sao: ",
+        if (length(sem_evidencia) > 0) paste(as.character(df_forest$rotulo[sem_evidencia]), collapse = "; ") else "nenhum",
+        " - para eles os dados nao excluem ausencia de efeito, mas o intervalo mostra ",
+        "a faixa de magnitudes ainda plausivel, o que nao e o mesmo que 'nao ha efeito'. ",
+        "RESPOSTA A TAREFA 4. Os efeitos estao interpretados em razoes de chances com ",
+        "intervalos de confianca, em relacao as categorias de referencia (",
+        paste(sapply(fatores_final, function(f) levels(dados_cafe[[f]])[1]), collapse = ", "),
+        ") e em unidades agronomicas para as numericas. ",
+        "O QUE FICA PARA OS PROXIMOS STEPS: a capacidade preditiva (Step 8) e a ",
+        "traducao das razoes de chances em probabilidades para cenarios concretos (Step 9).")
+
+
+# =====================================================================
+# ---- STEP 8 ---- CAPACIDADE PREDITIVA E PONTO DE CORTE
+# =====================================================================
+secao("STEP 8 - CAPACIDADE PREDITIVA (TAREFA 3)")
+
+# Pergunta do step: se usassemos o modelo para apontar, antes da
+# classificacao oficial, quais talhoes tendem a produzir lote
+# exportavel, quantas vezes acertariamos - e onde colocar a regua,
+# sabendo que errar para um lado custa mais do que para o outro?
+#
+# De probabilidade a decisao, em linguagem simples: o modelo da uma
+# probabilidade a cada talhao; para agir e preciso uma regua (ponto de
+# corte). Acima dela, o talhao e tratado como "exportavel". A regua
+# 0,5 e apenas o padrao ingenuo - ela so e otima quando os dois tipos de
+# erro custam o mesmo.
+#
+# Matriz de confusao: tabela 2 x 2 de acertos e erros.
+#   verdadeiro positivo (VP): previsto exportavel, e exportou;
+#   falso positivo (FP)     : previsto exportavel, e nao exportou;
+#   falso negativo (FN)     : previsto nao exportavel, e exportou;
+#   verdadeiro negativo (VN): previsto nao exportavel, e nao exportou.
+# Sensibilidade = VP / (VP + FN): dos que exportaram, quantos o modelo
+# apontou. Especificidade = VN / (VN + FP): dos que nao exportaram,
+# quantos ele deixou de fora. Valor preditivo positivo = VP / (VP + FP):
+# dos apontados, quantos de fato exportaram.
+# (Hosmer, Lemeshow e Sturdivant, 2013; Fawcett, 2006.)
+#
+# OBJETIVO: medir o acerto do modelo com a regua ingenua, como ponto de
+#   partida.
+# O QUE O CODIGO FAZ: a funcao metricas() classifica com um corte e
+#   devolve a matriz e as medidas.
+# COMO INTERPRETAR: a acuracia sozinha engana quando as classes sao
+#   desiguais; sensibilidade e especificidade dizem em que direcao o
+#   modelo erra. E aqui que o possivel desbalanceamento das classes
+#   (Step 0) e retomado: as contagens de cada classe sao impressas ao
+#   lado das medidas, junto com a acuracia de quem sempre apostasse na
+#   classe maior - a referencia minima que qualquer modelo deve superar.
+prob_predita <- fitted(modelo_final)
+
+metricas <- function(prob, obs, corte) {
+    pred <- as.integer(prob >= corte)
+    VP <- sum(pred == 1 & obs == 1); FP <- sum(pred == 1 & obs == 0)
+    FN <- sum(pred == 0 & obs == 1); VN <- sum(pred == 0 & obs == 0)
+    c(corte = corte, VP = VP, FP = FP, FN = FN, VN = VN,
+      sensibilidade = VP / (VP + FN), especificidade = VN / (VN + FP),
+      acuracia = (VP + VN) / length(obs),
+      VPP = if (VP + FP > 0) VP / (VP + FP) else NA,
+      VPN = if (VN + FN > 0) VN / (VN + FN) else NA)
+}
+
+m_05 <- metricas(prob_predita, resposta_exportacao, 0.5)
+cat(sprintf("regua ingenua (corte 0,5): VP = %d | FP = %d | FN = %d | VN = %d\n",
+            m_05[["VP"]], m_05[["FP"]], m_05[["FN"]], m_05[["VN"]]))
+cat(sprintf("   sensibilidade = %.3f | especificidade = %.3f | acuracia = %.3f | VPP = %.3f | VPN = %.3f\n",
+            m_05[["sensibilidade"]], m_05[["especificidade"]], m_05[["acuracia"]], m_05[["VPP"]], m_05[["VPN"]]))
+cat(sprintf("   classes: %d com padrao (%.1f%%) e %d sem; acuracia de sempre prever a classe maior: %.3f\n",
+            frequencia_exportacao[["1"]], 100 * proporcao_exportacao, frequencia_exportacao[["0"]],
+            max(proporcao_exportacao, 1 - proporcao_exportacao)))
+
+# Figura C8: matriz de confusao no corte ingenuo
+# Pergunta que responde: onde o modelo acerta e onde erra, com a regua 0,5?
+# Como ler: linhas = previsto; colunas = observado; diagonal = acertos.
+df_matriz <- data.frame(previsto  = factor(c("exportavel", "exportavel", "nao exportavel", "nao exportavel"),
+                                           levels = c("nao exportavel", "exportavel")),
+                        observado = factor(c("atingiu (1)", "nao atingiu (0)", "atingiu (1)", "nao atingiu (0)"),
+                                           levels = c("nao atingiu (0)", "atingiu (1)")),
+                        n = c(m_05[["VP"]], m_05[["FP"]], m_05[["FN"]], m_05[["VN"]]),
+                        tipo = c("VP", "FP", "FN", "VN"))
+df_matriz$acerto <- df_matriz$tipo %in% c("VP", "VN")
+g_matriz <- ggplot(df_matriz, aes(x = observado, y = previsto, fill = acerto)) +
+    geom_tile(colour = "black") +
+    geom_text(aes(label = sprintf("%s\n%d", tipo, n)), size = 5) +
+    scale_fill_manual(values = c(`TRUE` = "#CFE3DE", `FALSE` = "#F3E1DF"), guide = "none") +
+    labs(x = "observado", y = "previsto pelo modelo (corte 0,5)",
+         title = "Matriz de confusao com a regua ingenua (0,5)",
+         subtitle = sprintf("sensibilidade %.2f | especificidade %.2f | acuracia %.2f",
+                            m_05[["sensibilidade"]], m_05[["especificidade"]], m_05[["acuracia"]]),
+         caption = "0,5 so e a regua otima quando falso positivo e falso negativo custam o mesmo") +
+    theme_bw(base_size = 12) +
+    theme(panel.grid = element_blank())
+salvar(g_matriz, "C8_matriz_confusao.png", 7, 6)
+
+# ---------------------------------------------------------------------
+# Curva ROC e AUC
+# ---------------------------------------------------------------------
+# Em linguagem simples: em vez de escolher uma regua, experimentar todas.
+# Para cada corte possivel, anota-se a sensibilidade e a especificidade;
+# a curva ROC desenha uma contra a outra. A area sob a curva (AUC) e a
+# probabilidade de o modelo dar nota maior a um talhao que exportou do
+# que a um que nao exportou: 0,5 e uma moeda; 1 e separacao perfeita.
+# O intervalo de confianca da AUC e o de DeLong (pROC::ci.auc).
+#
+# OBJETIVO: medir a capacidade de ordenar do modelo, independente da regua.
+# O QUE O CODIGO FAZ: pROC::roc() varre os cortes; auc() e ci.auc()
+#   calculam a area e o IC; coords() devolve sensibilidade e
+#   especificidade por corte, e o corte de Youden (maximo de
+#   sensibilidade + especificidade - 1), criterio que ignora custos.
+# COMO INTERPRETAR: AUC perto de 0,5 = ordena mal; perto de 1 = ordena
+#   bem. AUC nao diz nada sobre calibracao (Step 5): sao coisas
+#   diferentes.
+curva_roc  <- pROC::roc(response = resposta_exportacao, predictor = prob_predita,
+                        levels = c(0, 1), direction = "<", quiet = TRUE)
+auc_amostra <- as.numeric(pROC::auc(curva_roc))
+ic_auc      <- as.numeric(pROC::ci.auc(curva_roc))
+corte_youden <- pROC::coords(curva_roc, "best", best.method = "youden",
+                             ret = c("threshold", "sensitivity", "specificity"))
+cat(sprintf("\nAUC na propria amostra: %.3f [IC95%% DeLong: %.3f; %.3f]\n", auc_amostra, ic_auc[1], ic_auc[3]))
+cat(sprintf("   corte de Youden: %.3f (sensibilidade %.3f, especificidade %.3f) - criterio sem custos\n",
+            corte_youden$threshold, corte_youden$sensitivity, corte_youden$specificity))
+
+# ---------------------------------------------------------------------
+# Otimismo e validacao cruzada
+# ---------------------------------------------------------------------
+# Em linguagem simples: medir o acerto nos mesmos talhoes que ajustaram
+# o modelo superestima, porque o modelo "ja viu" as respostas. Na
+# validacao cruzada em 10 partes, o modelo e ajustado em 9 partes e
+# avaliado na decima, em rodizio; cada talhao recebe uma probabilidade
+# prevista por um modelo que nao o usou. A AUC dessas probabilidades e
+# uma estimativa honesta (James et al., An Introduction to Statistical
+# Learning, cap. 5). Depende do sorteio das partes: semente fixa.
+K_FOLDS <- 10
+set.seed(20260920)
+fold <- sample(rep(seq_len(K_FOLDS), length.out = n_obs))
+prob_cv <- numeric(n_obs)
+for (k in seq_len(K_FOLDS)) {
+    m_k <- glm(formula(modelo_final), family = binomial(link = "logit"), data = dados_cafe[fold != k, ])
+    prob_cv[fold == k] <- predict(m_k, newdata = dados_cafe[fold == k, ], type = "response")
+}
+auc_cv <- as.numeric(pROC::auc(pROC::roc(resposta_exportacao, prob_cv, levels = c(0, 1), direction = "<", quiet = TRUE)))
+cat(sprintf("   AUC por validacao cruzada (%d partes): %.3f | otimismo (amostra - CV): %.3f\n",
+            K_FOLDS, auc_cv, auc_amostra - auc_cv))
+
+# Referencia: AUC na amostra dos outros modelos ja ajustados
+auc_de <- function(m) as.numeric(pROC::auc(pROC::roc(resposta_exportacao, fitted(m), levels = c(0, 1), direction = "<", quiet = TRUE)))
+cat(sprintf("   referencia (na amostra): modelo amplo %.3f | modelo direto (com severidade) %.3f | modelo nulo %.3f\n",
+            auc_de(modelo_amplo), auc_de(modelo_direto), 0.5))
+
+# Figura C8: curva ROC
+# Pergunta que responde: quao bem o modelo ordena os talhoes?
+# Como ler: eixo x = 1 - especificidade (falsos positivos); eixo y =
+# sensibilidade; a diagonal e a moeda; quanto mais a curva se afasta
+# dela para o canto superior esquerdo, melhor. Os pontos marcam a regua
+# 0,5 e o corte de Youden.
+df_roc <- pROC::coords(curva_roc, "all", ret = c("threshold", "sensitivity", "specificity"))
+pontos_roc <- rbind(
+    data.frame(regua = "corte 0,5", sensibilidade = m_05[["sensibilidade"]], especificidade = m_05[["especificidade"]]),
+    data.frame(regua = "Youden", sensibilidade = corte_youden$sensitivity, especificidade = corte_youden$specificity))
+g_roc <- ggplot(df_roc, aes(x = 1 - specificity, y = sensitivity)) +
+    geom_abline(slope = 1, intercept = 0, linetype = "dashed", colour = CINZA) +
+    geom_path(colour = VERDE, linewidth = 1) +
+    geom_point(data = pontos_roc, aes(x = 1 - especificidade, y = sensibilidade, shape = regua),
+               size = 3.5, colour = VERMELHO) +
+    coord_equal() +
+    labs(x = "1 - especificidade (fracao de falsos positivos)", y = "sensibilidade",
+         shape = NULL,
+         title = "Curva ROC do modelo final",
+         subtitle = sprintf("AUC = %.3f [%.3f; %.3f] na amostra; %.3f por validacao cruzada",
+                            auc_amostra, ic_auc[1], ic_auc[3], auc_cv),
+         caption = "diagonal = classificacao ao acaso; AUC mede ordenacao, nao calibracao") +
+    theme_bw(base_size = 12) +
+    theme(legend.position = "bottom")
+salvar(g_roc, "C8_roc.png", 7, 7.5)
+
+# ---------------------------------------------------------------------
+# O ponto de corte como decisao de custo
+# ---------------------------------------------------------------------
+# O que e cada erro, para a cooperativa (definicao adotada neste trabalho):
+#   FALSO POSITIVO: tratar como exportavel um lote que nao atinge o
+#     padrao - o lote entra na cadeia de exportacao (contrato, logistica,
+#     certificacao) e e rejeitado ou rebaixado; custo de retrabalho,
+#     frete e reputacao junto ao comprador.
+#   FALSO NEGATIVO: tratar como nao exportavel um lote que atingiria o
+#     padrao - o lote vai ao mercado interno e o premio de exportacao e
+#     perdido.
+# Qual custa mais e uma decisao da cooperativa, nao do modelo. A razao
+# de custos abaixo e uma SUPOSICAO declarada para este trabalho: a
+# rejeicao de um lote ja comprometido com a exportacao (FP) e tomada
+# como duas vezes mais cara do que o premio perdido (FN). A tabela mostra
+# o que muda se a suposicao mudar.
+#
+# Regra de decisao com custos (dedutivel igualando o custo esperado das
+# duas decisoes): classificar como exportavel quando
+#     p > C_FP / (C_FP + C_FN).
+# Com custos iguais, o corte e 0,5; se FP custa o dobro, 2/3; se FN custa
+# o dobro, 1/3. O corte sobe quando o erro "para cima" custa mais.
+CUSTO_FP <- 2
+CUSTO_FN <- 1
+corte_adotado <- CUSTO_FP / (CUSTO_FP + CUSTO_FN)
+
+razoes_custo <- c(`1:1` = 1, `2:1` = 2, `3:1` = 3, `1:2` = 0.5)     # C_FP / C_FN
+tab_cortes <- bind_rows(lapply(names(razoes_custo), function(nome) {
+    r <- razoes_custo[[nome]]
+    corte <- r / (1 + r)
+    m <- metricas(prob_predita, resposta_exportacao, corte)
+    data.frame(razao_FP_FN = nome, corte = corte,
+               VP = m[["VP"]], FP = m[["FP"]], FN = m[["FN"]], VN = m[["VN"]],
+               sensibilidade = m[["sensibilidade"]], especificidade = m[["especificidade"]],
+               custo_por_lote = (m[["FP"]] * r + m[["FN"]] * 1) / n_obs)
+}))
+m_youden <- metricas(prob_predita, resposta_exportacao, corte_youden$threshold)
+tab_cortes <- rbind(tab_cortes,
+    data.frame(razao_FP_FN = "Youden (sem custos)", corte = corte_youden$threshold,
+               VP = m_youden[["VP"]], FP = m_youden[["FP"]], FN = m_youden[["FN"]], VN = m_youden[["VN"]],
+               sensibilidade = m_youden[["sensibilidade"]], especificidade = m_youden[["especificidade"]],
+               custo_por_lote = NA))
+# Regras triviais, para comparacao: "nunca apontar" (so falsos negativos:
+# custo = n1 * C_FN / n) e "apontar todos" (so falsos positivos: custo =
+# n0 * C_FP / n). Um modelo so tem valor de decisao se custar menos do
+# que a melhor regra trivial para a mesma razao de custos.
+tab_cortes$custo_nunca_apontar <- ifelse(is.na(tab_cortes$custo_por_lote), NA,
+                                         frequencia_exportacao[["1"]] * 1 / n_obs)
+tab_cortes$custo_apontar_todos <- ifelse(is.na(tab_cortes$custo_por_lote), NA,
+                                         frequencia_exportacao[["0"]] * razoes_custo[tab_cortes$razao_FP_FN] / n_obs)
+tab_cortes$ganho_vs_trivial <- pmin(tab_cortes$custo_nunca_apontar, tab_cortes$custo_apontar_todos, na.rm = FALSE) -
+                               tab_cortes$custo_por_lote
+
+cat("\ncortes por razao de custos (custos por lote em unidades de C_FN; ganho = melhor regra trivial - modelo):\n")
+print(data.frame(razao_FP_FN    = tab_cortes$razao_FP_FN,
+                 corte          = round(tab_cortes$corte, 3),
+                 VP = tab_cortes$VP, FP = tab_cortes$FP, FN = tab_cortes$FN, VN = tab_cortes$VN,
+                 sensibilidade  = round(tab_cortes$sensibilidade, 3),
+                 especificidade = round(tab_cortes$especificidade, 3),
+                 custo_modelo   = round(tab_cortes$custo_por_lote, 3),
+                 custo_nunca    = round(tab_cortes$custo_nunca_apontar, 3),
+                 custo_todos    = round(tab_cortes$custo_apontar_todos, 3),
+                 ganho          = round(tab_cortes$ganho_vs_trivial, 3)),
+      row.names = FALSE)
+
+# Custo esperado ao longo de todos os cortes, por razao de custos
+grade_cortes <- seq(0.02, 0.98, by = 0.01)
+df_custo <- bind_rows(lapply(names(razoes_custo), function(nome) {
+    r <- razoes_custo[[nome]]
+    custo <- sapply(grade_cortes, function(cte) {
+        m <- metricas(prob_predita, resposta_exportacao, cte)
+        (m[["FP"]] * r + m[["FN"]]) / n_obs
+    })
+    data.frame(razao_FP_FN = nome, corte = grade_cortes, custo = custo)
+}))
+df_custo$razao_FP_FN <- factor(df_custo$razao_FP_FN, levels = names(razoes_custo))
+df_min <- df_custo %>% group_by(razao_FP_FN) %>% slice_min(custo, n = 1, with_ties = FALSE) %>% ungroup()
+
+# Figura C8: custo esperado por corte
+# Pergunta que responde: onde colocar a regua?
+# Como ler: uma curva por razao de custos (C_FP : C_FN); eixo y = custo
+# medio por lote, em unidades do custo de um falso negativo; o ponto
+# marca o minimo empirico de cada curva; a linha vertical e o corte
+# teorico C_FP / (C_FP + C_FN) da razao adotada.
+# Limitacao: os custos sao suposicoes declaradas; o minimo empirico e
+# calculado nos mesmos dados que ajustaram o modelo.
+g_custo <- ggplot(df_custo, aes(x = corte, y = custo, colour = razao_FP_FN)) +
+    geom_vline(xintercept = corte_adotado, linetype = "dashed", colour = CINZA) +
+    geom_line(linewidth = .9) +
+    geom_point(data = df_min, size = 3) +
+    scale_colour_manual(values = c(`1:1` = CINZA, `2:1` = VERDE, `3:1` = "#8A6D3B", `1:2` = VERMELHO),
+                        name = "custo FP : custo FN") +
+    labs(x = "ponto de corte (probabilidade)", y = "custo esperado por lote (em custos de FN)",
+         title = "Custo esperado de classificacao ao longo do ponto de corte",
+         subtitle = sprintf("linha tracejada: corte teorico %.3f para a razao adotada %d:%d; pontos: minimo empirico de cada curva",
+                            corte_adotado, CUSTO_FP, CUSTO_FN),
+         caption = "custos sao suposicoes declaradas; quem decide a razao e a cooperativa") +
+    theme_bw(base_size = 12) +
+    theme(legend.position = "bottom")
+salvar(g_custo, "C8_custo_por_corte.png", 9, 6)
+
+# Matriz no corte adotado, e o minimo empirico da curva de custo para a
+# razao adotada (pode diferir do corte teorico se o modelo nao estiver
+# perfeitamente calibrado ou por variacao amostral).
+m_adotado <- metricas(prob_predita, resposta_exportacao, corte_adotado)
+cat(sprintf("\ncorte adotado (%d:%d): %.3f -> VP = %d | FP = %d | FN = %d | VN = %d\n",
+            CUSTO_FP, CUSTO_FN, corte_adotado, m_adotado[["VP"]], m_adotado[["FP"]], m_adotado[["FN"]], m_adotado[["VN"]]))
+cat(sprintf("   sensibilidade = %.3f | especificidade = %.3f | VPP = %.3f | VPN = %.3f\n",
+            m_adotado[["sensibilidade"]], m_adotado[["especificidade"]], m_adotado[["VPP"]], m_adotado[["VPN"]]))
+linha_adotada <- tab_cortes[tab_cortes$razao_FP_FN == sprintf("%d:%d", CUSTO_FP, CUSTO_FN), ]
+min_adotado   <- df_min[df_min$razao_FP_FN == sprintf("%d:%d", CUSTO_FP, CUSTO_FN), ]
+cat(sprintf("   custo por lote: modelo %.3f | nunca apontar %.3f | apontar todos %.3f | ganho do modelo %.3f\n",
+            linha_adotada$custo_por_lote, linha_adotada$custo_nunca_apontar,
+            linha_adotada$custo_apontar_todos, linha_adotada$ganho_vs_trivial))
+cat(sprintf("   minimo empirico da curva de custo para %d:%d: corte %.2f, custo %.3f\n",
+            CUSTO_FP, CUSTO_FN, min_adotado$corte, min_adotado$custo))
+
+# ---------------------------------------------------------------------
+# Parecer do Step 8
+# ---------------------------------------------------------------------
+# CONCLUSAO LITERAL: quantas vezes acertariamos; o que muda com a regua.
+# CONCLUSAO ESTATISTICA: AUC, otimismo, regra de corte por custo.
+# RESPOSTA A TAREFA 3: matriz, ROC, AUC e ponto de corte discutido.
+# O QUE FICA: onde esta a variacao nao explicada.
+parecer("CONCLUSAO LITERAL. Com a regua ingenua de 0,5, o modelo aponta ",
+        sprintf("%.0f%%", 100 * m_05[["sensibilidade"]]), " dos lotes que atingiram o padrao ",
+        "e deixa de fora ", sprintf("%.0f%%", 100 * m_05[["especificidade"]]),
+        " dos que nao atingiram (acuracia ", sprintf("%.0f%%", 100 * m_05[["acuracia"]]),
+        ", contra ", sprintf("%.0f%%", 100 * max(proporcao_exportacao, 1 - proporcao_exportacao)),
+        " de quem sempre apostasse na classe maior). Com a razao de custos adotada (",
+        CUSTO_FP, ":", CUSTO_FN, ", rejeicao na exportacao mais cara que premio perdido), a ",
+        "regua sobe para ", sprintf("%.2f", corte_adotado), ": a sensibilidade cai para ",
+        sprintf("%.0f%%", 100 * m_adotado[["sensibilidade"]]), " e a especificidade sobe para ",
+        sprintf("%.0f%%", 100 * m_adotado[["especificidade"]]),
+        " - o modelo fica mais exigente para apontar um lote como exportavel. ",
+        "Comparado com as regras triviais, o modelo nesse corte custa ",
+        sprintf("%.3f", linha_adotada$custo_por_lote), " por lote contra ",
+        sprintf("%.3f", linha_adotada$custo_nunca_apontar), " de 'nunca apontar' e ",
+        sprintf("%.3f", linha_adotada$custo_apontar_todos), " de 'apontar todos': ",
+        if (linha_adotada$ganho_vs_trivial > 0.02)
+            "ha ganho de decisao em usa-lo. "
+        else if (linha_adotada$ganho_vs_trivial > 0)
+            "o ganho sobre a melhor regra trivial e pequeno - sob essa razao de custos, o modelo acrescenta pouco a decisao. "
+        else "ele nao supera a melhor regra trivial - sob essa razao de custos, o modelo nao tem valor de decisao. ",
+        "CONCLUSAO ESTATISTICA. A AUC e ", sprintf("%.3f", auc_amostra), " [",
+        sprintf("%.3f; %.3f", ic_auc[1], ic_auc[3]), "] na propria amostra e ",
+        sprintf("%.3f", auc_cv), " por validacao cruzada em ", K_FOLDS,
+        " partes: o modelo ordena melhor que o acaso, mas com capacidade ",
+        if (auc_cv < 0.7) "modesta" else if (auc_cv < 0.8) "moderada" else "boa",
+        ", e o otimismo da avaliacao na amostra e de ",
+        sprintf("%.3f", auc_amostra - auc_cv), ". O ponto de corte nao e uma propriedade ",
+        "do modelo: e a decisao p > C_FP/(C_FP + C_FN), que vale 0,5 so com custos ",
+        "iguais; o corte de Youden (", sprintf("%.2f", corte_youden$threshold),
+        ") e reportado como referencia sem custos. ",
+        "RESPOSTA A TAREFA 3. Matriz de confusao, curva ROC e AUC estao calculadas; a ",
+        "escolha do corte foi discutida em funcao do custo assimetrico, com a razao de ",
+        "custos declarada como suposicao e a tabela mostrando o efeito de razoes ",
+        "alternativas. ",
+        "O QUE FICA PARA OS PROXIMOS STEPS: a capacidade preditiva modesta indica que ",
+        "boa parte do que decide o padrao de exportacao nao esta nas caracteristicas do ",
+        "talhao medidas nesta base (colheita, pos-colheita, beneficiamento). A ",
+        "recomendacao do Step 9 precisa dizer isso.")
+
+
+# =====================================================================
+# ---- STEP 9 ---- CENARIOS, CONCLUSAO E RECOMENDACAO
+# =====================================================================
+secao("STEP 9 - CENARIOS E RECOMENDACAO (REQUISITO D)")
+
+# Pergunta do step: para um produtor concreto, qual e a probabilidade de
+# exportar sob diferentes escolhas - e o que a cooperativa deve
+# recomendar para a proxima safra?
+#
+# Da razao de chances a probabilidade (slides, secao 12, item 6): os
+# coeficientes vivem na escala do preditor linear; interpretar exige
+# voltar a escala da resposta. Para um cenario, soma-se o preditor
+# linear (intercepto + coeficientes das caracteristicas escolhidas) e
+# converte-se com plogis(). Como a ligacao e nao linear, a mesma razao
+# de chances produz diferencas em pontos percentuais que DEPENDEM do
+# ponto de partida (Step 7).
+#
+# Intervalo de confianca da predicao: calculado na escala do preditor
+# linear (eta +- 1,96 EP) e so depois convertido com plogis(). Um
+# intervalo feito como p +- 1,96 EP poderia sair de [0, 1].
+#
+# "Mantendo as demais constantes": as numericas ficam na mediana da base
+# e os fatores no nivel indicado em cada cenario. A escolha e declarada
+# aqui, e nao escondida.
+#
+# OBJETIVO: traduzir o modelo em probabilidades para cenarios concretos.
+# O QUE O CODIGO FAZ: monta a grade cultivar x manejo com altitude e
+#   idade na mediana; predict(type = "link", se.fit = TRUE); plogis()
+#   para a probabilidade e o IC; diferencas em pontos percentuais.
+# COMO INTERPRETAR: a probabilidade de cada cenario e a leitura para o
+#   produtor; os IC largos sao parte da resposta (n = 340).
+mediana_altitude <- median(dados_cafe$altitude_m)
+mediana_idade    <- median(dados_cafe$idade_lavoura_anos)
+
+grade_cenarios <- expand.grid(cultivar = levels(dados_cafe$cultivar),
+                              manejo   = levels(dados_cafe$manejo),
+                              altitude_m = mediana_altitude,
+                              idade_lavoura_anos = mediana_idade)
+prever <- function(novos) {
+    pr <- predict(modelo_final, newdata = novos, type = "link", se.fit = TRUE)
+    novos$p      <- plogis(pr$fit)
+    novos$ic_inf <- plogis(pr$fit - qnorm(0.975) * pr$se.fit)
+    novos$ic_sup <- plogis(pr$fit + qnorm(0.975) * pr$se.fit)
+    novos
+}
+pred_cenarios <- prever(grade_cenarios)
+p_ref <- pred_cenarios$p[pred_cenarios$cultivar == levels(dados_cafe$cultivar)[1] &
+                         pred_cenarios$manejo   == levels(dados_cafe$manejo)[1]]
+pred_cenarios$dif_pp_vs_ref <- 100 * (pred_cenarios$p - p_ref)
+
+cat(sprintf("talhao tipico: altitude %.0f m e lavoura de %.1f anos (medianas da base)\n",
+            mediana_altitude, mediana_idade))
+cat("probabilidade de atingir o padrao, por cultivar x manejo:\n")
+print(data.frame(cultivar = pred_cenarios$cultivar, manejo = pred_cenarios$manejo,
+                 p = round(pred_cenarios$p, 3),
+                 IC_inf = round(pred_cenarios$ic_inf, 3), IC_sup = round(pred_cenarios$ic_sup, 3),
+                 dif_pp_vs_ref = round(pred_cenarios$dif_pp_vs_ref, 1)),
+      row.names = FALSE)
+cat(sprintf("   referencia (dif_pp_vs_ref = 0): %s, %s\n",
+            levels(dados_cafe$cultivar)[1], levels(dados_cafe$manejo)[1]))
+
+# O mesmo manejo, pontos de partida diferentes: ganho em pp do manejo
+# com maior probabilidade em relacao ao convencional, dentro de cada
+# cultivar. Mostra que a mesma razao de chances vale pontos percentuais
+# diferentes conforme a cultivar.
+manejo_ref <- levels(dados_cafe$manejo)[1]
+ganho_manejo <- pred_cenarios %>%
+    group_by(cultivar) %>%
+    summarise(p_convencional = p[manejo == manejo_ref],
+              melhor_manejo  = as.character(manejo[which.max(p)]),
+              p_melhor       = max(p),
+              ganho_pp       = 100 * (p_melhor - p_convencional), .groups = "drop")
+cat("\nganho em pontos percentuais do melhor manejo sobre o convencional, por cultivar:\n")
+print(data.frame(cultivar = ganho_manejo$cultivar, p_convencional = round(ganho_manejo$p_convencional, 3),
+                 melhor_manejo = ganho_manejo$melhor_manejo, p_melhor = round(ganho_manejo$p_melhor, 3),
+                 ganho_pp = round(ganho_manejo$ganho_pp, 1)),
+      row.names = FALSE)
+
+# Altitude e idade: variacoes dentro do suporte dos dados (quartis), no
+# cenario de referencia (cultivar e manejo de referencia).
+q_alt   <- quantile(dados_cafe$altitude_m, c(.25, .75))
+q_idade <- quantile(dados_cafe$idade_lavoura_anos, c(.25, .75))
+cen_num <- rbind(
+    data.frame(cenario = sprintf("altitude %.0f m (Q1)", q_alt[1]), altitude_m = q_alt[1], idade_lavoura_anos = mediana_idade),
+    data.frame(cenario = sprintf("altitude %.0f m (Q3)", q_alt[2]), altitude_m = q_alt[2], idade_lavoura_anos = mediana_idade),
+    data.frame(cenario = sprintf("lavoura de %.1f anos (Q1)", q_idade[1]), altitude_m = mediana_altitude, idade_lavoura_anos = q_idade[1]),
+    data.frame(cenario = sprintf("lavoura de %.1f anos (Q3)", q_idade[2]), altitude_m = mediana_altitude, idade_lavoura_anos = q_idade[2]))
+cen_num$cultivar <- factor(levels(dados_cafe$cultivar)[1], levels = levels(dados_cafe$cultivar))
+cen_num$manejo   <- factor(manejo_ref, levels = levels(dados_cafe$manejo))
+pred_num <- prever(cen_num)
+cat(sprintf("\nvariacoes de altitude e idade no cenario de referencia (%s, %s):\n",
+            levels(dados_cafe$cultivar)[1], manejo_ref))
+print(data.frame(cenario = pred_num$cenario, p = round(pred_num$p, 3),
+                 IC_inf = round(pred_num$ic_inf, 3), IC_sup = round(pred_num$ic_sup, 3)),
+      row.names = FALSE)
+dif_alt_pp   <- 100 * (pred_num$p[2] - pred_num$p[1])
+dif_idade_pp <- 100 * (pred_num$p[4] - pred_num$p[3])
+cat(sprintf("   de Q1 a Q3 de altitude: %+.1f pontos percentuais | de Q1 a Q3 de idade: %+.1f pontos percentuais\n",
+            dif_alt_pp, dif_idade_pp))
+
+# ---------------------------------------------------------------------
+# Figura C9: cenarios cultivar x manejo
+# ---------------------------------------------------------------------
+# Pergunta que responde: qual a probabilidade de exportar em cada escolha?
+# Como ler: um painel por manejo; ponto = probabilidade prevista para o
+# talhao tipico; barra = IC 95% (calculado no logit e convertido); linha
+# tracejada = proporcao geral da base. Comparar alturas e a sobreposicao
+# dos intervalos.
+# Limitacao: altitude e idade fixas na mediana; outros valores mudam as
+# probabilidades (mas nao as razoes de chances).
+g_cenarios <- ggplot(pred_cenarios, aes(x = cultivar, y = p)) +
+    geom_hline(yintercept = proporcao_exportacao, linetype = "dashed", colour = CINZA) +
+    geom_errorbar(aes(ymin = ic_inf, ymax = ic_sup), width = .2) +
+    geom_point(size = 3.5, colour = VERDE) +
+    geom_text(aes(label = sprintf("%.2f", p)), hjust = -.45, size = 3.2) +
+    facet_wrap(~ manejo) +
+    scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, .2)) +
+    labs(x = NULL, y = "probabilidade de atingir o padrao de exportacao",
+         title = "Probabilidade de exportar por cultivar e manejo, num talhao tipico",
+         subtitle = sprintf("altitude %.0f m e lavoura de %.1f anos (medianas); barras: IC 95%%; tracejada: proporcao geral",
+                            mediana_altitude, mediana_idade),
+         caption = "IC calculado na escala do logit e convertido; os pontos percentuais de cada troca dependem do ponto de partida") +
+    theme_bw(base_size = 11) +
+    theme(axis.text.x = element_text(angle = 15, hjust = 1))
+salvar(g_cenarios, "C9_cenarios.png", 11, 6)
+
+# ---------------------------------------------------------------------
+# Figura C9: curvas ao longo da altitude e da idade
+# ---------------------------------------------------------------------
+# Pergunta que responde: como altitude e idade movem a probabilidade?
+# Como ler: uma curva por cultivar, manejo de referencia; faixa = IC 95%.
+# A inclinacao muda ao longo do eixo: e a nao linearidade da ligacao na
+# escala da probabilidade. Curvas so dentro da faixa observada dos dados.
+grade_alt <- expand.grid(cultivar = levels(dados_cafe$cultivar), manejo = manejo_ref,
+                         altitude_m = seq(min(dados_cafe$altitude_m), max(dados_cafe$altitude_m), length.out = 80),
+                         idade_lavoura_anos = mediana_idade)
+grade_idade <- expand.grid(cultivar = levels(dados_cafe$cultivar), manejo = manejo_ref,
+                           altitude_m = mediana_altitude,
+                           idade_lavoura_anos = seq(min(dados_cafe$idade_lavoura_anos), max(dados_cafe$idade_lavoura_anos), length.out = 80))
+grade_alt$manejo   <- factor(grade_alt$manejo, levels = levels(dados_cafe$manejo))
+grade_idade$manejo <- factor(grade_idade$manejo, levels = levels(dados_cafe$manejo))
+pred_alt   <- prever(grade_alt)
+pred_idade <- prever(grade_idade)
+cores_cultivar <- c(VERDE, "#4A7FA5", VERMELHO, "#8A6D3B")
+names(cores_cultivar) <- levels(dados_cafe$cultivar)
+g_alt <- ggplot(pred_alt, aes(x = altitude_m, y = p, colour = cultivar, fill = cultivar)) +
+    geom_ribbon(aes(ymin = ic_inf, ymax = ic_sup), alpha = .12, colour = NA) +
+    geom_line(linewidth = 1) +
+    scale_colour_manual(values = cores_cultivar) + scale_fill_manual(values = cores_cultivar) +
+    scale_y_continuous(limits = c(0, 1)) +
+    labs(x = "altitude (m)", y = "probabilidade de exportar",
+         title = "Ao longo da altitude", subtitle = sprintf("manejo %s; lavoura de %.1f anos", manejo_ref, mediana_idade)) +
+    theme_bw(base_size = 11) + theme(legend.position = "bottom")
+g_idade <- ggplot(pred_idade, aes(x = idade_lavoura_anos, y = p, colour = cultivar, fill = cultivar)) +
+    geom_ribbon(aes(ymin = ic_inf, ymax = ic_sup), alpha = .12, colour = NA) +
+    geom_line(linewidth = 1) +
+    scale_colour_manual(values = cores_cultivar) + scale_fill_manual(values = cores_cultivar) +
+    scale_y_continuous(limits = c(0, 1)) +
+    labs(x = "idade da lavoura (anos)", y = NULL,
+         title = "Ao longo da idade da lavoura", subtitle = sprintf("manejo %s; altitude %.0f m", manejo_ref, mediana_altitude)) +
+    theme_bw(base_size = 11) + theme(legend.position = "bottom")
+salvar((g_alt | g_idade) + plot_layout(guides = "collect") & theme(legend.position = "bottom"),
+       "C9_altitude_idade.png", 12, 6)
+
+# ---------------------------------------------------------------------
+# Reconciliacao com o Desafio B: resistencia a ferrugem x exportacao
+# ---------------------------------------------------------------------
+# A cultivar mais resistente a ferrugem (menor severidade media, Step 6)
+# e a que mais exporta? A tabela coloca as duas ordenacoes lado a lado,
+# no cenario tipico com manejo de referencia.
+tab_reconcilia <- pred_cenarios %>%
+    filter(manejo == manejo_ref) %>%
+    transmute(cultivar = as.character(cultivar), p_exportar = p) %>%
+    mutate(severidade_media = as.vector(sev_media[cultivar])) %>%
+    arrange(desc(p_exportar))
+cat("\ncultivares: probabilidade de exportar (talhao tipico, manejo de referencia) x severidade media de ferrugem:\n")
+print(data.frame(cultivar = tab_reconcilia$cultivar, p_exportar = round(tab_reconcilia$p_exportar, 3),
+                 severidade_media = round(tab_reconcilia$severidade_media, 3)), row.names = FALSE)
+cultivar_mais_exporta <- tab_reconcilia$cultivar[1]
+cultivar_mais_resist  <- tab_reconcilia$cultivar[which.min(tab_reconcilia$severidade_media)]
+
+# ---------------------------------------------------------------------
+# Parecer final do Desafio C
+# ---------------------------------------------------------------------
+# RECOMENDACAO: o que fazer, para quem, com que efeito em probabilidade.
+# MANEJAVEL x NAO MANEJAVEL: o que se escolhe e o que so orienta onde agir.
+# RECONCILIACAO COM A e B: a cultivar resistente e a que exporta?
+# LIMITES: o que o modelo nao consegue dizer.
+melhor_cenario <- pred_cenarios[which.max(pred_cenarios$p), ]
+pior_cenario   <- pred_cenarios[which.min(pred_cenarios$p), ]
+
+parecer("RECOMENDACAO. Num talhao tipico (altitude ", sprintf("%.0f", mediana_altitude),
+        " m, lavoura de ", sprintf("%.1f", mediana_idade), " anos), a probabilidade de ",
+        "atingir o padrao de exportacao vai de ", sprintf("%.2f", pior_cenario$p), " (",
+        pior_cenario$cultivar, ", ", pior_cenario$manejo, ") a ",
+        sprintf("%.2f", melhor_cenario$p), " (", melhor_cenario$cultivar, ", ",
+        melhor_cenario$manejo, "), com intervalos largos (n = ", n_obs, "). Entre as ",
+        "escolhas do produtor: (1) o manejo - trocar o convencional pelo ",
+        ganho_manejo$melhor_manejo[1], " acrescenta de ",
+        sprintf("%.0f", min(ganho_manejo$ganho_pp)), " a ",
+        sprintf("%.0f", max(ganho_manejo$ganho_pp)), " pontos percentuais",
+        if (diff(range(ganho_manejo$ganho_pp)) < 3)
+            ", quase o mesmo em todas as cultivares porque todas partem de probabilidades proximas do meio da escala, onde a mesma razao de chances rende mais pontos percentuais"
+        else ", conforme a cultivar, porque a mesma razao de chances rende mais pontos percentuais perto de 50% do que longe dele",
+        "; (2) a cultivar - ", cultivar_mais_exporta,
+        " tem a maior probabilidade de exportar no cenario tipico, e o efeito total ",
+        "(Step 6) e o que vale para quem escolhe antes do plantio; (3) a idade da ",
+        "lavoura - entre o primeiro e o terceiro quartil de idade a probabilidade muda ",
+        sprintf("%+.0f", dif_idade_pp), " pontos percentuais, o que sustenta programar a ",
+        "renovacao das lavouras mais velhas. ",
+        "MANEJAVEL E NAO MANEJAVEL. A altitude nao se escolhe, mas orienta onde ",
+        "concentrar o esforco: entre o primeiro e o terceiro quartil de altitude a ",
+        "probabilidade muda ", sprintf("%+.0f", dif_alt_pp), " pontos percentuais; talhoes ",
+        "altos sao os candidatos naturais aos contratos de exportacao, e talhoes baixos ",
+        "os que mais precisam do manejo para compensar. ",
+        "RECONCILIACAO COM OS DESAFIOS A E B. A cultivar mais resistente a ferrugem e ",
+        cultivar_mais_resist, " (severidade media ",
+        sprintf("%.3f", tab_reconcilia$severidade_media[tab_reconcilia$cultivar == cultivar_mais_resist]),
+        "), e a que mais exporta e ", cultivar_mais_exporta, " (severidade media ",
+        sprintf("%.3f", tab_reconcilia$severidade_media[tab_reconcilia$cultivar == cultivar_mais_exporta]),
+        "). ",
+        if (cultivar_mais_resist != cultivar_mais_exporta)
+            paste0("Nao sao a mesma: a resistencia a ferrugem, sozinha, nao garante o padrao ",
+                   "de exportacao, e a cooperativa precisa decidir o objetivo - reduzir a doenca ",
+                   "ou maximizar a exportacao - ou combinar cultivares por talhao conforme a ",
+                   "pressao de ferrugem local (Desafio B) e a altitude. ")
+        else "Sao a mesma cultivar, o que simplifica a recomendacao. ",
+        "A contagem de brocas (Desafio A) nao acrescentou informacao ao modelo (Step 4). ",
+        "LIMITES. O modelo ordena os talhoes melhor que o acaso, mas com capacidade ",
+        "modesta (AUC ", sprintf("%.2f", auc_cv), " por validacao cruzada): boa parte do ",
+        "que decide o padrao de exportacao nao esta nas caracteristicas de talhao desta ",
+        "base - colheita, pos-colheita e beneficiamento nao foram medidos. As ",
+        "probabilidades acima valem dentro da faixa observada de altitude e idade e para ",
+        "as combinacoes de cultivar e manejo presentes na base; os intervalos de ",
+        "confianca devem acompanhar qualquer numero repassado ao produtor. E as ",
+        "associacoes estimadas sao observacionais: o modelo nao substitui um ensaio em ",
+        "que cultivar e manejo sejam atribuidos aos talhoes.")
+
+# ---------------------------------------------------------------------
+# Reprodutibilidade: versoes usadas nesta execucao
+# ---------------------------------------------------------------------
+# Para o relatorio, os pareceres de todos os steps podem ser extraidos
+# da saida deste script com:
+#   grep -A40 ">> PARECER" saida.txt
+cat("\nfiguras salvas em:", FIG, "\n")
+cat("\nversoes desta execucao:\n")
+print(sessionInfo())
 
 
 # =======================================================================================
