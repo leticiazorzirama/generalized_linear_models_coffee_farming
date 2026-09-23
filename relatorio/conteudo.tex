@@ -10,6 +10,8 @@
 %   \pendente{...}  destaca em amarelo no PDF o que ainda falta
 % =====================================================================
 
+\section{Contextualização}
+
 Uma cooperativa de cafeicultores de Minas Gerais enfrenta três problemas simultâneos que
 consomem seu orçamento técnico e definem sua margem:
 
@@ -41,8 +43,11 @@ e o padrão de exportação é uma resposta \textbf{binária}.
 Tratar as três com a mesma ferramenta seria ignorar o que a natureza de cada dado impõe. Portanto, cada pergunta se transformou
 em um desafio particular a ser tratado conforme suas especificidades.
 
-Após a análise exploratória univariada\footnote{Acesse a análise exploratória completa no repositório do github do projeto.}, este relatório apresenta os três modelos, o processo de seleção de variáveis, o
-diagnóstico de resíduos e a recomendação de manejo decorrente.
+Após a análise exploratória univariada\footnote{Acesse a análise exploratória completa no \href{https://github.com/leticiazorzirama/generalized_linear_models_coffee_farming/blob/main/exploratory_analysis/exploratory_analysis.R}{repositório do projeto}.}, 
+este relatório apresenta os três desafios cada um com as respectivas famílias de modelos, o processo de seleção de variáveis, 
+o diagnóstico de resíduos e a recomendação de manejo.
+
+\section{Análise exploratória de dados}
 
 \subsection{Variáveis categóricas de manejo e produção}
  
@@ -87,7 +92,7 @@ diagnóstico de resíduos e a recomendação de manejo decorrente.
     \label{fig:altitude}
 \end{figure}
  
-\textbf{\var{declividade\_pct}:} variou de 1\% a 51,4\% ($\bar{x}$ = 19,9\% e $s$ = 8.43\%), com predomínio de terrenos forte-ondulados {inpe2023declividade}; esse resultado diverge da faixa de 5\% a 15\% \cite{bernardes2012diagnostico} para a região (Figura~\ref{fig:declividade}).
+\textbf{\var{declividade\_pct}:} variou de 1\% a 51,4\% ($\bar{x}$ = 19,9\% e $s$ = 8.43\%), com predomínio de terrenos forte-ondulados \cite{inpe2023declividade}; esse resultado diverge da faixa de 5\% a 15\% \cite{bernardes2012diagnostico} para a região (Figura~\ref{fig:declividade}).
  
 \begin{figure}[H]
     \centering
@@ -200,44 +205,45 @@ diagnóstico de resíduos e a recomendação de manejo decorrente.
     \label{fig:pragas}
 \end{figure}
 
-\section{Materiais e métodos}
+% \section{Materiais e métodos}
 
-\subsection{Base de dados}
+% \subsection{Base de dados}
 
-Os \baseN{} talhões trazem, além das covariáveis agronômicas, três desfechos distintos:
-\var{n\_brocas\_capturadas}, \var{severidade\_ferrugem} e \var{padrao\_exportacao}. Essa
-estrutura exige cuidado: \textbf{cada desfecho é variável resposta em um desafio e
-candidato a preditor nos demais}, e nem toda inclusão é legítima. A questão reaparece
-explicitamente na Seção~\ref{sec:mediacao}.
+% Os \baseN{} talhões trazem, além das covariáveis agronômicas, três desfechos distintos:
+% \var{n\_brocas\_capturadas}, \var{severidade\_ferrugem} e \var{padrao\_exportacao}. Essa
+% estrutura exige cuidado: \textbf{cada desfecho é variável resposta em um desafio e
+% candidato a preditor nos demais}, e nem toda inclusão é legítima. A questão reaparece
+% explicitamente na Seção~\ref{sec:mediacao}.
 
-Há ainda duas variáveis que descrevem o \emph{processo de medição}, não o talhão:
-\var{n\_armadilhas} e \var{dias\_exposicao}. O produto das duas define o esforço
-amostral, que varia de \baseEsforcoMin{} a \baseEsforcoMax{} unidades --- uma amplitude
-de \baseEsforcoRaz{} vezes. Comparar contagens brutas entre talhões seria, portanto,
-comparar coisas diferentes.
+% Há ainda duas variáveis que descrevem o \emph{processo de medição}, não o talhão:
+% \var{n\_armadilhas} e \var{dias\_exposicao}. O produto das duas define o esforço
+% amostral, que varia de \baseEsforcoMin{} a \baseEsforcoMax{} unidades --- uma amplitude
+% de \baseEsforcoRaz{} vezes. Comparar contagens brutas entre talhões seria, portanto,
+% comparar coisas diferentes.
 
-\subsection{Procedimentos comuns}
+% \subsection{Procedimentos comuns}
 
-Todos os ajustes foram feitos em R \cite{rcore2026}, com scripts reprodutíveis e semente
-fixada. Três procedimentos são comuns aos três desafios:
+% Todos os ajustes foram feitos em R \cite{rcore2026}, com scripts reprodutíveis e semente
+% fixada. Três procedimentos são comuns aos três desafios:
 
-\begin{enumerate}
-    \item \textbf{Seleção de variáveis} por teste da razão de verossimilhanças, partindo
-          do modelo amplo, com exclusão prévia das variáveis irrelevantes por construção
-          e verificação de multicolinearidade pelo fator de inflação da variância.
-    \item \textbf{Diagnóstico} por resíduos quantílicos aleatorizados \cite{dunn1996},
-          envelope simulado \cite{atkinson1981}, verificação de dispersão, identificação
-          de pontos influentes e exame da linearidade das covariáveis contínuas na escala
-          do preditor linear.
-    \item \textbf{Interpretação na escala original} do fenômeno --- brocas por unidade de
-          esforço, pontos percentuais de severidade e probabilidade de exportação ---,
-          e não apenas na escala do preditor linear.
-\end{enumerate}
+% \begin{enumerate}
+%     \item \textbf{Seleção de variáveis} por teste da razão de verossimilhanças, partindo
+%           do modelo amplo, com exclusão prévia das variáveis irrelevantes por construção
+%           e verificação de multicolinearidade pelo fator de inflação da variância.
+%     \item \textbf{Diagnóstico} por resíduos quantílicos aleatorizados \cite{dunn1996},
+%           envelope simulado \cite{atkinson1981}, verificação de dispersão, identificação
+%           de pontos influentes e exame da linearidade das covariáveis contínuas na escala
+%           do preditor linear.
+%     \item \textbf{Interpretação na escala original} do fenômeno --- brocas por unidade de
+%           esforço, pontos percentuais de severidade e probabilidade de exportação ---,
+%           e não apenas na escala do preditor linear.
+% \end{enumerate}
 
 \section{Desafio A --- infestação pela broca}
 \label{sec:desafioA}
 
-A análise teve como objetivo identificar quais condições de talhão favorecem a
+A análise\footnote{Acesse a análise completa no \href{https://github.com/leticiazorzirama/generalized_linear_models_coffee_farming/blob/main/challenge_a/challenge_a.R}{repositório do projeto}.}
+teve como objetivo identificar quais condições de talhão favorecem a
 infestação pela broca-do-café e quantificar o efeito de cada uma dessas condições
 sobre a pressão de praga, medida pelo número de brocas capturadas
 (\textit{n\_brocas\_capturadas}). Inicialmente, foi realizada uma análise
@@ -370,15 +376,16 @@ ilustra os efeitos das variáveis nos modelos mod09 e mod10, respectivamente.
 Esse modelo apresentou AICc ligeiramente menor (1950,1) do que mod09
 (1956,0), sendo então adotado como modelo final, com um teste de razão de
 verossimilhanças frente ao modelo nulo (mod07) altamente significativo
-(LR = 133,39; 6 g.l.; $p < 0{,}001$). O diagnóstico de resíduos de mod10
-indicou, pelo gráfico meia-normal dos resíduos \textit{rstudent}, a presença de
-valores atípicos na variável resposta, principalmente nas observações 213 e 287;
-pelo gráfico meia-normal dos valores de alavancagem (\textit{leverage}), foram 
-identificadas como atípicas, quanto à combinação de valores das variáveis preditoras (leverage), 
-as observações 85 e 148, considerando o ponto de corte de alavancagem de 0,0353; 
-e, pela distância de Cook, as observações 84 e 272 destacaram-se muito acima das demais, indicando
-influência global relevante dessas observações sobre o ajuste do modelo. A Figura~\ref{fig:halfnorm_mod10} 
-ilustra os diagnósticos de resíduos.
+(LR = 133,39; 6 g.l.; $p < 0{,}001$). 
+
+O diagnóstico de resíduos de mod10 indicou, pelo gráfico meia-normal dos resíduos \textit{rstudent}, a presença de
+valores atípicos preditos, principalmente para os talhões 213 e 287. Ou seja, a resposta (número de brocas) 
+não combinou com o que era esperado. Pelo gráfico meia-normal dos valores de alavancagem (\textit{leverage}), foram 
+identificados talhões com condições atípicas, isto é, quanto à combinação de valores das variáveis preditoras (leverage), 
+principalmente nas observações 85 e 148, considerando o ponto de corte de alavancagem de 0,0353. Em outras palavras, 
+houve casos de talhões que se diferiram muito dos demais. Pela distância de Cook, as observações 84 e 272 destacaram-se 
+como muito acima das demais, indicando influência global relevante dessas observações sobre o ajuste do modelo e sua capacidade
+preditiva. A Figura~\ref{fig:halfnorm_mod10} ilustra os diagnósticos.
 
 \begin{figure}[H]
     \centering
@@ -702,38 +709,38 @@ alteram o sinal de nenhum coeficiente quando removidos, e nem $\hat\eta^2$ como
 covariável extra ($p = \cEtaQuadradoP$) nem o termo $x\log x$ ($p = \cBTAltitude$ e
 $p = \cBTIdade$) acusaram inadequação da ligação ou da escala adotadas.
 
-\section{Decisão e recomendação de manejo}
-\label{sec:decisao}
+% \section{Decisão e recomendação de manejo}
+% \label{sec:decisao}
 
-\pendente{Falta consolidar a recomendação do Desafio A --- brocas por unidade de esforço.}
+% \pendente{Falta consolidar a recomendação do Desafio A --- brocas por unidade de esforço.}
 
-A escolha da cultivar é o fator de maior impacto sobre a ferrugem: \bDifPP{} pontos
-percentuais de severidade separam a Bourbon da Icatu num talhão típico. Essa vantagem,
-contudo, não se traduz automaticamente em exportação --- a Seção~\ref{sec:mediacao}
-mostra que a Icatu carrega uma penalidade direta que compensa parte do ganho
-fitossanitário. A recomendação de cultivar, portanto, não pode ser derivada apenas do
-Desafio B.
+% A escolha da cultivar é o fator de maior impacto sobre a ferrugem: \bDifPP{} pontos
+% percentuais de severidade separam a Bourbon da Icatu num talhão típico. Essa vantagem,
+% contudo, não se traduz automaticamente em exportação --- a Seção~\ref{sec:mediacao}
+% mostra que a Icatu carrega uma penalidade direta que compensa parte do ganho
+% fitossanitário. A recomendação de cultivar, portanto, não pode ser derivada apenas do
+% Desafio B.
 
-Na escala que interessa ao produtor, num talhão típico --- altitude de
-\cAltitudeMediana~m e lavoura de \cIdadeMediana{} anos ---, a probabilidade de atingir o
-padrão de exportação vai de \cPmin\% (\cCenarioMin) a \cPmax\% (\cCenarioMax). Entre as
-decisões que estão ao alcance do cooperado, a de maior retorno é o \textbf{sistema de
-manejo}: a passagem do convencional ao orgânico acrescenta de \cGanhoManejoMin{} a
-\cGanhoManejoMax{} pontos percentuais de probabilidade, conforme a cultivar. A
-\textbf{renovação das lavouras mais velhas} vem em seguida: entre o primeiro e o terceiro
-quartil de idade a probabilidade varia \cIdadePP{} pontos percentuais. A altitude não se
-escolhe, mas orienta \emph{onde} concentrar o esforço --- \cAltitudePP{} pontos
-percentuais separam os quartis ---, indicando os talhões altos como candidatos naturais
-aos contratos de exportação e os baixos como os que mais dependem do manejo para
-compensar.
+% Na escala que interessa ao produtor, num talhão típico --- altitude de
+% \cAltitudeMediana~m e lavoura de \cIdadeMediana{} anos ---, a probabilidade de atingir o
+% padrão de exportação vai de \cPmin\% (\cCenarioMin) a \cPmax\% (\cCenarioMax). Entre as
+% decisões que estão ao alcance do cooperado, a de maior retorno é o \textbf{sistema de
+% manejo}: a passagem do convencional ao orgânico acrescenta de \cGanhoManejoMin{} a
+% \cGanhoManejoMax{} pontos percentuais de probabilidade, conforme a cultivar. A
+% \textbf{renovação das lavouras mais velhas} vem em seguida: entre o primeiro e o terceiro
+% quartil de idade a probabilidade varia \cIdadePP{} pontos percentuais. A altitude não se
+% escolhe, mas orienta \emph{onde} concentrar o esforço --- \cAltitudePP{} pontos
+% percentuais separam os quartis ---, indicando os talhões altos como candidatos naturais
+% aos contratos de exportação e os baixos como os que mais dependem do manejo para
+% compensar.
 
-Duas ressalvas delimitam o alcance dessas recomendações. A capacidade preditiva é
-moderada (AUC \cAUCcv{} sob validação cruzada), o que indica que parte relevante do que
-decide o padrão de exportação não está nas características de talhão desta base ---
-colheita, pós-colheita e beneficiamento não foram medidos. E as associações são
-observacionais: o modelo não substitui um experimento em que cultivar e manejo sejam
-atribuídos aos talhões.
+% Duas ressalvas delimitam o alcance dessas recomendações. A capacidade preditiva é
+% moderada (AUC \cAUCcv{} sob validação cruzada), o que indica que parte relevante do que
+% decide o padrão de exportação não está nas características de talhão desta base ---
+% colheita, pós-colheita e beneficiamento não foram medidos. E as associações são
+% observacionais: o modelo não substitui um experimento em que cultivar e manejo sejam
+% atribuídos aos talhões.
 
-\section{Considerações finais}
+% \section{Considerações finais}
 
-\pendente{Redigir ao final.}
+% \pendente{Redigir ao final.}

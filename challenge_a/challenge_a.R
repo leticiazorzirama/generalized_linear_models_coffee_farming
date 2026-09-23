@@ -614,10 +614,17 @@ halfnorm(rstudent(mod06))
 # linear e apresentem um salto acentuado para cima sao valores atipicos
 # Geralmente, residuos estudentizados com valores absolutos superiores a 2 ou 3 
 # justificam uma inspecao cuidadosa, pois representam contagens que o modelo de Poisson 
-# nao conseguiu prever com precisao
+# nao conseguiu prever com precisao.
+
+# Em outras palavras
+# O modelo tenta prever quantas brocas vão ser capturadas em cada talhão, com base nas condições dele 
+# (umidade, altitude, etc.). Para cada talhão, compara-se o valor real capturado com o valor que o modelo previu.
+# Se a diferença for pequena, tudo certo — o modelo acertou bem.
+# Se a diferença for gigante (o modelo previu 5 brocas e apareceram 40), esse talhão é um "ponto estranho" nesse gráfico. 
+# Ele está indicando: "a minha resposta (número de brocas) não combinou com o que era esperado."
 
 # Parecer
-cat("Presença de valores atípicos para a variável resposta, principalmente as observações
+cat("Presença de valores atípicos preditos, principalmente as predições do número de brocas para os talhões
     321 e 287.")
 
 # Checar valores atipicos nos coeficientes das variaveis preditoras
@@ -632,13 +639,19 @@ halfnorm(influence(mod06)$hat)
 # p = numero de parametros estimados 
 # n = tamanho da amostra
 # Se um ponto se desviar visualmente da linha de meia-normal e exceder esse valor, 
-# seus valores preditores sao extremos
+# seus valores sao extremos
 p <- 6
 n <- nrow(caf)
 alavanca <- 2 * p / n
 
-cat("Para um ponto de alavancagem de", alavanca, "contata-se valores atípicos nos
-    coeficientes das variáveis preditoras, sobretudo para as observações 148 e 214.")
+# Em outras palavras
+# "Esse talhão é diferente dos outros"
+# Não se está olhando pro resultado (quantas brocas), e sim pras características do talhão: a altitude dele, a umidade, o pH, etc.
+# Se um talhão tem uma combinação de características bem rara — tipo, é o único com altitude super alta E super seco ao mesmo tempo, 
+# enquanto todos os outros são parecidos entre si — esse talhão tem alta alavancagem. 
+# Ele é "diferente" porque ele mesmo, como talhão, já é fora do padrão.
+
+cat("Para um ponto de alavancagem de", alavanca, "contata-se talhões atípicos nos, sobretudo os talhões 214 e 148.")
 
 # Checar o quanto os valores atípicos influenciam no modelo 
 # A distancia de Cook combina magnitude residual e alavancagem para medir a influencia global
@@ -653,9 +666,20 @@ halfnorm(cooks.distance(mod06))
 # Se um ou dois pontos estiverem situados muito acima do restante da curva, eles estarao exercendo uma influencia significativa 
 # sobre os parametros do modelo poisson.
 
+# Em outras palavras
+# "Esse ponto realmente bagunçou o resultado final"
+# Essa é a junção das duas ideias anteriores. 
+# A distância de Cook pergunta: "e se eu tirar esse talhão da análise, o modelo muda muito ou fica quase igual?"
+# Ela combina:
+# o quão estranho foi o resultado dele (resíduo), com
+# o quão diferente ele é dos outros (alavancagem).
+# Se um ponto tem as duas coisas ao mesmo tempo — um resultado estranho e características raras — ele pode estar puxando o 
+# modelo inteiro para um lado, tipo um aluno que, se ele saísse da turma, a média da sala mudaria bastante.
+# É o ponto que realmente tem poder de influenciar a conclusão final, não só de "chamar atenção".
+
 # Parecer
-cat("A observação 321 apresentou uma distância de Cook muito acima do restante da curva, indicando uma influência
-    global no modelo.")
+cat("O talhão 321 apresentou uma distância de Cook acima do restante da curva, 
+    indicando uma influência global na capacidade preditiva do modelo.")
 
 # =======================================================================================
 # VERIFICACAO DA EQUIDISPERSAO DO MODELO POISSON
@@ -1087,7 +1111,7 @@ secao("DIAGNÓSTICO DOS RESÍDUOS")
 halfnorm(rstudent(mod10))
 
 # Parecer
-cat("Presença de valores atípicos para a variável resposta, principalmente as observações
+cat("Presença de valores atípicos preditos, principalmente as predições do número de brocas para os talhões
     213 e 287.")
 
 # Checar valores atipicos nos coeficientes das variaveis preditoras
@@ -1097,15 +1121,14 @@ p <- 6
 n <- nrow(caf)
 alavanca <- 2 * p / n
 
-cat("Para um ponto de alavancagem de", alavanca, "contata-se valores atípicos nos
-    coeficientes das variáveis preditoras, com maior atenção às observações 85 e 148.")
+cat("Para um ponto de alavancagem de", alavanca, "contata-se talhões atípicos nos, sobretudo os talhões 85 e 148.")
 
 # Distancia de cook 
 halfnorm(cooks.distance(mod10)) 
 
 # Parecer
-cat("As observações 84 e 272 apresentaram uma distância de Cook muito acima do restante da curva, 
-    indicando uma influência global no modelo.")
+cat("Os talhões 84 e 272 apresentaram uma distância de Cook acima do restante da curva, 
+    indicando uma influência global na capacidade preditiva do modelo.")
 
 # ============================================================
 # PARECERES
