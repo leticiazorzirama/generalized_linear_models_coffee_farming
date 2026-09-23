@@ -339,6 +339,41 @@ cat("  cenarios: desfavoravel ", round(cenario_pp(0.1), 1),
     " pp | tipico ", round(100*(pb - pi_), 1),
     " pp | favoravel ", round(cenario_pp(0.9), 1), " pp\n", sep = "")
 
+# --- Tarefa 5: diagnostico de residuos (os cinco itens do 4c) -------------------------
+# O relatorio precisa citar estes numeros; sem macro eles seriam digitados a mao.
+rq_b    <- residuals(mB, type = "quantile")
+sw_b    <- shapiro.test(rq_b)
+num("bShapiroW", sw_b$statistic, 4)
+pval("bShapiroP", sw_b$p.value)
+
+cook_b  <- cooks.distance(mB)
+num("bCookMax",   max(cook_b, na.rm = TRUE), 5)
+num("bCookMedia", mean(cook_b, na.rm = TRUE), 5)
+num("bCookAcimaTres", sum(cook_b > 3 * mean(cook_b, na.rm = TRUE)), 0)
+num("bCookAcimaUm",   sum(cook_b > 1, na.rm = TRUE), 0)
+ids_b <- as.character(caf$id_talhao)[order(cook_b, decreasing = TRUE)][1:3]
+txt("bCookIds", paste(ids_b, collapse = ", "))
+
+# Envelope meio-normal: quantos pontos escapam de fato da banda de 95%?
+set.seed(20260922)
+mu_b  <- fitted(mB); phi_b <- mB$coefficients$precision
+env_b <- replicate(99, {
+    d <- caf
+    d$severidade_ferrugem <- rbeta(nrow(caf), mu_b * phi_b, (1 - mu_b) * phi_b)
+    m <- suppressWarnings(betareg(FORM_B, data = d, link = "logit"))
+    sort(abs(residuals(m, type = "quantile")))
+})
+obs_b   <- sort(abs(rq_b))
+lo_b    <- apply(env_b, 1, quantile, 0.025)
+hi_b    <- apply(env_b, 1, quantile, 0.975)
+fora_b  <- sum(obs_b < lo_b | obs_b > hi_b)
+num("bEnvFora",    fora_b, 0)
+num("bEnvTotal",   length(obs_b), 0)
+num("bEnvForaPct", 100 * fora_b / length(obs_b), 1)
+cat(sprintf("  Tarefa 5: Shapiro p = %s | Cook max %.5f | envelope %d de %d fora (%.1f%%)\n",
+    format.pval(sw_b$p.value, digits = 3), max(cook_b), fora_b, length(obs_b),
+    100 * fora_b / length(obs_b)))
+
 # =======================================================================================
 # DESAFIO C - binaria
 # =======================================================================================
