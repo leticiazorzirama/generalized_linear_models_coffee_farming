@@ -460,11 +460,6 @@ e o esforço amostral constantes, são:
     estatisticamente significativo sobre a taxa de captura (intervalos de confiança
     de 95\% contendo o valor 1).
 \end{itemize}
- 
-Em síntese, matéria orgânica e umidade relativa são as condições de talhão que mais
-favorecem a infestação pela broca, enquanto adubação nitrogenada e altitude atuam
-como fatores de proteção. Densidade de plantio e idade da lavoura apresentam efeitos
-positivos, porém de magnitude reduzida.
 
 \section{Desafio B --- severidade da ferrugem}
 \label{sec:desafioB}
@@ -747,38 +742,36 @@ alteram o sinal de nenhum coeficiente quando removidos, e nem $\hat\eta^2$ como
 covariável extra ($p = \cEtaQuadradoP$) nem o termo $x\log x$ ($p = \cBTAltitude$ e
 $p = \cBTIdade$) acusaram inadequação da ligação ou da escala adotadas.
 
-% \section{Decisão e recomendação de manejo}
-% \label{sec:decisao}
+\section{Considerações finais}
+ 
+Em síntese, matéria orgânica e umidade relativa são as condições de talhão que mais
+favorecem a infestação pela broca, enquanto adubação nitrogenada e altitude atuam
+como fatores de proteção. Densidade de plantio e idade da lavoura apresentam efeitos
+positivos, porém de magnitude reduzida.
 
-% \pendente{Falta consolidar a recomendação do Desafio A --- brocas por unidade de esforço.}
+A escolha da cultivar é o fator de maior impacto sobre a ferrugem: \bDifPP{} pontos
+percentuais de severidade separam a Bourbon da Icatu num talhão típico. Essa vantagem,
+contudo, não se traduz automaticamente em exportação --- a Seção~\ref{sec:mediacao}
+mostra que a Icatu carrega uma penalidade direta que compensa parte do ganho
+fitossanitário. A recomendação de cultivar, portanto, não pode ser derivada apenas do
+Desafio B.
 
-% A escolha da cultivar é o fator de maior impacto sobre a ferrugem: \bDifPP{} pontos
-% percentuais de severidade separam a Bourbon da Icatu num talhão típico. Essa vantagem,
-% contudo, não se traduz automaticamente em exportação --- a Seção~\ref{sec:mediacao}
-% mostra que a Icatu carrega uma penalidade direta que compensa parte do ganho
-% fitossanitário. A recomendação de cultivar, portanto, não pode ser derivada apenas do
-% Desafio B.
+Na escala que interessa ao produtor, num talhão típico --- altitude de
+\cAltitudeMediana~m e lavoura de \cIdadeMediana{} anos ---, a probabilidade de atingir o
+padrão de exportação vai de \cPmin\% (\cCenarioMin) a \cPmax\% (\cCenarioMax). Entre as
+decisões que estão ao alcance do cooperado, a de maior retorno é o \textbf{sistema de
+manejo}: a passagem do convencional ao orgânico acrescenta de \cGanhoManejoMin{} a
+\cGanhoManejoMax{} pontos percentuais de probabilidade, conforme a cultivar. A
+\textbf{renovação das lavouras mais velhas} vem em seguida: entre o primeiro e o terceiro
+quartil de idade a probabilidade varia \cIdadePP{} pontos percentuais. A altitude não se
+escolhe, mas orienta \emph{onde} concentrar o esforço --- \cAltitudePP{} pontos
+percentuais separam os quartis ---, indicando os talhões altos como candidatos naturais
+aos contratos de exportação e os baixos como os que mais dependem do manejo para
+compensar.
 
-% Na escala que interessa ao produtor, num talhão típico --- altitude de
-% \cAltitudeMediana~m e lavoura de \cIdadeMediana{} anos ---, a probabilidade de atingir o
-% padrão de exportação vai de \cPmin\% (\cCenarioMin) a \cPmax\% (\cCenarioMax). Entre as
-% decisões que estão ao alcance do cooperado, a de maior retorno é o \textbf{sistema de
-% manejo}: a passagem do convencional ao orgânico acrescenta de \cGanhoManejoMin{} a
-% \cGanhoManejoMax{} pontos percentuais de probabilidade, conforme a cultivar. A
-% \textbf{renovação das lavouras mais velhas} vem em seguida: entre o primeiro e o terceiro
-% quartil de idade a probabilidade varia \cIdadePP{} pontos percentuais. A altitude não se
-% escolhe, mas orienta \emph{onde} concentrar o esforço --- \cAltitudePP{} pontos
-% percentuais separam os quartis ---, indicando os talhões altos como candidatos naturais
-% aos contratos de exportação e os baixos como os que mais dependem do manejo para
-% compensar.
-
-% Duas ressalvas delimitam o alcance dessas recomendações. A capacidade preditiva é
-% moderada (AUC \cAUCcv{} sob validação cruzada), o que indica que parte relevante do que
-% decide o padrão de exportação não está nas características de talhão desta base ---
-% colheita, pós-colheita e beneficiamento não foram medidos. E as associações são
-% observacionais: o modelo não substitui um experimento em que cultivar e manejo sejam
-% atribuídos aos talhões.
-
-% \section{Considerações finais}
-
-% \pendente{Redigir ao final.}
+Duas ressalvas delimitam o alcance dessas recomendações. A capacidade preditiva é
+moderada (AUC \cAUCcv{} sob validação cruzada), o que indica que parte relevante do que
+decide o padrão de exportação não está nas características de talhão desta base ---
+colheita, pós-colheita e beneficiamento não foram medidos. E as associações são
+observacionais: o modelo não substitui um experimento em que cultivar e manejo sejam
+atribuídos aos talhões.
